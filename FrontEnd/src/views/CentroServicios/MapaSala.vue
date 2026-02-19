@@ -117,16 +117,8 @@ onMounted(cargarMapa);
 watch([pisoSeleccionado, areaSeleccionada], cargarMapa);
 
 // ─── COMPUTED ─────────────────────────────────────────────────────────────────
-/** Maquinas filtradas por búsqueda local */
-const maquinasFiltradas = computed(() => {
-    if (!busqueda.value) return maquinas.value;
-    const q = busqueda.value.toLowerCase();
-    return maquinas.value.filter(m =>
-        m.uid_sala?.toLowerCase().includes(q) ||
-        m.juego?.toLowerCase().includes(q) ||
-        m.modelo_nombre?.toLowerCase().includes(q)
-    );
-});
+/** Maquinas visibles (ya no filtramos el array completo, solo cambiamos colores) */
+const maquinasVisibles = computed(() => maquinas.value);
 
 /** Proveedores únicos en el mapa actual */
 const proveedoresUnicos = computed(() => {
@@ -151,6 +143,14 @@ const opcionesArea = computed(() =>
 
 // ─── HELPERS DE COLOR ──────────────────────────────────────────────────────────
 function getColorMaquina(m) {
+    if (busqueda.value) {
+        const q = busqueda.value.toLowerCase();
+        const coincide = m.uid_sala?.toLowerCase().includes(q) ||
+            m.juego?.toLowerCase().includes(q) ||
+            m.modelo_nombre?.toLowerCase().includes(q);
+        if (coincide) return '#2563eb'; // azul intenso
+        return '#94a3b8'; // gris opaco
+    }
     if (modoVisualizacion.value === 'proveedor') {
         return coloresProveedor.value[m.proveedor_id] || '#94a3b8';
     }
@@ -158,6 +158,14 @@ function getColorMaquina(m) {
 }
 
 function getTextColor(m) {
+    if (busqueda.value) {
+        const q = busqueda.value.toLowerCase();
+        const coincide = m.uid_sala?.toLowerCase().includes(q) ||
+            m.juego?.toLowerCase().includes(q) ||
+            m.modelo_nombre?.toLowerCase().includes(q);
+        if (coincide) return '#ffffff';
+        return '#ffffff';
+    }
     if (modoVisualizacion.value === 'proveedor') return '#fff';
     return COLORES_ESTADO[m.estado_actual]?.text || '#fff';
 }
@@ -334,7 +342,7 @@ const NEXUS_SVG = `<svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org
 
 async function _logoToPng(wPx, hPx) {
     const blob = new Blob([NEXUS_SVG], { type: 'image/svg+xml' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     return new Promise((resolve, reject) => {
         const img = new Image(wPx, hPx);
         img.onload = () => {
@@ -351,12 +359,12 @@ async function _logoToPng(wPx, hPx) {
 
 async function _dibujarYExportar() {
     // ── Constantes de layout (mm) ─────────────────────────────────────────────
-    const MARGIN    = 8;
-    const HEADER_H  = 16;
-    const LEGEND_H  = 8;
-    const GAP       = 0.5;   // gap entre celdas
-    const PAGE_W    = 420;   // A3 landscape
-    const PAGE_H    = 297;
+    const MARGIN = 8;
+    const HEADER_H = 16;
+    const LEGEND_H = 8;
+    const GAP = 0.5;   // gap entre celdas
+    const PAGE_W = 420;   // A3 landscape
+    const PAGE_H = 297;
 
     const cols = gridConfig.value.grid_width;
     const rows = gridConfig.value.grid_height;
@@ -429,7 +437,7 @@ async function _dibujarYExportar() {
         for (let x = 1; x <= cols; x++) {
             const px = MARGIN + (x - 1) * STEP;
             const py = gridOffY + (y - 1) * STEP;
-            const m  = maqMap[`${x}_${y}`];
+            const m = maqMap[`${x}_${y}`];
 
             if (!m) {
                 // Celda vacía
@@ -445,7 +453,7 @@ async function _dibujarYExportar() {
 
                 // UID centrado, font auto-size para llenar la celda
                 const uid = m.uid_sala || '';
-                const fs  = _fitFontSize(pdf, uid, CELL * 0.88, 2, 18);
+                const fs = _fitFontSize(pdf, uid, CELL * 0.88, 2, 18);
                 pdf.setFont('helvetica', 'bold');
                 pdf.setFontSize(fs);
                 pdf.setTextColor(getTextColor(m));
@@ -477,7 +485,7 @@ function _fitFontSize(pdf, text, maxW, minFS, maxFS) {
 // ─── HELPERS DE GRID ──────────────────────────────────────────────────────────
 /** Obtiene la máquina en una celda dada (si existe) */
 function getMaquinaEnCelda(x, y) {
-    return maquinasFiltradas.value.find(m => m.coordenada_x === x && m.coordenada_y === y) || null;
+    return maquinas.value.find(m => m.coordenada_x === x && m.coordenada_y === y) || null;
 }
 
 /** Filas visibles del grid (1..grid_height) */
@@ -502,7 +510,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                     </div>
                     <div class="text-surface-500 text-sm mt-1">
                         Grid: {{ gridConfig.grid_width }}×{{ gridConfig.grid_height }} celdas ·
-                        <span class="font-semibold text-primary-500">{{ maquinasFiltradas.length }}</span> máquinas
+                        <span class="font-semibold text-primary-500">{{ maquinas.length }}</span> máquinas
                     </div>
                 </div>
 
@@ -581,6 +589,13 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                 <ProgressSpinner style="width:60px;height:60px" />
             </div>
 
+            <div v-else-if="!pisoSeleccionado || !areaSeleccionada"
+                class="flex flex-col items-center justify-center py-20 border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                <i class="pi pi-map text-6xl text-surface-300 dark:text-surface-600 mb-4"></i>
+                <p class="text-surface-500 dark:text-surface-400 text-lg">Por favor, selecciona un piso y un área para
+                    visualizar el mapa de la sala.</p>
+            </div>
+
             <div v-else id="mapa-exportar" ref="elemento" :style="{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${gridConfig.grid_width}, 48px)`,
@@ -611,7 +626,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                 }">
                                 <span class="maquina-uid">{{ getMaquinaEnCelda(x, y).uid_sala }}</span>
                                 <span class="maquina-sub">{{ getMaquinaEnCelda(x, y).modelo_nombre?.slice(0, 8)
-                                }}</span>
+                                    }}</span>
                             </div>
                         </template>
                     </div>
@@ -635,7 +650,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                             <div>
                                 <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{
                                     maquinaDetalle.uid_sala
-                                    }}</h3>
+                                }}</h3>
                                 <p class="text-surface-500 text-sm">{{ maquinaDetalle.modelo_nombre }} · {{
                                     maquinaDetalle.modelo_producto }}</p>
                             </div>
@@ -877,7 +892,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                                     </div>
                                                     <span class="text-xs text-surface-500">{{ new
                                                         Date(bitacora.fecha_registro).toLocaleString('es-MX')
-                                                    }}</span>
+                                                        }}</span>
                                                 </div>
                                                 <p
                                                     class="text-xs md:text-sm text-surface-700 dark:text-surface-300 mb-3 pl-0 md:pl-6">

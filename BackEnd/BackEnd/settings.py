@@ -85,9 +85,9 @@ DATABASES = {
         'USER': 'robert',
         'PASSWORD': 'Chido1993$',
         # usar ip en local en lugar de localhost para usar bd del servidor
-        'HOST': '192.168.1.69',
+        #'HOST': '192.168.1.69',
         #usar liga http cuando se trabaja furea de oficina y se tiene acceso a la base de datos a través de un dominio con puerto específico
-        #'HOST': 'cytechn.ddns.net',
+        'HOST': 'cytechn.ddns.net',
         'PORT': '3306'
     }
 }
@@ -126,9 +126,9 @@ CSRF_TRUSTED_ORIGINS = [
     'http://192.168.1.69:5173',
     'http://192.168.1.69:8000',
     # Dominio No-IP con puertos específicos
-    'http://cytechn.ddns.net:5173',
+    'http://cytechn.ddns.net:',
     'http://cytechn.ddns.net:8000',
-    'https://cytechn.ddns.net:5173',  # Si usas HTTPS
+    'https://cytechn.ddns.ne',  # Si usas HTTPS
     'https://cytechn.ddns.net:8000',
 ]
 
