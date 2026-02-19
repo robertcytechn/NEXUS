@@ -1,0 +1,165 @@
+/* ============================================================================
+   DATATABLE RESPONSIVE MOBILE-FIRST
+   Para PrimeVue 4.5 - Modo Stack en pantallas pequeñas
+   ============================================================================ */
+
+/* Modo Stack para móviles y tablets pequeños */
+@media screen and (max-width: 768px) {
+    
+    /* Aplicar a DataTables con clase .datatable-mobile */
+    .datatable-mobile {
+        
+        /* Ocultar encabezados de tabla */
+        .p-datatable-thead {
+            display: none !important;
+        }
+
+        /* Convertir filas en tarjetas */
+        .p-datatable-tbody > tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--p-surface-border, #e5e7eb);
+            border-radius: 8px;
+            background: var(--p-surface-0, #ffffff);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Convertir celdas en formato stack */
+        .p-datatable-tbody > tr > td {
+            display: block;
+            padding: 0.75rem 1rem !important;
+            border: none !important;
+            border-bottom: 1px solid var(--p-surface-100, #f3f4f6) !important;
+            text-align: left !important;
+            position: relative;
+            min-height: 2.5rem;
+            
+            &:last-child {
+                border-bottom: none !important;
+            }
+
+            /* Mostrar label antes del contenido */
+            &:before {
+                content: attr(data-label);
+                display: block;
+                font-weight: 600;
+                font-size: 0.75rem;
+                color: var(--p-text-muted-color, #6b7280);
+                margin-bottom: 0.25rem;
+                text-transform: uppercase;
+                letter-spacing: 0.025em;
+            }
+        }
+
+        /* Estilo especial para columna de acciones */
+        .p-datatable-tbody > tr > td:last-child {
+            text-align: center !important;
+            padding: 1rem !important;
+            background: var(--p-surface-50, #f9fafb);
+            
+            &:before {
+                text-align: center;
+                width: 100%;
+            }
+        }
+
+        /* Paginador más compacto */
+        .p-paginator {
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            padding: 0.5rem !important;
+
+            /* Ocultar números de página en móvil, solo flechas */
+            .p-paginator-pages {
+                display: none !important;
+            }
+
+            /* Botones más pequeños */
+            .p-paginator-first,
+            .p-paginator-prev,
+            .p-paginator-next,
+            .p-paginator-last {
+                min-width: 2.5rem !important;
+                height: 2.5rem !important;
+                margin: 0 !important;
+            }
+
+            /* Selector de filas más compacto */
+            .p-dropdown {
+                font-size: 0.875rem;
+            }
+        }
+    }
+}
+
+/* Tablets medianas - Reducir padding */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    .datatable-mobile {
+        font-size: 0.875rem;
+
+        .p-datatable-thead > tr > th,
+        .p-datatable-tbody > tr > td {
+            padding: 0.5rem !important;
+        }
+    }
+}
+
+/* ============================================================================
+   DIÁLOGOS/MODALES RESPONSIVE
+   Evitar que los diálogos ocupen toda la pantalla en móviles
+   ============================================================================ */
+
+@media screen and (max-width: 768px) {
+    
+    /* Contenedor del diálogo */
+    .p-dialog {
+        width: calc(100vw - 20px) !important;
+        max-width: calc(100vw - 20px) !important;
+        margin: 10px !important;
+        max-height: calc(100vh - 20px) !important;
+    }
+
+    /* Overlay/Máscara del diálogo */
+    .p-dialog-mask {
+        padding: 10px !important;
+    }
+
+    /* Encabezado del diálogo más compacto */
+    .p-dialog-header {
+        padding: 1rem !important;
+        
+        .p-dialog-title {
+            font-size: 1.125rem !important;
+        }
+    }
+
+    /* Contenido del diálogo */
+    .p-dialog-content {
+        padding: 1rem !important;
+        max-height: calc(100vh - 120px) !important;
+        overflow-y: auto;
+    }
+
+    /* Footer del diálogo */
+    .p-dialog-footer {
+        padding: 0.75rem 1rem !important;
+        gap: 0.5rem;
+        
+        /* Botones en columna en pantallas muy pequeñas */
+        @media screen and (max-width: 480px) {
+            flex-direction: column;
+            
+            .p-button {
+                width: 100%;
+            }
+        }
+    }
+}
+
+/* Tablets - Diálogos un poco más grandes pero con margen */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    .p-dialog {
+        max-width: 90vw !important;
+    }
+}
