@@ -1,11 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getUser, hasRoleAccess } from '@/service/api';
+import { getUser, hasRoleAccess, fetchRoles } from '@/service/api';
 import { getDashboardStats, guardarUsuario } from '@/service/usuarioService';
 import { crearTicket } from '@/service/ticketService';
+import { getMaquinasPorCasino } from '@/service/maquinaService';
 import EvolucionService from '@/service/EvolucionService';
-import api from '@/service/api';
 import { useToast } from 'primevue/usetoast';
 
 // Components
@@ -64,7 +64,7 @@ const roles = ref([]);
 // Roles disponibles filtrados según el rol del usuario logueado
 const rolesDisponibles = computed(() => {
     if (!roles.value) return [];
-    
+
     const rolActual = user?.rol_nombre;
     const esAdminODBA = ['ADMINISTRADOR', 'DB ADMIN'].includes(rolActual);
     if (esAdminODBA) {
@@ -76,22 +76,20 @@ const rolesDisponibles = computed(() => {
 });
 
 const openUsuarioDialog = async () => {
-    usuario.value = { 
+    usuario.value = {
         esta_activo: true,
         casino: user?.casino // Auto-asignar casino del usuario logueado
     };
     submittedUsuario.value = false;
     usuarioDialog.value = true;
-    
+
     // Cargar roles si no existen
     if (roles.value.length === 0) {
-        try {
-            const resRoles = await api.get('roles/lista/');
-            if (resRoles.data && Array.isArray(resRoles.data)) {
-                 roles.value = resRoles.data.filter(r => r.esta_activo);
-            }
-        } catch (error) {
-            console.error("Error loading roles", error);
+        const resRoles = await fetchRoles();
+        if (resRoles.success && Array.isArray(resRoles.data)) {
+            roles.value = resRoles.data.filter(r => r.esta_activo);
+        } else {
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los roles', life: 3000 });
         }
     }
 };
@@ -138,13 +136,10 @@ const openTicketDialog = async () => {
 
     // Cargar máquinas del casino del usuario
     if ((maquinas.value.length === 0) && user?.casino) {
-        try {
-            // Usamos el endpoint específico que ya filtra por casino y devuelve { maquinas: [...], estadisticas: ... }
-            const res = await api.get(`maquinas/lista-por-casino/${user.casino}/`);
-            // Ajustar según estructura de respuesta. En Tickets.vue es res.data.maquinas
-            maquinas.value = res.data.maquinas || res.data; 
-        } catch (error) {
-            console.error("Error loading machines", error);
+        const res = await getMaquinasPorCasino(user.casino);
+        if (res.exito) {
+            maquinas.value = res.data.maquinas || res.data;
+        } else {
             toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las máquinas', life: 3000 });
         }
     }
@@ -152,7 +147,7 @@ const openTicketDialog = async () => {
 
 const saveTicket = async () => {
     submittedTicket.value = true;
-    
+
     // Validar campos mínimos
     if (ticket.value.maquina && ticket.value.categoria && ticket.value.descripcion) {
         // Encontrar UID de la máquina seleccionada para mostrar en el mensaje
@@ -185,33 +180,33 @@ const saveTicket = async () => {
 
 const quickActions = computed(() => {
     const actions = [
-        { 
-            label: 'Nuevo Ticket', 
-            icon: 'pi pi-ticket', 
-            action: openTicketDialog, 
-            color: 'bg-blue-500', 
-            allowed: true 
+        {
+            label: 'Nuevo Ticket',
+            icon: 'pi pi-ticket',
+            action: openTicketDialog,
+            color: 'bg-blue-500',
+            allowed: true
         },
-        { 
-            label: 'Crear Usuario', 
-            icon: 'pi pi-user-plus', 
-            action: openUsuarioDialog, 
-            color: 'bg-green-500', 
+        {
+            label: 'Crear Usuario',
+            icon: 'pi pi-user-plus',
+            action: openUsuarioDialog,
+            color: 'bg-green-500',
             allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS']) // Ampliado para coincidir con Usuarios.vue
         },
-        { 
-            label: 'Reportar Error', 
-            icon: 'pi pi-exclamation-circle', 
-            action: openEvolucionDialog, 
-            color: 'bg-orange-500', 
-            allowed: true 
+        {
+            label: 'Reportar Error',
+            icon: 'pi pi-exclamation-circle',
+            action: openEvolucionDialog,
+            color: 'bg-orange-500',
+            allowed: true
         },
-        { 
-            label: 'Inventario', 
-            icon: 'pi pi-box', 
-            action: () => router.push('/centro-servicios/inventario'), 
-            color: 'bg-purple-500', 
-            allowed: hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS', 'TECNICO']) 
+        {
+            label: 'Inventario',
+            icon: 'pi pi-box',
+            action: () => router.push('/centro-servicios/inventario'),
+            color: 'bg-purple-500',
+            allowed: hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS', 'TECNICO'])
         }
     ];
     return actions.filter(a => a.allowed);
@@ -222,22 +217,22 @@ const loadDashboardData = async () => {
     loading.value = true;
     try {
         const data = await getDashboardStats();
-        
+
         if (canViewGlobalStats.value) {
-             stats.value.usuariosActivos = data.kpis.usuarios_activos;
-             stats.value.ticketsPendientes = data.kpis.tickets_pendientes;
-             stats.value.ticketsCriticos = data.kpis.tickets_criticos;
-             stats.value.reportesEvolucion = data.kpis.reportes_evolucion;
+            stats.value.usuariosActivos = data.kpis.usuarios_activos;
+            stats.value.ticketsPendientes = data.kpis.tickets_pendientes;
+            stats.value.ticketsCriticos = data.kpis.tickets_criticos;
+            stats.value.reportesEvolucion = data.kpis.reportes_evolucion;
         }
-        
+
         // Mapear actividad reciente del backend
         recentActivity.value = data.actividad_reciente.map(item => ({
-             ...item,
-             date: new Date(item.fecha).toLocaleString() 
+            ...item,
+            date: new Date(item.fecha).toLocaleString()
         }));
 
     } catch (error) {
-        console.error("Error loading dashboard data", error);
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el estado del dashboard', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -273,10 +268,11 @@ const handleAction = (actionFn) => {
             <div class="card">
                 <div class="font-semibold text-xl mb-4">Accesos Rápidos</div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 transition-all">
-                    <div v-for="action in quickActions" :key="action.label" 
+                    <div v-for="action in quickActions" :key="action.label"
                         class="flex flex-col items-center p-4 border rounded-xl cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800 transition-transform hover:scale-105"
                         @click="handleAction(action.action)">
-                        <div :class="['flex items-center justify-center w-14 h-14 rounded-full text-white mb-3 shadow-lg', action.color]">
+                        <div
+                            :class="['flex items-center justify-center w-14 h-14 rounded-full text-white mb-3 shadow-lg', action.color]">
                             <i :class="[action.icon, 'text-2xl']"></i>
                         </div>
                         <span class="font-medium text-center">{{ action.label }}</span>
@@ -291,42 +287,54 @@ const handleAction = (actionFn) => {
                 <div class="font-semibold text-xl mb-4">Estado del Sistema</div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- KPI 1 -->
-                    <div class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
+                    <div
+                        class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
                         <div>
                             <span class="block text-surface-500 font-medium mb-1">Usuarios Activos</span>
-                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{ stats.usuariosActivos }}</div>
+                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{
+                                stats.usuariosActivos }}</div>
                         </div>
-                        <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-full w-12 h-12">
+                        <div
+                            class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-full w-12 h-12">
                             <i class="pi pi-users text-blue-500 text-xl"></i>
                         </div>
                     </div>
                     <!-- KPI 2 -->
-                    <div class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
+                    <div
+                        class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
                         <div>
                             <span class="block text-surface-500 font-medium mb-1">Tickets Pendientes</span>
-                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{ stats.ticketsPendientes }}</div>
+                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{
+                                stats.ticketsPendientes }}</div>
                         </div>
-                        <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-full w-12 h-12">
+                        <div
+                            class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-full w-12 h-12">
                             <i class="pi pi-ticket text-orange-500 text-xl"></i>
                         </div>
                     </div>
                     <!-- KPI 3 -->
-                    <div class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
+                    <div
+                        class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
                         <div>
                             <span class="block text-surface-500 font-medium mb-1">Tickets Críticos</span>
-                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{ stats.ticketsCriticos }}</div>
+                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{
+                                stats.ticketsCriticos }}</div>
                         </div>
-                        <div class="flex items-center justify-center bg-red-100 dark:bg-red-400/10 rounded-full w-12 h-12">
+                        <div
+                            class="flex items-center justify-center bg-red-100 dark:bg-red-400/10 rounded-full w-12 h-12">
                             <i class="pi pi-exclamation-circle text-red-500 text-xl"></i>
                         </div>
                     </div>
                     <!-- KPI 4 -->
-                     <div class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
+                    <div
+                        class="flex justify-between items-center p-4 border rounded-lg bg-surface-50 dark:bg-surface-800">
                         <div>
                             <span class="block text-surface-500 font-medium mb-1">Reportes Evolución</span>
-                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{ stats.reportesEvolucion }}</div>
+                            <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl">{{
+                                stats.reportesEvolucion }}</div>
                         </div>
-                        <div class="flex items-center justify-center bg-purple-100 dark:bg-purple-400/10 rounded-full w-12 h-12">
+                        <div
+                            class="flex items-center justify-center bg-purple-100 dark:bg-purple-400/10 rounded-full w-12 h-12">
                             <i class="pi pi-bolt text-purple-500 text-xl"></i>
                         </div>
                     </div>
@@ -345,13 +353,17 @@ const handleAction = (actionFn) => {
                     <i class="pi pi-spin pi-spinner text-2xl"></i>
                 </div>
                 <ul v-else class="p-0 m-0 list-none max-h-[400px] overflow-y-auto">
-                    <li v-for="(activity, index) in recentActivity" :key="index" class="flex items-start py-3 border-b border-surface-200 dark:border-surface-700 last:border-0 hover:bg-surface-50 dark:hover:bg-surface-800/50 px-2 rounded-md transition-colors">
-                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-100 dark:bg-surface-800 mr-3 shrink-0 mt-1">
+                    <li v-for="(activity, index) in recentActivity" :key="index"
+                        class="flex items-start py-3 border-b border-surface-200 dark:border-surface-700 last:border-0 hover:bg-surface-50 dark:hover:bg-surface-800/50 px-2 rounded-md transition-colors">
+                        <div
+                            class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-100 dark:bg-surface-800 mr-3 shrink-0 mt-1">
                             <i :class="[activity.icono, activity.color, 'text-lg']"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="font-medium text-sm truncate" :title="activity.titulo">{{ activity.titulo }}</div>
-                            <div class="text-sm text-surface-600 dark:text-surface-400 line-clamp-2" :title="activity.descripcion">{{ activity.descripcion }}</div>
+                            <div class="font-medium text-sm truncate" :title="activity.titulo">{{ activity.titulo }}
+                            </div>
+                            <div class="text-sm text-surface-600 dark:text-surface-400 line-clamp-2"
+                                :title="activity.descripcion">{{ activity.descripcion }}</div>
                             <div class="text-xs text-surface-500 mt-1">{{ activity.date }}</div>
                         </div>
                     </li>
@@ -363,37 +375,41 @@ const handleAction = (actionFn) => {
         </div>
 
         <!-- Dialog: Nuevo Ticket -->
-        <Dialog v-model:visible="ticketDialog" :style="{width: '600px'}" :modal="true" header="Nuevo Ticket Rápido">
-             <div class="flex flex-col gap-4">
+        <Dialog v-model:visible="ticketDialog" :style="{ width: '600px' }" :modal="true" header="Nuevo Ticket Rápido">
+            <div class="flex flex-col gap-4">
                 <div>
-                     <label class="block font-medium mb-1">Máquina</label>
-                     <Select v-model="ticket.maquina" :options="maquinas" optionLabel="uid_sala" optionValue="id" placeholder="Seleccione Máquina" filter fluid :invalid="submittedTicket && !ticket.maquina">
-                         <template #option="slotProps">
+                    <label class="block font-medium mb-1">Máquina</label>
+                    <Select v-model="ticket.maquina" :options="maquinas" optionLabel="uid_sala" optionValue="id"
+                        placeholder="Seleccione Máquina" filter fluid :invalid="submittedTicket && !ticket.maquina">
+                        <template #option="slotProps">
                             <div class="flex flex-col">
                                 <span class="font-bold">{{ slotProps.option.uid_sala }}</span>
                                 <span class="text-xs text-surface-500">{{ slotProps.option.modelo_nombre }}</span>
                             </div>
                         </template>
-                     </Select>
-                     <small class="text-red-500" v-if="submittedTicket && !ticket.maquina">Requerido.</small>
+                    </Select>
+                    <small class="text-red-500" v-if="submittedTicket && !ticket.maquina">Requerido.</small>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium mb-1">Categoría</label>
-                        <Select v-model="ticket.categoria" :options="categoriasTicket" optionLabel="label" optionValue="value" fluid :invalid="submittedTicket && !ticket.categoria"/>
+                        <Select v-model="ticket.categoria" :options="categoriasTicket" optionLabel="label"
+                            optionValue="value" fluid :invalid="submittedTicket && !ticket.categoria" />
                         <small class="text-red-500" v-if="submittedTicket && !ticket.categoria">Requerido.</small>
                     </div>
-                     <div>
+                    <div>
                         <label class="block font-medium mb-1">Prioridad</label>
-                        <Select v-model="ticket.prioridad" :options="prioridadesTicket" optionLabel="label" optionValue="value" fluid />
+                        <Select v-model="ticket.prioridad" :options="prioridadesTicket" optionLabel="label"
+                            optionValue="value" fluid />
                     </div>
                 </div>
                 <div>
                     <label class="block font-medium mb-1">Descripción del Problema</label>
-                    <Textarea v-model="ticket.descripcion" rows="4" fluid placeholder="Describe la falla..." :invalid="submittedTicket && !ticket.descripcion" />
+                    <Textarea v-model="ticket.descripcion" rows="4" fluid placeholder="Describe la falla..."
+                        :invalid="submittedTicket && !ticket.descripcion" />
                     <small class="text-red-500" v-if="submittedTicket && !ticket.descripcion">Requerido.</small>
                 </div>
-                 <div>
+                <div>
                     <label class="block font-medium mb-1">Subcategoría (Opcional)</label>
                     <InputText v-model="ticket.subcategoria" fluid placeholder="Ej: Billetero Atascado" />
                 </div>
@@ -405,16 +421,19 @@ const handleAction = (actionFn) => {
         </Dialog>
 
         <!-- Dialog: Reportar Error (Evolución) -->
-        <Dialog v-model:visible="evolucionDialog" :style="{width: '500px'}" :modal="true" header="Reportar Incidencia Rápida">
-             <div class="flex flex-col gap-4">
+        <Dialog v-model:visible="evolucionDialog" :style="{ width: '500px' }" :modal="true"
+            header="Reportar Incidencia Rápida">
+            <div class="flex flex-col gap-4">
                 <div>
                     <label class="block font-medium mb-1">Título</label>
-                    <InputText v-model="evolucion.titulo" fluid placeholder="Ej: Error al guardar..." :invalid="submittedEvolucion && !evolucion.titulo" />
+                    <InputText v-model="evolucion.titulo" fluid placeholder="Ej: Error al guardar..."
+                        :invalid="submittedEvolucion && !evolucion.titulo" />
                     <small class="text-red-500" v-if="submittedEvolucion && !evolucion.titulo">Requerido.</small>
                 </div>
                 <div>
                     <label class="block font-medium mb-1">Descripción</label>
-                    <Textarea v-model="evolucion.descripcion" rows="4" fluid placeholder="Describe qué sucedió..." :invalid="submittedEvolucion && !evolucion.descripcion" />
+                    <Textarea v-model="evolucion.descripcion" rows="4" fluid placeholder="Describe qué sucedió..."
+                        :invalid="submittedEvolucion && !evolucion.descripcion" />
                     <small class="text-red-500" v-if="submittedEvolucion && !evolucion.descripcion">Requerido.</small>
                 </div>
             </div>
@@ -425,25 +444,27 @@ const handleAction = (actionFn) => {
         </Dialog>
 
         <!-- Dialog: Nuevo Usuario (Simplificado) -->
-        <Dialog v-model:visible="usuarioDialog" :style="{width: '700px'}" :modal="true" header="Registro Rápido de Usuario">
-             <div class="flex flex-col gap-4">
+        <Dialog v-model:visible="usuarioDialog" :style="{ width: '700px' }" :modal="true"
+            header="Registro Rápido de Usuario">
+            <div class="flex flex-col gap-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium mb-1">Casino</label>
-                        <InputText :value="user?.casino_nombre" fluid disabled class="bg-surface-100 dark:bg-surface-800" />
+                        <InputText :value="user?.casino_nombre" fluid disabled
+                            class="bg-surface-100 dark:bg-surface-800" />
                         <small class="text-surface-500">Auto-asignado.</small>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                         <label class="block font-medium mb-1">Usuario</label>
-                        <InputText v-model="usuario.username" fluid :invalid="submittedUsuario && !usuario.username"/>
+                        <label class="block font-medium mb-1">Usuario</label>
+                        <InputText v-model="usuario.username" fluid :invalid="submittedUsuario && !usuario.username" />
                         <small class="text-red-500" v-if="submittedUsuario && !usuario.username">Requerido.</small>
                     </div>
                     <div>
                         <label class="block font-medium mb-1">Email</label>
-                        <InputText v-model="usuario.email" fluid :invalid="submittedUsuario && !usuario.email"/>
+                        <InputText v-model="usuario.email" fluid :invalid="submittedUsuario && !usuario.email" />
                         <small class="text-red-500" v-if="submittedUsuario && !usuario.email">Requerido.</small>
                     </div>
                 </div>
@@ -451,34 +472,38 @@ const handleAction = (actionFn) => {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block font-medium mb-1">Nombres</label>
-                         <InputText v-model="usuario.nombres" fluid :invalid="submittedUsuario && !usuario.nombres"/>
-                         <small class="text-red-500" v-if="submittedUsuario && !usuario.nombres">Requerido.</small>
+                        <InputText v-model="usuario.nombres" fluid :invalid="submittedUsuario && !usuario.nombres" />
+                        <small class="text-red-500" v-if="submittedUsuario && !usuario.nombres">Requerido.</small>
                     </div>
-                     <div>
+                    <div>
                         <label class="block font-medium mb-1">Apellido Paterno</label>
-                         <InputText v-model="usuario.apellido_paterno" fluid :invalid="submittedUsuario && !usuario.apellido_paterno"/>
-                         <small class="text-red-500" v-if="submittedUsuario && !usuario.apellido_paterno">Requerido.</small>
+                        <InputText v-model="usuario.apellido_paterno" fluid
+                            :invalid="submittedUsuario && !usuario.apellido_paterno" />
+                        <small class="text-red-500"
+                            v-if="submittedUsuario && !usuario.apellido_paterno">Requerido.</small>
                     </div>
-                     <div>
+                    <div>
                         <label class="block font-medium mb-1">Apellido Materno</label>
-                         <InputText v-model="usuario.apellido_materno" fluid />
+                        <InputText v-model="usuario.apellido_materno" fluid />
                     </div>
                 </div>
 
-                 <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium mb-1">Rol</label>
-                         <Select v-model="usuario.rol" :options="rolesDisponibles" optionLabel="nombre" optionValue="id" placeholder="Seleccione Rol" fluid :invalid="submittedUsuario && !usuario.rol"/>
-                         <small class="text-red-500" v-if="submittedUsuario && !usuario.rol">Requerido.</small>
+                        <Select v-model="usuario.rol" :options="rolesDisponibles" optionLabel="nombre" optionValue="id"
+                            placeholder="Seleccione Rol" fluid :invalid="submittedUsuario && !usuario.rol" />
+                        <small class="text-red-500" v-if="submittedUsuario && !usuario.rol">Requerido.</small>
                     </div>
                     <div>
                         <label class="block font-medium mb-1">Contraseña</label>
-                        <Password v-model="usuario.password" toggleMask fluid :feedback="false" :invalid="submittedUsuario && !usuario.password"/>
+                        <Password v-model="usuario.password" toggleMask fluid :feedback="false"
+                            :invalid="submittedUsuario && !usuario.password" />
                         <small class="text-red-500" v-if="submittedUsuario && !usuario.password">Requerido.</small>
                     </div>
                 </div>
             </div>
-             <template #footer>
+            <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="usuarioDialog = false" />
                 <Button label="Crear Usuario" icon="pi pi-check" severity="success" @click="saveUsuario" />
             </template>

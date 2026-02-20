@@ -42,7 +42,7 @@ const cargarMantenimientos = async () => {
         const response = await api.get('mantenimientos-preventivos/');
         mantenimientos.value = response.data;
     } catch (error) {
-        console.error('Error al cargar mantenimientos:', error);
+
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 

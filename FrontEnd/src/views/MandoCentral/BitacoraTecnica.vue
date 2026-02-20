@@ -435,7 +435,7 @@ const cargarTicketsAbiertos = async () => {
         // Mostrar los tickets abiertos o en proceso (excluir cerrados)
         ticketsAbiertos.value = response.data.filter(ticket => ticket.estado_ciclo !== 'cerrado');
     } catch (error) {
-        console.error('Error al cargar tickets:', error);
+
         toast.add({ 
             summary: 'Error', 
             detail: 'No se pudieron cargar los tickets abiertos', 
@@ -459,7 +459,7 @@ const cargarHistorialBitacora = async (ticketId) => {
             new Date(b.fecha_registro) - new Date(a.fecha_registro)
         );
     } catch (error) {
-        console.error('Error al cargar bitácora:', error);
+
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 
@@ -589,7 +589,7 @@ const guardarEntrada = async () => {
         // Actualizar información del ticket seleccionado SIEMPRE
         const ticketActualizado = await api.get(`tickets/${ticketSeleccionado.value.id}/`);
         ticketSeleccionado.value = ticketActualizado.data;
-        console.log('📋 Ticket actualizado en vista:', ticketSeleccionado.value.estado_ciclo);
+
 
         // Si se cerró el ticket, volver a la lista después de un momento
         if (nuevaEntrada.value.finaliza_ticket) {
@@ -600,7 +600,7 @@ const guardarEntrada = async () => {
         }
 
     } catch (error) {
-        console.error('Error al guardar entrada:', error);
+
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 

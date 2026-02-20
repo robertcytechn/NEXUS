@@ -94,7 +94,7 @@ const cargarAuditorias = async () => {
         });
         auditorias.value = response.data.results || response.data;
     } catch (error) {
-        console.error('Error al cargar auditorías:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las auditorías', life: 3000 });
     } finally {
         loading.value = false;
@@ -118,7 +118,7 @@ const buscarProveedores = async (event) => {
             nombre: p.nombre
         }));
     } catch (error) {
-        console.error('Error buscando proveedores:', error);
+
     }
 };
 
@@ -187,7 +187,7 @@ const saveAuditoria = async () => {
         auditoria.value = {};
         await cargarAuditorias();
     } catch (error) {
-        console.error('Error al guardar:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al guardar la auditoría', life: 3000 });
     } finally {
         loading.value = false;

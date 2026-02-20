@@ -33,7 +33,7 @@ const handleLogin = async () => {
 
         if (result.success) {
             // Token, refresh_token y usuario ya están guardados en localStorage
-            console.log('Login exitoso:', result.user);
+
             
             // Redirigir a la ruta original o al dashboard
             const redirectPath = route.query.redirect || '/';
@@ -43,7 +43,7 @@ const handleLogin = async () => {
         }
     } catch (error) {
         errorMessage.value = 'Error de conexión con el servidor';
-        console.error('Error en login:', error);
+
     } finally {
         loading.value = false;
     }

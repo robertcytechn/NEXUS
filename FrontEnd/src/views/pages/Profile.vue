@@ -48,7 +48,7 @@ const loadEstadisticas = async () => {
             estadisticas.value = result.data;
         }
     } catch (e) {
-        console.error('Error cargando estadísticas:', e);
+
     } finally {
         loadingStats.value = false;
     }

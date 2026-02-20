@@ -342,7 +342,7 @@ import { getUser, hasRoleAccess } from '@/service/api';
 
 // Obtener el rol del usuario
 const user = getUser();
-console.log('Rol del usuario:', user?.rol_nombre);
+
 
 // Verificar si tiene acceso a ciertos roles
 if (hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS'])) {
@@ -352,7 +352,7 @@ if (hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS'])) {
 DEBUGGING:
 ----------
 Para ver qué ítems están visibles en el menú:
-console.log('Menú filtrado:', model.value);
+
 
 ===============================================================================
 -->

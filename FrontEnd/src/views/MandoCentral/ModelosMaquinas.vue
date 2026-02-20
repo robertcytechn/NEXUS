@@ -69,7 +69,7 @@ const cargarModelos = async () => {
 
         actualizarGraficas();
     } catch (error) {
-        console.error('Error al cargar modelos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la lista de modelos', life: 3000 });
     } finally {
         loading.value = false;
@@ -81,7 +81,7 @@ const cargarCasinos = async () => {
         const response = await api.get('casinos/');
         casinos.value = response.data;
     } catch (error) {
-        console.error('Error al cargar casinos:', error);
+
     }
 };
 

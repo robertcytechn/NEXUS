@@ -54,7 +54,7 @@ const cargarRelevos = async () => {
         });
         relevos.value = (response.data.results || response.data).slice(0, 10);
     } catch (error) {
-        console.error('Error al cargar relevos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los relevos', life: 3000 });
     } finally {
         loading.value = false;
@@ -79,7 +79,7 @@ const buscarUsuarios = async (event) => {
             username: u.username
         }));
     } catch (error) {
-        console.error('Error buscando usuarios:', error);
+
     }
 };
 
@@ -128,7 +128,7 @@ const saveRelevo = async () => {
         relevo.value = {};
         await cargarRelevos();
     } catch (error) {
-        console.error('Error al guardar:', error);
+
         
         // Manejar errores de validación específicos del backend
         let errorDetail = 'Error al guardar el relevo';

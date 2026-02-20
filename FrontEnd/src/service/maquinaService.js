@@ -47,7 +47,7 @@ export async function guardarMaquina(maquinaData, esEdicion = false) {
 
         // Preparar payload
         const payload = { ...maquinaData };
-        
+
         // Formatear fechas a YYYY-MM-DD
         const formatDate = (date) => {
             if (!date) return null;
@@ -80,11 +80,11 @@ export async function guardarMaquina(maquinaData, esEdicion = false) {
 
     } catch (error) {
         console.error('Error en guardarMaquina:', error);
-        
+
         // Manejo de errores específicos
         if (error.response?.status === 400) {
             const errorData = error.response.data;
-            
+
             // Errores de duplicados
             if (errorData.ip_maquina) {
                 return {
@@ -130,7 +130,24 @@ export function formatearFecha(fecha) {
     return fecha;
 }
 
+export async function getMaquinasPorCasino(casinoId) {
+    try {
+        const response = await api.get(`maquinas/lista-por-casino/${casinoId}/`);
+        return {
+            exito: true,
+            data: response.data
+        };
+    } catch (error) {
+        return {
+            exito: false,
+            error: 'Error de carga',
+            detalle: error.response?.data?.message || 'No se pudieron cargar las máquinas'
+        };
+    }
+}
+
 export default {
     guardarMaquina,
-    formatearFecha
+    formatearFecha,
+    getMaquinasPorCasino
 };

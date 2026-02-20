@@ -63,7 +63,7 @@ const cargarProveedores = async () => {
         proveedores.value = response.data;
         actualizarGraficas();
     } catch (error) {
-        console.error('Error al cargar proveedores:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la lista de proveedores', life: 3000 });
     } finally {
         loading.value = false;
@@ -76,7 +76,7 @@ const cargarCasinos = async () => {
         const response = await api.get('casinos/');
         casinos.value = response.data;
     } catch (error) {
-        console.error('Error al cargar casinos:', error);
+
     }
 };
 
@@ -87,7 +87,7 @@ const cargarMaquinas = async () => {
         maquinas.value = response.data;
         actualizarGraficas();
     } catch (error) {
-        console.error('Error al cargar máquinas:', error);
+
     }
 };
 
@@ -97,7 +97,7 @@ const cargarModelos = async () => {
         const response = await api.get('modelos/lista/');
         modelos.value = response.data;
     } catch (error) {
-        console.error('Error al cargar modelos:', error);
+
     }
 };
 
@@ -341,7 +341,7 @@ const toggleActivarProveedor = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Proveedor ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarProveedores();
             } catch (error) {
-                console.error(error);
+
                 toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el proveedor`, life: 3000 });
             } finally {
                 loading.value = false;

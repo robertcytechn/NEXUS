@@ -200,7 +200,7 @@ const crearTicketPanico = async () => {
         cerrarPanico();
 
     } catch (error) {
-        console.error('Error al crear ticket de pánico:', error);
+
 
         const mensajesError = {
             'ECONNABORTED': 'No se pudo conectar con el servidor.',

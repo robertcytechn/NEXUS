@@ -141,7 +141,7 @@ const cargarDatos = async () => {
         }
 
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         toast.add({
             severity: 'error',
             summary: 'Error',
@@ -287,7 +287,7 @@ const verDetalleMaquina = async (data) => {
         const response = await api.get(`tickets/historial-maquina/${data.id}/`);
         historialTickets.value = response.data.historial;
     } catch (error) {
-        console.error('Error al cargar historial:', error);
+
         toast.add({
             severity: 'error',
             summary: 'Error',
@@ -387,7 +387,7 @@ const levantarIncidencia = async () => {
         cargarDatos();
 
     } catch (error) {
-        console.error('Error al crear ticket:', error);
+
 
         const mensajesError = {
             'ECONNABORTED': 'No se pudo conectar con el servidor.',

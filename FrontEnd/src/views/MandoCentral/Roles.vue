@@ -59,7 +59,7 @@ const cargarRoles = async () => {
         const response = await api.get('roles/lista/');
         roles.value = response.data;
     } catch (error) {
-        console.error('Error al cargar roles:', error);
+
     } finally {
         loading.value = false;
     }
@@ -133,7 +133,7 @@ const saveRol = async () => {
             rol.value = {};
             cargarRoles();
         } catch (error) {
-            console.error(error);
+
             toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el rol', life: 3000 });
         } finally {
             loading.value = false;
@@ -169,7 +169,7 @@ const toggleActivarRol = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Rol ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarRoles();
             } catch (error) {
-                console.error(error);
+
                 toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el rol`, life: 3000 });
             } finally {
                 loading.value = false;

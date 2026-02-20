@@ -49,7 +49,6 @@ const cargarCasinos = async () => {
         const response = await api.get('casinos/lista/');
         casinos.value = response.data;
     } catch (error) {
-        console.error('Error al cargar casinos:', error);
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la lista de casinos', life: 3000 });
     } finally {
         loading.value = false;
@@ -77,7 +76,7 @@ const esColumnaVisible = (field) => {
 // Acciones
 const editarCasino = (data) => {
     casino.value = { ...data };
-    
+
     // Convertir strings de hora a objetos Date para el TimePicker
     const convertirHora = (horaStr) => {
         if (!horaStr) return null;
@@ -89,7 +88,7 @@ const editarCasino = (data) => {
 
     if (casino.value.horario_apertura) casino.value.horario_apertura = convertirHora(casino.value.horario_apertura);
     if (casino.value.horario_cierre) casino.value.horario_cierre = convertirHora(casino.value.horario_cierre);
-    
+
     casinoDialog.value = true;
 };
 
@@ -111,7 +110,7 @@ const saveCasino = async () => {
 
     if (casino.value.nombre?.trim()) {
         loading.value = true;
-        
+
         // Preparar payload y formatear horas
         const payload = { ...casino.value };
         const formatTime = (date) => {
@@ -134,7 +133,6 @@ const saveCasino = async () => {
             casino.value = {};
             cargarCasinos();
         } catch (error) {
-            console.error(error);
             toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el casino', life: 3000 });
         } finally {
             loading.value = false;
@@ -144,7 +142,7 @@ const saveCasino = async () => {
 
 const toggleActivarCasino = (data) => {
     const accion = data.esta_activo ? 'desactivar' : 'activar';
-    
+
     confirm.require({
         message: `¿Estás seguro de que deseas ${accion} el casino "${data.nombre}"?`,
         header: 'Confirmar Acción',
@@ -165,7 +163,6 @@ const toggleActivarCasino = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Casino ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarCasinos();
             } catch (error) {
-                console.error(error);
                 toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el casino`, life: 3000 });
             } finally {
                 loading.value = false;
@@ -184,192 +181,102 @@ onMounted(() => {
         <div class="card">
             <Toast />
             <ConfirmDialog />
-            
+
             <!-- Toolbar personalizable -->
-            <DataTableToolbar
-                ref="toolbarRef"
-                :dt="dt"
-                :datos="casinos"
-                titulo-reporte="Gestión de Casinos y Salas"
-                nombre-archivo="casinos"
-                :columnas="columnas"
-                :mostrar-exportacion="true"
-                :mostrar-imprimir="true"
-                :mostrar-refrescar="true"
-                :mostrar-selector-columnas="true"
-                :mostrar-buscador="true"
-                @refrescar="cargarCasinos"
-                v-model:columnas-seleccionadas="columnas"
-            >
+            <DataTableToolbar ref="toolbarRef" :dt="dt" :datos="casinos" titulo-reporte="Gestión de Casinos y Salas"
+                nombre-archivo="casinos" :columnas="columnas" :mostrar-exportacion="true" :mostrar-imprimir="true"
+                :mostrar-refrescar="true" :mostrar-selector-columnas="true" :mostrar-buscador="true"
+                @refrescar="cargarCasinos" v-model:columnas-seleccionadas="columnas">
                 <template #acciones-extra>
-                    <Button 
-                        icon="pi pi-plus" 
-                        label="Nuevo Casino"
-                        rounded
-                        severity="primary"
-                        @click="openNew"
-                    />
+                    <Button icon="pi pi-plus" label="Nuevo Casino" rounded severity="primary" @click="openNew" />
                 </template>
             </DataTableToolbar>
-            
-            <DataTable 
-                ref="dt"
-                :value="casinos" 
-                :loading="loading"
-                v-model:filters="filtros"
-                :globalFilterFields="['nombre', 'identificador', 'ciudad', 'encargado', 'direccion']"
-                paginator 
-                :rows="10" 
-                :rowsPerPageOptions="[5, 10, 20, 50]"
-                dataKey="id"
-                filterDisplay="menu"
-                showGridlines
-                stripedRows
-                class="datatable-mobile"
-            >
+
+            <DataTable ref="dt" :value="casinos" :loading="loading" v-model:filters="filtros"
+                :globalFilterFields="['nombre', 'identificador', 'ciudad', 'encargado', 'direccion']" paginator
+                :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" dataKey="id" filterDisplay="menu" showGridlines
+                stripedRows class="datatable-mobile">
                 <template #empty>
                     <div class="text-center p-4">
                         No se encontraron casinos registrados.
                     </div>
                 </template>
-                
+
                 <template #loading>
                     Cargando información de casinos...
                 </template>
-                
-                <Column 
-                    v-if="esColumnaVisible('nombre')"
-                    field="nombre" 
-                    header="Nombre" 
-                    sortable 
-                    style="min-width: 14rem"
-                >
+
+                <Column v-if="esColumnaVisible('nombre')" field="nombre" header="Nombre" sortable
+                    style="min-width: 14rem">
                     <template #body="{ data }">
                         <span class="font-bold">{{ data.nombre }}</span>
                     </template>
                 </Column>
-                
-                <Column 
-                    v-if="esColumnaVisible('identificador')"
-                    field="identificador" 
-                    header="ID" 
-                    sortable 
-                    style="min-width: 8rem"
-                />
 
-                <Column 
-                    v-if="esColumnaVisible('ciudad')"
-                    field="ciudad" 
-                    header="Ciudad" 
-                    sortable 
-                    style="min-width: 10rem"
-                />
-                
-                <Column 
-                    v-if="esColumnaVisible('telefono')"
-                    field="telefono" 
-                    header="Teléfono" 
-                    sortable 
-                    style="min-width: 10rem"
-                />
+                <Column v-if="esColumnaVisible('identificador')" field="identificador" header="ID" sortable
+                    style="min-width: 8rem" />
 
-                <Column 
-                    v-if="esColumnaVisible('horario_apertura')"
-                    field="horario_apertura" 
-                    header="Apertura" 
-                    sortable 
-                    style="min-width: 8rem"
-                />
+                <Column v-if="esColumnaVisible('ciudad')" field="ciudad" header="Ciudad" sortable
+                    style="min-width: 10rem" />
 
-                <Column 
-                    v-if="esColumnaVisible('horario_cierre')"
-                    field="horario_cierre" 
-                    header="Cierre" 
-                    sortable 
-                    style="min-width: 8rem"
-                />
+                <Column v-if="esColumnaVisible('telefono')" field="telefono" header="Teléfono" sortable
+                    style="min-width: 10rem" />
 
-                <Column 
-                    v-if="esColumnaVisible('encargado')"
-                    field="encargado" 
-                    header="Encargado" 
-                    sortable 
-                    style="min-width: 12rem"
-                />
+                <Column v-if="esColumnaVisible('horario_apertura')" field="horario_apertura" header="Apertura" sortable
+                    style="min-width: 8rem" />
 
-                <Column 
-                    v-if="esColumnaVisible('direccion')"
-                    field="direccion" 
-                    header="Dirección" 
-                    sortable 
-                    style="min-width: 20rem"
-                >
+                <Column v-if="esColumnaVisible('horario_cierre')" field="horario_cierre" header="Cierre" sortable
+                    style="min-width: 8rem" />
+
+                <Column v-if="esColumnaVisible('encargado')" field="encargado" header="Encargado" sortable
+                    style="min-width: 12rem" />
+
+                <Column v-if="esColumnaVisible('direccion')" field="direccion" header="Dirección" sortable
+                    style="min-width: 20rem">
                     <template #body="{ data }">
                         <div class="text-sm">{{ data.direccion || 'Sin dirección registrada' }}</div>
                     </template>
                 </Column>
-                
-                <Column 
-                    v-if="esColumnaVisible('esta_activo')"
-                    field="esta_activo" 
-                    header="Estado" 
-                    sortable 
-                    style="min-width: 8rem"
-                >
+
+                <Column v-if="esColumnaVisible('esta_activo')" field="esta_activo" header="Estado" sortable
+                    style="min-width: 8rem">
                     <template #body="{ data }">
-                        <Tag 
-                            :value="data.esta_activo ? 'Activo' : 'Inactivo'" 
-                            :severity="data.esta_activo ? 'success' : 'danger'" 
-                        />
+                        <Tag :value="data.esta_activo ? 'Activo' : 'Inactivo'"
+                            :severity="data.esta_activo ? 'success' : 'danger'" />
                     </template>
                 </Column>
-                
-                <Column 
-                    v-if="esColumnaVisible('creado_en')"
-                    field="creado_en" 
-                    header="Fecha Registro" 
-                    sortable 
-                    style="min-width: 12rem"
-                >
+
+                <Column v-if="esColumnaVisible('creado_en')" field="creado_en" header="Fecha Registro" sortable
+                    style="min-width: 12rem">
                     <template #body="{ data }">
                         <div class="text-sm">{{ formatearFecha(data.creado_en) }}</div>
                     </template>
                 </Column>
-                
+
                 <Column header="Acciones" :exportable="false" style="min-width: 10rem">
                     <template #body="{ data }">
                         <div class="flex gap-2">
-                            <Button 
-                                icon="pi pi-pencil" 
-                                size="small"
-                                severity="info"
-                                rounded 
-                                outlined
-                                @click="editarCasino(data)"
-                                v-tooltip.top="'Editar'"
-                            />
-                            <Button 
-                                :icon="data.esta_activo ? 'pi pi-ban' : 'pi pi-check-circle'" 
-                                size="small"
-                                :severity="data.esta_activo ? 'warning' : 'success'"
-                                rounded 
-                                outlined
+                            <Button icon="pi pi-pencil" size="small" severity="info" rounded outlined
+                                @click="editarCasino(data)" v-tooltip.top="'Editar'" />
+                            <Button :icon="data.esta_activo ? 'pi pi-ban' : 'pi pi-check-circle'" size="small"
+                                :severity="data.esta_activo ? 'warning' : 'success'" rounded outlined
                                 @click="toggleActivarCasino(data)"
-                                v-tooltip.top="data.esta_activo ? 'Desactivar' : 'Activar'"
-                            />
+                                v-tooltip.top="data.esta_activo ? 'Desactivar' : 'Activar'" />
                         </div>
                     </template>
                 </Column>
             </DataTable>
 
-            <Dialog v-model:visible="casinoDialog" :style="{ width: '500px' }" header="Detalles del Casino" :modal="true">
+            <Dialog v-model:visible="casinoDialog" :style="{ width: '500px' }" header="Detalles del Casino"
+                :modal="true">
                 <div class="flex flex-col gap-6">
                     <div>
                         <label for="nombre" class="block font-bold mb-3">Nombre del Casino</label>
-                        <InputText id="nombre" v-model.trim="casino.nombre" required="true" autofocus :invalid="submitted && !casino.nombre" fluid />
+                        <InputText id="nombre" v-model.trim="casino.nombre" required="true" autofocus
+                            :invalid="submitted && !casino.nombre" fluid />
                         <small class="text-red-500" v-if="submitted && !casino.nombre">El nombre es obligatorio.</small>
                     </div>
-                    
+
                     <div>
                         <label for="identificador" class="block font-bold mb-3">Identificador</label>
                         <InputText id="identificador" v-model.trim="casino.identificador" fluid />
@@ -389,11 +296,13 @@ onMounted(() => {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="horario_apertura" class="block font-bold mb-3">Horario Apertura</label>
-                            <DatePicker id="horario_apertura" v-model="casino.horario_apertura" timeOnly fluid hourFormat="24" />
+                            <DatePicker id="horario_apertura" v-model="casino.horario_apertura" timeOnly fluid
+                                hourFormat="24" />
                         </div>
                         <div>
                             <label for="horario_cierre" class="block font-bold mb-3">Horario Cierre</label>
-                            <DatePicker id="horario_cierre" v-model="casino.horario_cierre" timeOnly fluid hourFormat="24" />
+                            <DatePicker id="horario_cierre" v-model="casino.horario_cierre" timeOnly fluid
+                                hourFormat="24" />
                         </div>
                     </div>
 
@@ -401,10 +310,11 @@ onMounted(() => {
                         <label for="encargado" class="block font-bold mb-3">Nombre del Encargado</label>
                         <InputText id="encargado" v-model="casino.encargado" fluid />
                     </div>
-                    
+
                     <div>
                         <label for="direccion" class="block font-bold mb-3">Dirección Física</label>
-                        <Textarea id="direccion" v-model="casino.direccion" rows="3" cols="20" fluid placeholder="Calle, Número, Colonia, Ciudad..." />
+                        <Textarea id="direccion" v-model="casino.direccion" rows="3" cols="20" fluid
+                            placeholder="Calle, Número, Colonia, Ciudad..." />
                     </div>
 
                     <div class="flex items-center mt-2">
@@ -416,12 +326,17 @@ onMounted(() => {
                         <div class="font-bold mb-3 text-surface-500 dark:text-surface-400">Auditoría</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Creado por</label>
-                                <InputText id="creado_por" name="creado_por" :value="casino.creado_por || 'Sistema'" disabled fluid class="opacity-100" />
+                                <label
+                                    class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Creado
+                                    por</label>
+                                <InputText id="creado_por" name="creado_por" :value="casino.creado_por || 'Sistema'"
+                                    disabled fluid class="opacity-100" />
                             </div>
                             <div>
-                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Fecha Registro</label>
-                                <InputText id="creado_en" name="creado_en" :value="formatearFecha(casino.creado_en)" disabled fluid class="opacity-100" />
+                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Fecha
+                                    Registro</label>
+                                <InputText id="creado_en" name="creado_en" :value="formatearFecha(casino.creado_en)"
+                                    disabled fluid class="opacity-100" />
                             </div>
                         </div>
                     </div>

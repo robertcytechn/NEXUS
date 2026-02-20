@@ -94,7 +94,7 @@ const exportarExcel = () => {
     const columnasVisibles = props.columnas.filter(c => c.visible);
     
     if (!props.datos || props.datos.length === 0) {
-        console.warn('No hay datos para exportar');
+
         return;
     }
 
@@ -160,7 +160,7 @@ const exportarJSON = () => {
     const columnasVisibles = props.columnas.filter(c => c.visible);
     
     if (!props.datos || props.datos.length === 0) {
-        console.warn('No hay datos para exportar');
+
         return;
     }
 
@@ -199,7 +199,7 @@ const imprimirTabla = () => {
     const columnasVisibles = props.columnas.filter(c => c.visible);
     
     if (!props.datos || props.datos.length === 0) {
-        console.warn('No hay datos para imprimir');
+
         return;
     }
 
@@ -565,7 +565,7 @@ const cargarDatos = async () => {
         const response = await api.get('tu-endpoint/');
         datos.value = response.data;
     } catch (error) {
-        console.error('Error:', error);
+
     } finally {
         loading.value = false;
     }

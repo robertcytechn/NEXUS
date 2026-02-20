@@ -156,9 +156,9 @@ const onNotificationClick = async (item) => {
     if (result.success) {
         // Actualizar localmente
         item.read = true;
-        console.log('✅ Notificación marcada como leída');
+
     } else {
-        console.error('❌ Error al marcar notificación:', result.error);
+
         // Aún así actualizar localmente para mejor UX
         item.read = true;
     }

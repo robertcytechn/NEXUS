@@ -93,7 +93,7 @@ const cargarDatos = async () => {
             roles.value = resRoles.data.filter(r => r.esta_activo);  // rolesDisponibles computed filtra según rol del usuario
         }
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los usuarios', life: 3000 });
     } finally {
         loading.value = false;

@@ -87,7 +87,7 @@ const cargarDatos = async () => {
         maquinas.value = resMaquinas.data;
 
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos', life: 3000 });
     } finally {
         loading.value = false;
@@ -138,14 +138,14 @@ const openNew = () => {
         esta_activo: true,
         // El reportante idealmente se asigna en el backend con el usuario logueado
     };
-    console.log('🆕 openNew() - ticket.value limpiado:', ticket.value);
+
     submitted.value = false;
     ticketDialog.value = true;
 };
 
 const editarTicket = (data) => {
     ticket.value = { ...data };
-    console.log('✏️ editarTicket() - ticket.value con ID:', ticket.value.id);
+
     ticketDialog.value = true;
 };
 
@@ -196,7 +196,7 @@ const saveTicket = async () => {
                             life: 2000 
                         });
                     } catch (errorFallas) {
-                        console.error('Error al incrementar contador_fallas:', errorFallas);
+
                         toast.add({ 
                             severity: 'warn', 
                             summary: 'Advertencia', 
@@ -258,7 +258,7 @@ const toggleActivarTicket = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Ticket ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                console.error(error);
+
                 toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el ticket`, life: 3000 });
             } finally {
                 loading.value = false;
@@ -281,7 +281,7 @@ const cargarHistorialBitacora = async (ticketId) => {
             new Date(b.fecha_registro) - new Date(a.fecha_registro)
         );
     } catch (error) {
-        console.error('Error al cargar bitácora:', error);
+
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 

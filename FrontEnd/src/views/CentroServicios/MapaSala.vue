@@ -322,7 +322,7 @@ async function exportarPDF() {
         await _dibujarYExportar();
         toast.add({ severity: 'success', summary: '✓ PDF exportado', detail: 'El mapa se descargó correctamente', life: 3000 });
     } catch (err) {
-        console.error('[exportarPDF]', err);
+
         toast.add({ severity: 'error', summary: 'Error al exportar', detail: err?.message || 'No se pudo generar el PDF', life: 5000 });
     } finally {
         loading.value = false;

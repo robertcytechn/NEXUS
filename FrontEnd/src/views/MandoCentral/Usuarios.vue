@@ -68,7 +68,7 @@ const cargarUsuarios = async () => {
         usuarios.value = response.data;
         actualizarGraficas();
     } catch (error) {
-        console.error('Error al cargar usuarios:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la lista de usuarios', life: 3000 });
     } finally {
         loading.value = false;
@@ -85,7 +85,7 @@ const cargarCatalogos = async () => {
         casinos.value = resCasinos.data;
         roles.value = resRoles.data;
     } catch (error) {
-        console.error('Error al cargar catálogos:', error);
+
         toast.add({ severity: 'warn', summary: 'Advertencia', detail: 'No se pudieron cargar algunos catálogos', life: 3000 });
     }
 };
@@ -161,7 +161,7 @@ const saveUsuario = async () => {
             usuario.value = {};
             cargarUsuarios();
         } catch (error) {
-            console.error(error);
+
             const msg = error.response?.data?.message || 'No se pudo guardar el usuario';
             toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3000 });
         } finally {
@@ -199,7 +199,7 @@ const toggleActivarUsuario = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Usuario ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarUsuarios();
             } catch (error) {
-                console.error(error);
+
                 toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el usuario`, life: 3000 });
             } finally {
                 loading.value = false;

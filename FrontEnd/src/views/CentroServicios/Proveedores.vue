@@ -84,7 +84,7 @@ const cargarDatos = async () => {
             casinos.value = resCasinos.data;
         }
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los proveedores', life: 3000 });
     } finally {
         loading.value = false;

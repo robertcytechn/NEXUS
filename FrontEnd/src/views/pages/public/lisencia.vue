@@ -121,7 +121,7 @@ const handleAccept = async () => {
         }
     } catch (error) {
         errorMessage.value = 'Error de conexión con el servidor';
-        console.error('Error al aceptar EULA:', error);
+
     } finally {
         loading.value = false;
     }

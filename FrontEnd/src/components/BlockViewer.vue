@@ -46,7 +46,7 @@ async function copyCode(event) {
             codeCopied.value = false;
         }, 2000);
     } catch (err) {
-        console.error('Clipboard write failed:', err);
+
         codeCopyLoading.value = false;
     }
 }

@@ -128,7 +128,7 @@ const performSearch = async () => {
                 remoteResults = response.data;
             }
         } catch (error) {
-            console.error("Error en búsqueda global:", error);
+
         }
     }
 

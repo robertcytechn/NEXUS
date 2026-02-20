@@ -100,7 +100,7 @@ const cargarDatos = async () => {
         });
 
     } catch (error) {
-        console.error('Error al cargar datos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos necesarios', life: 3000 });
     } finally {
         loading.value = false;

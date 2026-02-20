@@ -75,7 +75,7 @@ const cargarMantenimientos = async () => {
         });
         mantenimientos.value = response.data.results || response.data;
     } catch (error) {
-        console.error('Error al cargar mantenimientos:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los mantenimientos', life: 3000 });
     } finally {
         loading.value = false;
@@ -103,7 +103,7 @@ const buscarMaquinas = async (event) => {
             modelo: m.modelo_nombre
         }));
     } catch (error) {
-        console.error('Error buscando máquinas:', error);
+
     }
 };
 
@@ -150,7 +150,7 @@ const saveMantenimiento = async () => {
         mantenimiento.value = {};
         await cargarMantenimientos();
     } catch (error) {
-        console.error('Error al guardar:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'Error al guardar el mantenimiento', life: 3000 });
     } finally {
         loading.value = false;

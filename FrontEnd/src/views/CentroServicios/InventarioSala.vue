@@ -55,7 +55,7 @@ const cargarDatos = async () => {
         const todos = Array.isArray(response) ? response : response.results || [];
         articulos.value = todos.filter(item => item.esta_activo);
     } catch (error) {
-        console.error('Error al cargar inventario:', error);
+
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el inventario', life: 3000 });
     } finally {
         loading.value = false;
@@ -102,7 +102,7 @@ const saveArticulo = async () => {
             articulo.value = {};
             cargarDatos();
         } catch (error) {
-            console.error(error);
+
             toast.add({ severity: 'error', summary: 'Error', detail: 'Ocurrió un error al guardar', life: 3000 });
         } finally {
             loading.value = false;

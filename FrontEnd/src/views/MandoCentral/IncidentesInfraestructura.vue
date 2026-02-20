@@ -67,7 +67,7 @@ const cargarIncidencias = async () => {
     try {
         incidencias.value = await infraestructuraService.getIncidencias();
     } catch (error) {
-        console.error('Error al cargar incidencias:', error);
+
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 
@@ -84,7 +84,7 @@ const cargarCasinos = async () => {
     try {
         casinos.value = await infraestructuraService.getCasinos();
     } catch (error) {
-        console.error('Error al cargar casinos:', error);
+
     }
 };
 
@@ -289,7 +289,7 @@ const saveIncidencia = async () => {
             incidencia.value = {};
             cargarIncidencias();
         } catch (error) {
-            console.error(error);
+
             toast.add({ 
                 severity: 'error', 
                 summary: 'Error', 
@@ -330,7 +330,7 @@ const toggleActivarIncidencia = (data) => {
                 });
                 cargarIncidencias();
             } catch (error) {
-                console.error(error);
+
                 toast.add({ 
                     severity: 'error', 
                     summary: 'Error', 

@@ -83,7 +83,7 @@ const cargarNotificacion = async () => {
             });
         }
     } catch (error) {
-        console.error('Error al cargar notificación:', error);
+
         toast.add({
             severity: 'error',
             summary: 'Error',
