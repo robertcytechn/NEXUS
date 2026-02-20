@@ -271,7 +271,7 @@ onMounted(() => {
                 <Column v-if="esColumnaVisible('ip_maquina')" field="ip_maquina" header="IP" sortable
                     style="min-width: 10rem">
                     <template #body="{ data }"><span class="font-mono text-sm">{{ data.ip_maquina || 'N/A'
-                    }}</span></template>
+                            }}</span></template>
                 </Column>
                 <Column v-if="esColumnaVisible('ubicacion_piso')" field="ubicacion_piso" header="Piso" sortable
                     style="min-width: 8rem" />
@@ -443,8 +443,3 @@ onMounted(() => {
         </div>
     </div>
 </template>
-```
-
-### 2. Actualización de Rutas: `src\router\index.js`
-
-```diff
