@@ -30,8 +30,37 @@ const pisoChoices = ref([]);
 const salaChoices = ref([]);
 
 // Modo de visualización
-const modoVisualizacion = ref('estado'); // 'estado' | 'proveedor'
+const modoVisualizacion = ref('estado'); // 'estado' | 'proveedor' | 'modelo'
 const coloresProveedor = ref({}); // { proveedor_id: '#hex' }
+const coloresModelo = ref({}); // { modelo_nombre: '#hex' }
+
+/**
+ * Convierte HSL a Hexadecimal.
+ */
+function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/**
+ * Genera un arreglo de colores HSL distribuidos equitativamente.
+ * Utilizamos una luminosidad más baja (ej. 45%) para asegurar
+ * un buen contraste con texto blanco.
+ */
+function generarColoresAltaDistincion(itemsTotales, sat = 80, lig = 45) {
+    if (itemsTotales === 0) return [];
+    const paso = 360 / itemsTotales;
+    return Array.from({ length: itemsTotales }, (_, i) => {
+        const hue = Math.round(paso * i);
+        return hslToHex(hue, sat, lig);
+    });
+}
 
 /**
  * Actualiza el color de un proveedor de forma reactiva.
@@ -41,6 +70,11 @@ function setColorProveedor(id, valor) {
     // valor puede venir con o sin '#'
     const hex = valor?.startsWith?.('#') ? valor : `#${valor}`;
     coloresProveedor.value = { ...coloresProveedor.value, [id]: hex };
+}
+
+function setColorModelo(id, valor) {
+    const hex = valor?.startsWith?.('#') ? valor : `#${valor}`;
+    coloresModelo.value = { ...coloresModelo.value, [id]: hex };
 }
 
 // Modo edición (drag & drop)
@@ -99,12 +133,17 @@ const cargarMapa = async () => {
         pisoChoices.value = data.piso_choices || [];
         salaChoices.value = data.sala_choices || [];
 
-        // Asignar colores a proveedores nuevos
-        data.maquinas.forEach(m => {
-            if (m.proveedor_id && !coloresProveedor.value[m.proveedor_id]) {
-                const idx = Object.keys(coloresProveedor.value).length % COLORES_PALETA.length;
-                coloresProveedor.value[m.proveedor_id] = COLORES_PALETA[idx];
-            }
+        // Asignar colores distribuidos equitativamente (HSL)
+        const proveedores = [...new Set(data.maquinas.map(m => m.proveedor_id).filter(Boolean))];
+        const coloresProvNuevos = generarColoresAltaDistincion(proveedores.length, 85, 42);
+        proveedores.forEach((pid, idx) => {
+            if (!coloresProveedor.value[pid]) coloresProveedor.value[pid] = coloresProvNuevos[idx];
+        });
+
+        const modelos = [...new Set(data.maquinas.map(m => m.modelo_nombre).filter(Boolean))];
+        const coloresModNuevos = generarColoresAltaDistincion(modelos.length, 80, 45);
+        modelos.forEach((mid, idx) => {
+            if (!coloresModelo.value[mid]) coloresModelo.value[mid] = coloresModNuevos[idx];
         });
     } finally {
         loading.value = false;
@@ -131,6 +170,17 @@ const proveedoresUnicos = computed(() => {
     return Object.entries(map).map(([id, nombre]) => ({ id: Number(id), nombre }));
 });
 
+/** Modelos únicos en el mapa actual */
+const modelosUnicos = computed(() => {
+    const map = {};
+    maquinas.value.forEach(m => {
+        if (m.modelo_nombre && !map[m.modelo_nombre]) {
+            map[m.modelo_nombre] = m.modelo_nombre;
+        }
+    });
+    return Object.keys(map).map(nombre => ({ id: nombre, nombre }));
+});
+
 /** Opciones de piso para el selector (solo los existentes en el casino) */
 const opcionesPiso = computed(() =>
     pisoChoices.value.filter(c => pisosDisponibles.value.includes(c.value))
@@ -154,6 +204,9 @@ function getColorMaquina(m) {
     if (modoVisualizacion.value === 'proveedor') {
         return coloresProveedor.value[m.proveedor_id] || '#94a3b8';
     }
+    if (modoVisualizacion.value === 'modelo') {
+        return coloresModelo.value[m.modelo_nombre] || '#94a3b8';
+    }
     return COLORES_ESTADO[m.estado_actual]?.bg || '#94a3b8';
 }
 
@@ -166,7 +219,7 @@ function getTextColor(m) {
         if (coincide) return '#ffffff';
         return '#ffffff';
     }
-    if (modoVisualizacion.value === 'proveedor') return '#fff';
+    if (modoVisualizacion.value === 'proveedor' || modoVisualizacion.value === 'modelo') return '#fff';
     return COLORES_ESTADO[m.estado_actual]?.text || '#fff';
 }
 
@@ -410,7 +463,9 @@ async function _dibujarYExportar() {
     // ── Leyenda ───────────────────────────────────────────────────────────────
     const legendItems = modoVisualizacion.value === 'estado'
         ? Object.entries(COLORES_ESTADO).map(([, v]) => ({ label: v.label, color: v.bg }))
-        : proveedoresUnicos.value.map(p => ({ label: p.nombre, color: coloresProveedor.value[p.id] || '#94a3b8' }));
+        : modoVisualizacion.value === 'proveedor'
+            ? proveedoresUnicos.value.map(p => ({ label: p.nombre, color: coloresProveedor.value[p.id] || '#94a3b8' }))
+            : modelosUnicos.value.map(m => ({ label: m.nombre, color: coloresModelo.value[m.id] || '#94a3b8' }));
 
     pdf.setFontSize(6);
     pdf.setFont('helvetica', 'bold');
@@ -483,9 +538,21 @@ function _fitFontSize(pdf, text, maxW, minFS, maxFS) {
 }
 
 // ─── HELPERS DE GRID ──────────────────────────────────────────────────────────
-/** Obtiene la máquina en una celda dada (si existe) */
+/** 
+ * En lugar de buscar en el arreglo cada vez, precalculamos un mapa hash
+ * para obtener la máquina de una celda en O(1) y mejorar el rendimiento.
+ */
+const maquinasPorCoordenada = computed(() => {
+    const map = {};
+    maquinas.value.forEach(m => {
+        map[`${m.coordenada_x}_${m.coordenada_y}`] = m;
+    });
+    return map;
+});
+
+/** Obtiene la máquina en una celda dada en O(1) */
 function getMaquinaEnCelda(x, y) {
-    return maquinas.value.find(m => m.coordenada_x === x && m.coordenada_y === y) || null;
+    return maquinasPorCoordenada.value[`${x}_${y}`] || null;
 }
 
 /** Filas visibles del grid (1..grid_height) */
@@ -527,7 +594,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
 
                     <!-- Modo visualización -->
                     <SelectButton v-model="modoVisualizacion"
-                        :options="[{ label: 'Estado', value: 'estado', icon: 'pi pi-circle-fill' }, { label: 'Proveedor', value: 'proveedor', icon: 'pi pi-users' }]"
+                        :options="[{ label: 'Estado', value: 'estado', icon: 'pi pi-circle-fill' }, { label: 'Proveedor', value: 'proveedor', icon: 'pi pi-users' }, { label: 'Modelo', value: 'modelo', icon: 'pi pi-desktop' }]"
                         optionLabel="label" optionValue="value" />
 
                     <!-- Switch de edición (solo roles autorizados) -->
@@ -570,13 +637,23 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                         {{ color.label }}
                     </div>
                 </template>
-                <template v-else>
+                <template v-else-if="modoVisualizacion === 'proveedor'">
                     <div v-for="prov in proveedoresUnicos" :key="prov.id"
                         class="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold text-white"
                         :style="{ background: coloresProveedor[prov.id] || '#94a3b8' }">
                         {{ prov.nombre }}
                         <ColorPicker :modelValue="(coloresProveedor[prov.id] || '#94a3b8').replace('#', '')"
                             @update:modelValue="val => setColorProveedor(prov.id, val)"
+                            style="width:16px;height:16px;flex-shrink:0;" />
+                    </div>
+                </template>
+                <template v-else-if="modoVisualizacion === 'modelo'">
+                    <div v-for="mod in modelosUnicos" :key="mod.id"
+                        class="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold text-white"
+                        :style="{ background: coloresModelo[mod.id] || '#94a3b8' }">
+                        {{ mod.nombre }}
+                        <ColorPicker :modelValue="(coloresModelo[mod.id] || '#94a3b8').replace('#', '')"
+                            @update:modelValue="val => setColorModelo(mod.id, val)"
                             style="width:16px;height:16px;flex-shrink:0;" />
                     </div>
                 </template>
@@ -627,7 +704,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                 }">
                                 <span class="maquina-uid">{{ getMaquinaEnCelda(x, y).uid_sala }}</span>
                                 <span class="maquina-sub">{{ getMaquinaEnCelda(x, y).modelo_nombre?.slice(0, 8)
-                                }}</span>
+                                    }}</span>
                             </div>
                         </template>
                     </div>
@@ -651,7 +728,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                             <div>
                                 <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{
                                     maquinaDetalle.uid_sala
-                                    }}</h3>
+                                }}</h3>
                                 <p class="text-surface-500 text-sm">{{ maquinaDetalle.modelo_nombre }} · {{
                                     maquinaDetalle.modelo_producto }}</p>
                             </div>
@@ -893,7 +970,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                                     </div>
                                                     <span class="text-xs text-surface-500">{{ new
                                                         Date(bitacora.fecha_registro).toLocaleString('es-MX')
-                                                    }}</span>
+                                                        }}</span>
                                                 </div>
                                                 <p
                                                     class="text-xs md:text-sm text-surface-700 dark:text-surface-300 mb-3 pl-0 md:pl-6">
