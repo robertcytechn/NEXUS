@@ -78,6 +78,14 @@ class MaquinaMapaSerializer(serializers.ModelSerializer):
     # Datos del proveedor (para Modo Proveedor en el mapa)
     proveedor_id = serializers.IntegerField(source='modelo.proveedor.id', read_only=True)
     proveedor_nombre = serializers.CharField(source='modelo.proveedor.nombre', read_only=True)
+    proveedor_rfc = serializers.CharField(source='modelo.proveedor.rfc', read_only=True)
+    proveedor_email = serializers.EmailField(source='modelo.proveedor.email_corporativo', read_only=True)
+    proveedor_telefono = serializers.CharField(source='modelo.proveedor.telefono_soporte', read_only=True)
+
+    # Datos adicionales para el diálogo de detalles
+    dias_licencia = serializers.SerializerMethodField()
+    fecha_instalacion = serializers.DateTimeField(source='creado_en', read_only=True, format='%Y-%m-%d')
+    denominaciones_info = serializers.SerializerMethodField()
 
     # Labels legibles para piso y sala
     ubicacion_piso_label = serializers.SerializerMethodField()
@@ -93,9 +101,9 @@ class MaquinaMapaSerializer(serializers.ModelSerializer):
             'estado_actual', 'contador_fallas',
             'casino', 'casino_nombre',
             'modelo_nombre', 'modelo_producto', 'imagen_url',
-            'proveedor_id', 'proveedor_nombre',
+            'proveedor_id', 'proveedor_nombre', 'proveedor_rfc', 'proveedor_email', 'proveedor_telefono',
             'ip_maquina', 'numero_serie',
-            'ultimo_mantenimiento', 'fecha_vencimiento_licencia',
+            'ultimo_mantenimiento', 'fecha_vencimiento_licencia', 'dias_licencia', 'fecha_instalacion', 'denominaciones_info'
         ]
         read_only_fields = fields
 
@@ -108,3 +116,20 @@ class MaquinaMapaSerializer(serializers.ModelSerializer):
         """Retorna la etiqueta legible de la sala según los choices del modelo."""
         choices_dict = dict(Maquina.SALA_CHOICES)
         return choices_dict.get(obj.ubicacion_sala, obj.ubicacion_sala)
+
+    def get_dias_licencia(self, obj):
+        if not obj.fecha_vencimiento_licencia:
+            return "Indefinida"
+        delta = obj.fecha_vencimiento_licencia - date.today()
+        return max(delta.days, 0)
+    
+    def get_denominaciones_info(self, obj):
+        """Retorna las denominaciones como lista de objetos con id y etiqueta"""
+        return [
+            {
+                'id': denom.id,
+                'etiqueta': denom.etiqueta,
+                'valor': str(denom.valor)
+            }
+            for denom in obj.denominaciones.all()
+        ]

@@ -544,7 +544,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
 
                     <!-- Exportar PDF -->
                     <Button icon="pi pi-file-pdf" label="PDF" severity="danger" outlined @click="exportarPDF"
-                        size="small" />
+                        size="small" class="hidden md:inline-flex" />
                     <!-- Refrescar -->
                     <Button icon="pi pi-refresh" severity="secondary" outlined @click="cargarMapa" :loading="loading"
                         size="small" />
@@ -584,7 +584,8 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
         </div>
 
         <!-- ─── MAPA ─────────────────────────────────────────────────────── -->
-        <div class="card p-2 overflow-auto" style="touch-action: pan-x pan-y; max-height: calc(100vh - 280px);">
+        <div class="card p-2 overflow-auto relative"
+            style="touch-action: auto; overflow: auto; max-width: 100vw; max-height: calc(100vh - 280px);">
             <div v-if="loading && maquinas.length === 0" class="flex items-center justify-center py-20">
                 <ProgressSpinner style="width:60px;height:60px" />
             </div>
@@ -626,7 +627,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                 }">
                                 <span class="maquina-uid">{{ getMaquinaEnCelda(x, y).uid_sala }}</span>
                                 <span class="maquina-sub">{{ getMaquinaEnCelda(x, y).modelo_nombre?.slice(0, 8)
-                                    }}</span>
+                                }}</span>
                             </div>
                         </template>
                     </div>
@@ -650,7 +651,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                             <div>
                                 <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{
                                     maquinaDetalle.uid_sala
-                                }}</h3>
+                                    }}</h3>
                                 <p class="text-surface-500 text-sm">{{ maquinaDetalle.modelo_nombre }} · {{
                                     maquinaDetalle.modelo_producto }}</p>
                             </div>
@@ -892,7 +893,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                                     </div>
                                                     <span class="text-xs text-surface-500">{{ new
                                                         Date(bitacora.fecha_registro).toLocaleString('es-MX')
-                                                        }}</span>
+                                                    }}</span>
                                                 </div>
                                                 <p
                                                     class="text-xs md:text-sm text-surface-700 dark:text-surface-300 mb-3 pl-0 md:pl-6">
