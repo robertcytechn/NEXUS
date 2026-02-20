@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/', include('AuditoriasExternas.urls')),
     path('api/', include('Notificaciones.urls')),
     path('api/', include('EvolucionNexus.urls')),
+    path('api/', include('Menus.urls')),
 ]
 
 from django.conf import settings

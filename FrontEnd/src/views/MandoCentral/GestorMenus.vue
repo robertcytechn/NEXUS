@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { fetchRoles } from '@/service/api';
-import defaultMenuData from '@/config/menu.json';
+import api, { fetchRoles } from '@/service/api';
 import primeIconsJson from '@/config/primeicons.json';
 import { useToast } from 'primevue/usetoast';
 
@@ -20,15 +19,15 @@ const filteredIcons = ref([]);
 
 // Load data on mount
 onMounted(async () => {
-    const savedConfig = localStorage.getItem('nexusMenuConfig');
-    if (savedConfig) {
-        try {
-            menuData.value = JSON.parse(savedConfig);
-        } catch (e) {
-            menuData.value = JSON.parse(JSON.stringify(defaultMenuData));
+    try {
+        const res = await api.get('menus/activo/');
+        if (res.data && res.data.length > 0) {
+            menuData.value = res.data;
+        } else {
+            menuData.value = [];
         }
-    } else {
-        menuData.value = JSON.parse(JSON.stringify(defaultMenuData));
+    } catch (e) {
+        menuData.value = [];
     }
 
     try {
@@ -48,17 +47,16 @@ onMounted(async () => {
 });
 
 // -- Actions: Main Config --
-const saveConfig = () => {
-    localStorage.setItem('nexusMenuConfig', JSON.stringify(menuData.value));
-    toast.add({ severity: 'success', summary: 'Éxito', detail: 'Configuración guardada. Recarga el navegador para observar los cambios en el menú global.', life: 4000 });
+const saveConfig = async () => {
+    try {
+        await api.post('menus/', menuData.value);
+        toast.add({ severity: 'success', summary: 'Éxito', detail: 'Configuración guardada. Refresque la página para ver cambios en el menú.', life: 4000 });
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se guardó en el servidor.', life: 3000 });
+    }
 };
 
-const resetToDefault = () => {
-    localStorage.removeItem('nexusMenuConfig');
-    menuData.value = JSON.parse(JSON.stringify(defaultMenuData));
-    editMode.value = '';
-    toast.add({ severity: 'info', summary: 'Restaurado', detail: 'Se ha restaurado el menú por defecto.', life: 3000 });
-};
+// Eliminar resetToDefault
 
 // -- Actions: Select to Edit --
 const selectCategory = (catIndex) => {
@@ -241,8 +239,6 @@ const searchIcon = (event) => {
             <div class="flex gap-2">
                 <Button label="Añadir Categoría Principal" icon="pi pi-plus" severity="success" outlined
                     @click="addCategory" />
-                <Button label="Restaurar Defecto" icon="pi pi-refresh" severity="secondary" outlined
-                    @click="resetToDefault" />
                 <Button label="Guardar Configuración Global" icon="pi pi-save" @click="saveConfig" />
             </div>
         </div>

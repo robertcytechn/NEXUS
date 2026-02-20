@@ -25,6 +25,7 @@ OWN_APPS = [
     'AuditoriasExternas',
     'Notificaciones',
     'EvolucionNexus',
+    'Menus',
 ]
 
 AUTH_USER_MODEL = 'Usuarios.Usuarios'

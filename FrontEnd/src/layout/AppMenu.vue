@@ -1,17 +1,23 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import AppMenuItem from './AppMenuItem.vue';
-import { getUser, hasRoleAccess } from '@/service/api';
+import api, { getUser, hasRoleAccess } from '@/service/api';
 
-// Definición del menú completo con roles de acceso
-// ------------------------------------------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------------------------------------------
+// Cargar menú siempre desde la base de datos
+const menuDefinition = ref([]);
 
-import defaultMenuData from '@/config/menu.json';
-
-// Cargar menú desde localStorage o usar el default
-const savedMenuConfig = localStorage.getItem('nexusMenuConfig');
-const menuDefinition = savedMenuConfig ? JSON.parse(savedMenuConfig) : defaultMenuData;
+onMounted(async () => {
+    try {
+        const res = await api.get('menus/activo/');
+        if (res.data && res.data.length > 0) {
+            menuDefinition.value = res.data;
+        } else {
+            menuDefinition.value = [];
+        }
+    } catch (e) {
+        menuDefinition.value = [];
+    }
+});
 
 // Función recursiva para filtrar ítems del menú según el rol del usuario
 const filterMenuByRole = (items) => {
@@ -40,7 +46,7 @@ const filterMenuByRole = (items) => {
 
 // Menú filtrado según el rol del usuario
 const model = computed(() => {
-    return filterMenuByRole(menuDefinition);
+    return filterMenuByRole(menuDefinition.value);
 });
 </script>
 

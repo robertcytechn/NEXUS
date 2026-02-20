@@ -1,11 +1,16 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import { getAuthToken, getUser, hasRoleAccess } from '@/service/api';
+import api, { getAuthToken, getUser, hasRoleAccess } from '@/service/api';
 
-import defaultMenuData from '@/config/menu.json';
-
-const savedMenuConfig = localStorage.getItem('nexusMenuConfig');
-const menuData = savedMenuConfig ? JSON.parse(savedMenuConfig) : defaultMenuData;
+let menuData = [];
+try {
+    const res = await api.get('menus/activo/');
+    if (res.data && res.data.length > 0) {
+        menuData = res.data;
+    }
+} catch (e) {
+    console.warn("No se pudo cargar menú desde API, usando arreglo vacío por defecto.");
+}
 
 const viewModules = import.meta.glob('/src/views/**/*.vue');
 const dynamicRoutes = [];
