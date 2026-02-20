@@ -2,6 +2,40 @@ import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { getAuthToken, getUser, hasRoleAccess } from '@/service/api';
 
+import defaultMenuData from '@/config/menu.json';
+
+const savedMenuConfig = localStorage.getItem('nexusMenuConfig');
+const menuData = savedMenuConfig ? JSON.parse(savedMenuConfig) : defaultMenuData;
+
+const viewModules = import.meta.glob('/src/views/**/*.vue');
+const dynamicRoutes = [];
+
+const extractRoutes = (items) => {
+    for (const item of items) {
+        if (item.to && item.componentPath) {
+            const loadComponent = viewModules[item.componentPath];
+            if (loadComponent) {
+                dynamicRoutes.push({
+                    path: item.to,
+                    component: loadComponent,
+                    meta: {
+                        title: item.title || item.label,
+                        requiresAuth: true,
+                        roles: item.roles || ['all']
+                    }
+                });
+            } else {
+                console.warn(`Componente no encontrado para la ruta ${item.to}: ${item.componentPath}`);
+            }
+        }
+        if (item.items) {
+            extractRoutes(item.items);
+        }
+    }
+};
+
+extractRoutes(menuData);
+
 const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -9,15 +43,7 @@ const router = createRouter({
             path: '/',
             component: AppLayout,
             children: [
-                {
-                    path: '/',
-                    component: () => import('@/views/Dashboard.vue'),
-                    meta: {
-                        title: 'Escritorio',
-                        requiresAuth: true,
-                        roles: ['all']
-                    }
-                },
+                ...dynamicRoutes,
                 {
                     path: '/profile',
                     name: 'profile',
@@ -35,206 +61,6 @@ const router = createRouter({
                         title: 'Detalle de Notificación',
                         requiresAuth: true,
                         roles: ['all']
-                    }
-                },
-                {
-                    path: '/admin/roles',
-                    component: () => import('@/views/MandoCentral/Roles.vue'),
-                    meta: {
-                        title: 'Gestión de Roles',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/casinos',
-                    component: () => import('@/views/MandoCentral/Casinos.vue'),
-                    meta: {
-                        title: 'Casinos y Salas',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/usuarios',
-                    component: () => import('@/views/MandoCentral/Usuarios.vue'),
-                    meta: {
-                        title: 'Usuarios',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/proveedores',
-                    component: () => import('@/views/MandoCentral/Proveedores.vue'),
-                    meta: {
-                        title: 'Proveedores',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/modelos',
-                    component: () => import('@/views/MandoCentral/ModelosMaquinas.vue'),
-                    meta: {
-                        title: 'Modelos',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/maquinas',
-                    component: () => import('@/views/MandoCentral/Maquinas.vue'),
-                    meta: {
-                        title: 'Máquinas',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-
-                },
-                {
-                    path: '/admin/tickets',
-                    component: () => import('@/views/MandoCentral/Tickets.vue'),
-                    meta: {
-                        title: 'Tickets',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-
-                },
-                {
-                    path: '/admin/bitacora-tecnica',
-                    component: () => import('@/views/MandoCentral/BitacoraTecnica.vue'),
-                    meta: {
-                        title: 'Bitácora Técnica',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/admin/mantenimientos-preventivos',
-                    component: () => import('@/views/MandoCentral/MantenimientosPreventivos.vue'),
-                    meta: {
-                        title: 'Mantenimientos Preventivos',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'TECNICO', 'GERENCIA', 'SUPERVISOR SALA']
-                    }
-                },
-                {
-                    path: '/admin/incidentes-infraestructura',
-                    component: () => import('@/views/MandoCentral/IncidentesInfraestructura.vue'),
-                    meta: {
-                        title: 'Incidentes de Infraestructura',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/centro-servicios/usuarios',
-                    component: () => import('@/views/CentroServicios/Usuarios.vue'),
-                    meta: {
-                        title: 'Usuarios',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'GERENCIA', 'SUPERVISOR SALA']
-                    }
-                },
-                {
-                    path: '/centro-servicios/proveedores',
-                    component: () => import('@/views/CentroServicios/Proveedores.vue'),
-                    meta: {
-                        title: 'Proveedores',
-                        requiresAuth: true,
-                        roles: ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/centro-servicios/modelos',
-                    component: () => import('@/views/CentroServicios/ModelosMaquinas.vue'),
-                    meta: {
-                        title: 'Modelos de Máquinas',
-                        requiresAuth: true,
-                        roles: ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/centro-servicios/maquinas',
-                    component: () => import('@/views/CentroServicios/Maquinas.vue'),
-                    meta: {
-                        title: 'Maquinas',
-                        requiresAuth: true,
-                        roles: ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/centro-servicios/tickets',
-                    component: () => import('@/views/CentroServicios/Tickets.vue'),
-                    meta: {
-                        title: 'Tickets',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA']
-                    }
-                },
-                {
-                    path: '/centro-servicios/mapa-sala',
-                    component: () => import('@/views/CentroServicios/MapaSala.vue'),
-                    meta: {
-                        title: 'Mapa de Sala',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'GERENCIA', 'SUPERVISOR SALA', 'TECNICO']
-                    }
-                },
-                {
-                    path: '/centro-servicios/inventario',
-                    component: () => import('@/views/CentroServicios/InventarioSala.vue'),
-                    meta: {
-                        title: 'Inventario de Sala',
-                        requiresAuth: true,
-                        roles: ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/centro-servicios/mantenimientos-preventivos',
-                    component: () => import('@/views/CentroServicios/MantenimientosPreventivos.vue'),
-                    meta: {
-                        title: 'Mantenimientos Preventivos',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'TECNICO', 'GERENCIA', 'SUPERVISOR SALA']
-                    }
-                },
-                {
-                    path: '/centro-servicios/incidentes-infraestructura',
-                    component: () => import('@/views/CentroServicios/IncidenciasInfraestructura.vue'),
-                    meta: {
-                        title: 'Incidentes de Infraestructura',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA']
-                    }
-                },
-                {
-                    path: '/operatividad/auditorias-externas',
-                    component: () => import('@/views/Operatividad/AuditoriasExternas.vue'),
-                    meta: {
-                        title: 'Auditorías Externas',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'TECNICO', 'GERENCIA', 'SUPERVISOR SALA']
-                    }
-                },
-                {
-                    path: '/operatividad/relevo-turno',
-                    component: () => import('@/views/Operatividad/RelevosTurnos.vue'),
-                    meta: {
-                        title: 'Relevo de Turno',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'TECNICO', 'GERENCIA', 'SUPERVISOR SALA']
-                    }
-                },
-                {
-                    path: '/evolucion-nexus',
-                    component: () => import('@/views/pages/EvolucionNexus.vue'),
-                    meta: {
-                        title: 'Evolución NEXUS',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA']
                     }
                 }
             ]
