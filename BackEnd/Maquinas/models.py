@@ -67,7 +67,6 @@ class Maquina(ModeloBase):
     )
     numero_serie = models.CharField(
         max_length=100, 
-        unique=True,
         help_text="Número de serie único de la máquina"
     )
     ip_maquina = models.GenericIPAddressField(
@@ -82,14 +81,12 @@ class Maquina(ModeloBase):
     ubicacion_piso = models.CharField(
         max_length=50,
         choices=PISO_CHOICES,
-        blank=True,
         default='PISO_1',
         help_text="Piso donde se encuentra la máquina (selección predefinida)"
     )
     ubicacion_sala = models.CharField(
         max_length=100,
         choices=SALA_CHOICES,
-        blank=True,
         default='SALA_PRINCIPAL',
         help_text="Sala o sección específica dentro del piso del casino (selección predefinida)"
     )
@@ -128,37 +125,59 @@ class Maquina(ModeloBase):
         unique_together = ('casino', 'uid_sala')
 
     def clean(self):
-        """Validación de IP: Solo una activa por sala."""
-        if self.ip_maquina and self.esta_activo:
-            exists = Maquina.objects.filter(
+        """Validación de identificadores y ubicaciones."""
+        # Unicidad de IP por casino
+        if self.ip_maquina:
+            exists_ip = Maquina.objects.filter(
                 casino=self.casino,
-                ip_maquina=self.ip_maquina,
-                esta_activo=True
+                ip_maquina=self.ip_maquina
             ).exclude(id=self.id).exists()
-            if exists:
-                raise ValidationError(f"La IP {self.ip_maquina} ya está en uso por una máquina activa en este casino.")
+            if exists_ip:
+                raise ValidationError({"ip_maquina": f"La IP {self.ip_maquina} ya está en uso en este casino."})
+                
+        # Unicidad de numero de serie por casino
+        if self.numero_serie:
+            exists_serie = Maquina.objects.filter(
+                casino=self.casino,
+                numero_serie=self.numero_serie
+            ).exclude(id=self.id).exists()
+            if exists_serie:
+                raise ValidationError({"numero_serie": f"El número de serie {self.numero_serie} ya está registrado en este casino."})
             
         # Validación de fechas: Último mantenimiento no puede ser futuro, vencimiento licencia no puede ser pasado
         if self.ultimo_mantenimiento and self.ultimo_mantenimiento > date.today():
-            raise ValidationError("La fecha del último mantenimiento no puede ser futura.")
+            raise ValidationError({"ultimo_mantenimiento": "La fecha del último mantenimiento no puede ser futura."})
         if self.fecha_vencimiento_licencia and self.fecha_vencimiento_licencia < date.today():
-            raise ValidationError("La fecha de vencimiento de la licencia no puede ser pasada.")
+            raise ValidationError({"fecha_vencimiento_licencia": "La fecha de vencimiento de la licencia no puede ser pasada."})
 
-        # validamos coordenadas, pueden ser 0,0 para mantener sin asignar pero no pueden ser negativas y tampoco pueden ser iguales a otra máquina en la misma sala piso y ubicacion_sala
+        # Validación campos requeridos
+        if not self.ubicacion_piso:
+            raise ValidationError({"ubicacion_piso": "El piso es requerido."})
+        if not self.ubicacion_sala:
+            raise ValidationError({"ubicacion_sala": "La sala es requerida."})
+        if self.coordenada_x is None or self.coordenada_y is None:
+            raise ValidationError("Las coordenadas X e Y son requeridas.")
+
         if self.coordenada_x < 0 or self.coordenada_y < 0:
             raise ValidationError("Las coordenadas X e Y deben ser enteros positivos.")
-        if self.coordenada_x == 0 and self.coordenada_y == 0:
-            return # Permitimos coordenadas 0,0 para máquinas sin asignar ubicación específica
-        exists = Maquina.objects.filter(
+            
+        if self.coordenada_x > self.casino.grid_width or self.coordenada_y > self.casino.grid_height:
+            raise ValidationError(
+                "Las coordenadas X e Y no pueden exceder los límites configurados en el mapa del casino "
+                f"({self.casino.grid_width}x{self.casino.grid_height})."
+            )
+            
+        # Validación coordenadas únicas por piso y sala en el mismo casino
+        exists_coordenada = Maquina.objects.filter(
             casino=self.casino,
             ubicacion_sala=self.ubicacion_sala,
             ubicacion_piso=self.ubicacion_piso,
             coordenada_x=self.coordenada_x,
-            coordenada_y=self.coordenada_y,
-            esta_activo=True
+            coordenada_y=self.coordenada_y
         ).exclude(id=self.id).exists()
-        if exists:
-            raise ValidationError("Ya existe una máquina activa con las mismas coordenadas en esta sala y piso del casino.")
+        
+        if exists_coordenada:
+            raise ValidationError("Ya existe una máquina con las mismas coordenadas en esta sala y piso del casino.")
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields')

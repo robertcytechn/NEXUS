@@ -214,7 +214,15 @@ const hideDialog = () => {
 const saveMaquina = async () => {
     submitted.value = true;
 
-    if (maquina.value.uid_sala?.trim() && maquina.value.numero_serie?.trim() && maquina.value.casino && maquina.value.modelo) {
+    if (maquina.value.uid_sala?.trim() &&
+        maquina.value.numero_serie?.trim() &&
+        maquina.value.casino &&
+        maquina.value.modelo &&
+        maquina.value.ubicacion_piso &&
+        maquina.value.ubicacion_sala &&
+        maquina.value.coordenada_x != null &&
+        maquina.value.coordenada_y != null) {
+
         loading.value = true;
 
         const esEdicion = !!maquina.value.id;
@@ -425,7 +433,7 @@ onMounted(() => {
                             <span class="block text-surface-500 dark:text-surface-400 font-medium mb-3">Total de
                                 Máquinas</span>
                             <div class="text-surface-900 dark:text-surface-0 font-medium text-4xl">{{ estadisticas.total
-                                }}</div>
+                            }}</div>
                         </div>
                         <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-lg"
                             style="width:3.5rem;height:3.5rem">
@@ -508,7 +516,7 @@ onMounted(() => {
                 <Column v-if="esColumnaVisible('ip_maquina')" field="ip_maquina" header="IP" sortable
                     style="min-width: 10rem">
                     <template #body="{ data }"><span class="font-mono text-sm">{{ data.ip_maquina || 'N/A'
-                            }}</span></template>
+                    }}</span></template>
                 </Column>
                 <Column v-if="esColumnaVisible('ubicacion_piso')" field="ubicacion_piso" header="Piso" sortable
                     style="min-width: 8rem" />
@@ -586,12 +594,16 @@ onMounted(() => {
                         <div>
                             <label for="ubicacion_piso" class="block font-bold mb-3">Piso / Área</label>
                             <Select id="ubicacion_piso" v-model="maquina.ubicacion_piso" :options="pisosChoices"
-                                optionLabel="label" optionValue="value" placeholder="Seleccione piso" showClear fluid />
+                                optionLabel="label" optionValue="value" placeholder="Seleccione piso" showClear fluid
+                                :invalid="submitted && !maquina.ubicacion_piso" />
+                            <small class="text-red-500" v-if="submitted && !maquina.ubicacion_piso">Requerido.</small>
                         </div>
                         <div>
                             <label for="ubicacion_sala" class="block font-bold mb-3">Sala / Sección</label>
                             <Select id="ubicacion_sala" v-model="maquina.ubicacion_sala" :options="salasChoices"
-                                optionLabel="label" optionValue="value" placeholder="Seleccione sala" showClear fluid />
+                                optionLabel="label" optionValue="value" placeholder="Seleccione sala" showClear fluid
+                                :invalid="submitted && !maquina.ubicacion_sala" />
+                            <small class="text-red-500" v-if="submitted && !maquina.ubicacion_sala">Requerido.</small>
                         </div>
                     </div>
 
@@ -600,10 +612,16 @@ onMounted(() => {
                             <label class="block font-bold mb-3">Coordenadas (X, Y)</label>
                             <div class="flex gap-2">
                                 <InputNumber id="coordenada_x" name="coordenada_x" v-model="maquina.coordenada_x"
-                                    showButtons :min="0" placeholder="X" fluid />
+                                    showButtons :min="0" placeholder="X" fluid
+                                    :invalid="submitted && maquina.coordenada_x == null" />
                                 <InputNumber id="coordenada_y" name="coordenada_y" v-model="maquina.coordenada_y"
-                                    showButtons :min="0" placeholder="Y" fluid />
+                                    showButtons :min="0" placeholder="Y" fluid
+                                    :invalid="submitted && maquina.coordenada_y == null" />
                             </div>
+                            <small class="text-red-500"
+                                v-if="submitted && (maquina.coordenada_x == null || maquina.coordenada_y == null)">Ambas
+                                coordenadas
+                                son requeridas.</small>
                         </div>
                         <div>
                             <label for="juego" class="block font-bold mb-3">Juego / Título</label>
@@ -673,12 +691,12 @@ onMounted(() => {
                                     <h3
                                         class="text-xl md:text-2xl font-bold text-surface-900 dark:text-surface-0 mb-1 truncate">
                                         {{
-                                        maquinaDetalle.uid_sala }}</h3>
+                                            maquinaDetalle.uid_sala }}</h3>
                                     <p
                                         class="text-surface-600 dark:text-surface-400 font-medium text-sm md:text-base truncate">
                                         {{
-                                        maquinaDetalle.modelo_nombre }} <span class="text-primary-500">•</span> {{
-                                        maquinaDetalle.modelo_producto }}</p>
+                                            maquinaDetalle.modelo_nombre }} <span class="text-primary-500">•</span> {{
+                                            maquinaDetalle.modelo_producto }}</p>
                                 </div>
                             </div>
                             <div class="shrink-0">
@@ -699,7 +717,7 @@ onMounted(() => {
                                 </div>
                                 <span class="font-bold text-surface-900 dark:text-surface-0 text-sm">{{
                                     maquinaDetalle.casino_nombre
-                                    }}</span>
+                                }}</span>
                             </div>
                             <div
                                 class="bg-white dark:bg-surface-800 rounded-lg p-3 border border-surface-200 dark:border-surface-700">
@@ -710,7 +728,7 @@ onMounted(() => {
                                 </div>
                                 <span class="font-bold text-surface-900 dark:text-surface-0 text-sm">{{
                                     maquinaDetalle.ubicacion_piso || 'N/A' }} / {{ maquinaDetalle.ubicacion_sala ||
-                                    'N/A' }}</span>
+                                        'N/A' }}</span>
                             </div>
                             <div
                                 class="bg-white dark:bg-surface-800 rounded-lg p-3 border border-surface-200 dark:border-surface-700">
@@ -744,7 +762,7 @@ onMounted(() => {
                                 </div>
                                 <span class="font-bold text-surface-900 dark:text-surface-0 text-sm">{{
                                     maquinaDetalle.numero_serie
-                                    }}</span>
+                                }}</span>
                             </div>
                             <div
                                 class="bg-white dark:bg-surface-800 rounded-lg p-3 border border-surface-200 dark:border-surface-700">
@@ -929,7 +947,7 @@ onMounted(() => {
                                             <div class="flex items-center gap-2 flex-wrap">
                                                 <span
                                                     class="font-bold text-lg md:text-2xl text-blue-600 dark:text-blue-400">{{
-                                                    slotProps.item.folio }}</span>
+                                                        slotProps.item.folio }}</span>
                                                 <Tag :value="slotProps.item.estado_ciclo"
                                                     :severity="slotProps.item.estado_ciclo === 'cerrado' ? 'success' : slotProps.item.estado_ciclo === 'proceso' ? 'info' : 'warn'" />
                                             </div>
@@ -963,7 +981,7 @@ onMounted(() => {
                                             <span class="text-surface-500 text-sm">Técnico:</span>
                                             <span class="font-semibold text-surface-900 dark:text-surface-0 text-sm">
                                                 {{ slotProps.item.tecnico_asignado.nombre }} {{
-                                                slotProps.item.tecnico_asignado.apellidos }}
+                                                    slotProps.item.tecnico_asignado.apellidos }}
                                             </span>
                                         </div>
                                     </div>
@@ -997,11 +1015,11 @@ onMounted(() => {
                                                             <i class="pi pi-user-edit text-blue-500 text-sm"></i>
                                                             <span
                                                                 class="text-xs md:text-sm font-bold text-surface-900 dark:text-surface-0">{{
-                                                                bitacora.tecnico_nombre }}</span>
+                                                                    bitacora.tecnico_nombre }}</span>
                                                         </div>
                                                         <span class="text-xs text-surface-500">{{ new
                                                             Date(bitacora.fecha_registro).toLocaleString('es-MX')
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <p
                                                         class="text-xs md:text-sm text-surface-700 dark:text-surface-300 mb-3 pl-0 md:pl-6">

@@ -167,7 +167,15 @@ const hideDialog = () => {
 const saveMaquina = async () => {
     submitted.value = true;
 
-    if (maquina.value.uid_sala?.trim() && maquina.value.numero_serie?.trim() && maquina.value.casino && maquina.value.modelo) {
+    if (maquina.value.uid_sala?.trim() &&
+        maquina.value.numero_serie?.trim() &&
+        maquina.value.casino &&
+        maquina.value.modelo &&
+        maquina.value.ubicacion_piso &&
+        maquina.value.ubicacion_sala &&
+        maquina.value.coordenada_x != null &&
+        maquina.value.coordenada_y != null) {
+
         loading.value = true;
 
         const esEdicion = !!maquina.value.id;
@@ -263,7 +271,7 @@ onMounted(() => {
                 <Column v-if="esColumnaVisible('ip_maquina')" field="ip_maquina" header="IP" sortable
                     style="min-width: 10rem">
                     <template #body="{ data }"><span class="font-mono text-sm">{{ data.ip_maquina || 'N/A'
-                            }}</span></template>
+                    }}</span></template>
                 </Column>
                 <Column v-if="esColumnaVisible('ubicacion_piso')" field="ubicacion_piso" header="Piso" sortable
                     style="min-width: 8rem" />
@@ -349,12 +357,16 @@ onMounted(() => {
                         <div>
                             <label for="ubicacion_piso" class="block font-bold mb-3">Piso / Área</label>
                             <Select id="ubicacion_piso" v-model="maquina.ubicacion_piso" :options="pisosChoices"
-                                optionLabel="label" optionValue="value" placeholder="Seleccione piso" showClear fluid />
+                                optionLabel="label" optionValue="value" placeholder="Seleccione piso" showClear fluid
+                                :invalid="submitted && !maquina.ubicacion_piso" />
+                            <small class="text-red-500" v-if="submitted && !maquina.ubicacion_piso">Requerido.</small>
                         </div>
                         <div>
                             <label for="ubicacion_sala" class="block font-bold mb-3">Sala / Sección</label>
                             <Select id="ubicacion_sala" v-model="maquina.ubicacion_sala" :options="salasChoices"
-                                optionLabel="label" optionValue="value" placeholder="Seleccione sala" showClear fluid />
+                                optionLabel="label" optionValue="value" placeholder="Seleccione sala" showClear fluid
+                                :invalid="submitted && !maquina.ubicacion_sala" />
+                            <small class="text-red-500" v-if="submitted && !maquina.ubicacion_sala">Requerido.</small>
                         </div>
                     </div>
 
@@ -363,10 +375,16 @@ onMounted(() => {
                             <label class="block font-bold mb-3">Coordenadas (X, Y)</label>
                             <div class="flex gap-2">
                                 <InputNumber id="coordenada_x" name="coordenada_x" v-model="maquina.coordenada_x"
-                                    showButtons :min="0" placeholder="X" fluid />
+                                    showButtons :min="0" placeholder="X" fluid
+                                    :invalid="submitted && maquina.coordenada_x == null" />
                                 <InputNumber id="coordenada_y" name="coordenada_y" v-model="maquina.coordenada_y"
-                                    showButtons :min="0" placeholder="Y" fluid />
+                                    showButtons :min="0" placeholder="Y" fluid
+                                    :invalid="submitted && maquina.coordenada_y == null" />
                             </div>
+                            <small class="text-red-500"
+                                v-if="submitted && (maquina.coordenada_x == null || maquina.coordenada_y == null)">Ambas
+                                coordenadas
+                                son requeridas.</small>
                         </div>
                         <div>
                             <label for="juego" class="block font-bold mb-3">Juego / Título</label>

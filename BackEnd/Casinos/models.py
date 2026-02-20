@@ -37,6 +37,25 @@ class Casino(ModeloBase):
         help_text="Número de filas del mapa de sala (alto de la cuadrícula). Default: 50"
     )
 
+    def clean(self):
+        super().clean()
+        from django.core.exceptions import ValidationError
+        
+        if self.pk:
+            # Importar localmente para evitar importaciones circulares
+            from Maquinas.models import Maquina
+            from django.db.models import Max
+            
+            # Verificar si hay máquinas cuyas coordenadas excedan los nuevos límites
+            max_x = Maquina.objects.filter(casino=self).aggregate(Max('coordenada_x'))['coordenada_x__max']
+            max_y = Maquina.objects.filter(casino=self).aggregate(Max('coordenada_y'))['coordenada_y__max']
+            
+            if max_x is not None and self.grid_width < max_x:
+                raise ValidationError({"grid_width": f"El ancho no puede ser menor a {max_x}, ya que hay máquinas en esa coordenada X."})
+                
+            if max_y is not None and self.grid_height < max_y:
+                raise ValidationError({"grid_height": f"El alto no puede ser menor a {max_y}, ya que hay máquinas en esa coordenada Y."})
+
     def __str__(self):
         return self.nombre
 
