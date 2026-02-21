@@ -3,80 +3,42 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
                 <h2 class="text-3xl font-bold mb-2">Ojo de Dios <i class="pi pi-eye text-primary-500"></i></h2>
-                <span class="text-surface-600 dark:text-surface-400">Auditoría global e histórico de modificaciones del sistema</span>
+                <span class="text-surface-600 dark:text-surface-400">Auditoría global e histórico de modificaciones del
+                    sistema</span>
             </div>
-            
-            <Button 
-                icon="pi pi-refresh" 
-                label="Actualizar" 
-                @click="cargarHistorial" 
-                :loading="loading"
-                severity="secondary" 
-                outlined
-            />
+
+            <Button icon="pi pi-refresh" label="Actualizar" @click="cargarHistorial" :loading="loading"
+                severity="secondary" outlined />
         </div>
 
         <!-- Filtros -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-surface-50 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
+        <div
+            class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-surface-50 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
             <div class="flex flex-col gap-2">
                 <label class="font-semibold text-sm">Tabla Afectada</label>
-                <Dropdown 
-                    v-model="filtros.tabla" 
-                    :options="listaTablas" 
-                    placeholder="Todas las tablas"
-                    showClear 
-                    class="w-full" 
-                    @change="onFiltroChange"
-                />
+                <Select v-model="filtros.tabla" :options="listaTablas" placeholder="Todas las tablas" showClear
+                    class="w-full" @change="onFiltroChange" />
             </div>
             <div class="flex flex-col gap-2">
                 <label class="font-semibold text-sm">Tipo de Acción</label>
-                <Dropdown 
-                    v-model="filtros.accion" 
-                    :options="listaAcciones" 
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Todas las acciones"
-                    showClear 
-                    class="w-full" 
-                    @change="onFiltroChange"
-                />
+                <Select v-model="filtros.accion" :options="listaAcciones" optionLabel="label" optionValue="value"
+                    placeholder="Todas las acciones" showClear class="w-full" @change="onFiltroChange" />
             </div>
             <div class="flex flex-col gap-2">
                 <label class="font-semibold text-sm">ID de Usuario</label>
-                <InputText 
-                    v-model="filtros.usuario" 
-                    placeholder="Filtrar por ID" 
-                    class="w-full" 
-                    @keyup.enter="onFiltroChange"
-                />
+                <InputText v-model="filtros.usuario" placeholder="Filtrar por ID" class="w-full"
+                    @keyup.enter="onFiltroChange" />
             </div>
             <div class="flex flex-col justify-end">
-                <Button 
-                    label="Limpiar Filtros" 
-                    icon="pi pi-filter-slash" 
-                    @click="limpiarFiltros"
-                    severity="danger" 
-                    outlined
-                />
+                <Button label="Limpiar Filtros" icon="pi pi-filter-slash" @click="limpiarFiltros" severity="danger"
+                    outlined />
             </div>
         </div>
 
         <!-- Tabla Expandible -->
-        <DataTable 
-            ref="dt"
-            v-model:expandedRows="expandedRows" 
-            :value="historial" 
-            :loading="loading"
-            dataKey="id"
-            paginator 
-            :rows="50"
-            :totalRecords="totalRecords"
-            :lazy="true"
-            @page="onPage"
-            class="p-datatable-sm"
-            stripedRows
-        >
+        <DataTable ref="dt" v-model:expandedRows="expandedRows" :value="historial" :loading="loading" dataKey="id"
+            paginator :rows="50" :totalRecords="totalRecords" :lazy="true" @page="onPage" class="p-datatable-sm"
+            stripedRows>
             <template #empty>No se encontraron registros de auditoría</template>
             <template #loading>Cargando registros históricos del sistema...</template>
 
@@ -106,15 +68,11 @@
 
             <Column field="accion" header="Acción" style="min-width: 8rem">
                 <template #body="{ data }">
-                    <Tag 
-                        :value="data.accion" 
-                        :severity="getAccionSeverity(data.accion)" 
-                        :icon="getAccionIcon(data.accion)"
-                        class="w-full text-center"
-                    />
+                    <Tag :value="data.accion" :severity="getAccionSeverity(data.accion)"
+                        :icon="getAccionIcon(data.accion)" class="w-full text-center" />
                 </template>
             </Column>
-            
+
             <Column field="tabla" header="Modelo Local" style="min-width: 10rem">
                 <template #body="{ data }">
                     <span class="bg-surface-200 dark:bg-surface-700 px-2 py-1 rounded font-mono text-xs">
@@ -123,39 +81,87 @@
                 </template>
             </Column>
 
-            <!-- Expansión: Visor JSON interactivo -->
+            <!-- Expansión: Visor interactivo de diferencias -->
             <template #expansion="slotProps">
-                <div class="p-4 bg-surface-50 dark:bg-surface-800 rounded-lg mx-3 my-2 border border-surface-200 dark:border-surface-700 shadow-inner">
+                <div
+                    class="p-4 bg-surface-50 dark:bg-surface-800 rounded-lg mx-3 my-2 border border-surface-200 dark:border-surface-700 shadow-inner">
+                    <div class="flex justify-end mb-4">
+                        <Button :icon="showJson[slotProps.data.id] ? 'pi pi-list' : 'pi pi-code'"
+                            :label="showJson[slotProps.data.id] ? 'Vista Estilizada' : 'Ver Raw JSON'"
+                            @click="toggleJsonView(slotProps.data.id)" size="small" severity="secondary" outlined />
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
+
                         <!-- Panel Izquierdo: Datos Anteriores -->
                         <div v-if="slotProps.data.accion === 'UPDATE' || slotProps.data.accion === 'DELETE'">
-                            <div class="flex items-center gap-2 mb-3 text-red-600 dark:text-red-400 font-bold border-b border-surface-200 dark:border-surface-700 pb-2">
+                            <div
+                                class="flex items-center gap-2 mb-3 text-red-600 dark:text-red-400 font-bold border-b border-surface-200 dark:border-surface-700 pb-2">
                                 <i class="pi pi-history"></i>
                                 <span>Datos Anteriores</span>
                             </div>
-                            <pre class="bg-surface-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono shadow">
+
+                            <div v-if="!showJson[slotProps.data.id]"
+                                class="bg-surface-0 dark:bg-surface-900 p-0 rounded-lg shadow border border-surface-200 dark:border-surface-700 overflow-hidden">
+                                <ul class="list-none p-0 m-0">
+                                    <li v-for="(val, key) in getParsedData(slotProps.data.datos_anteriores)" :key="key"
+                                        class="flex flex-col md:flex-row border-b border-surface-200 dark:border-surface-700 p-3 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors items-center">
+                                        <span
+                                            class="font-bold text-surface-900 dark:text-surface-0 md:w-1/3 text-right pr-4">"{{
+                                                key }}":</span>
+                                        <span
+                                            class="md:w-2/3 break-words text-blue-600 dark:text-blue-400 font-mono font-bold">{{
+                                                val !== null && val !== undefined && val !== '' ? val : 'null' }}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <pre v-else
+                                class="bg-surface-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono shadow">
 {{ formatJSON(slotProps.data.datos_anteriores) }}
                             </pre>
                         </div>
-                        
-                         <!-- Centrar panel si es solo Creación y no hay datos anteriores -->
-                        <div v-if="slotProps.data.accion === 'CREATE'" class="hidden md:block flex justify-center items-center opacity-50">
+
+                        <!-- Centrar panel si es solo Creación y no hay datos anteriores -->
+                        <div v-if="slotProps.data.accion === 'CREATE'"
+                            class="hidden md:block flex justify-center items-center opacity-50">
                             <i class="pi pi-arrow-right text-6xl text-surface-400"></i>
                         </div>
 
                         <!-- Panel Derecho: Datos Nuevos -->
                         <div v-if="slotProps.data.accion === 'CREATE' || slotProps.data.accion === 'UPDATE'">
-                            <div class="flex items-center gap-2 mb-3 text-green-600 dark:text-green-400 font-bold border-b border-surface-200 dark:border-surface-700 pb-2">
+                            <div
+                                class="flex items-center gap-2 mb-3 text-green-600 dark:text-green-400 font-bold border-b border-surface-200 dark:border-surface-700 pb-2">
                                 <i class="pi pi-check-square"></i>
                                 <span>Datos Nuevos</span>
                             </div>
-                            <pre class="bg-surface-900 text-blue-300 p-4 rounded-lg overflow-x-auto text-sm font-mono shadow">
+
+                            <div v-if="!showJson[slotProps.data.id]"
+                                class="bg-surface-0 dark:bg-surface-900 p-0 rounded-lg shadow border border-surface-200 dark:border-surface-700 overflow-hidden">
+                                <ul class="list-none p-0 m-0">
+                                    <li v-for="(val, key) in getParsedData(slotProps.data.datos_nuevos)" :key="key"
+                                        class="flex flex-col md:flex-row border-b border-surface-200 dark:border-surface-700 p-3 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors items-center"
+                                        :class="{ 'bg-blue-100 dark:bg-blue-900/40': slotProps.data.accion === 'UPDATE' && String(val) !== String(getParsedData(slotProps.data.datos_anteriores)[key]) }">
+                                        <span
+                                            class="font-bold text-surface-900 dark:text-surface-0 md:w-1/3 text-right pr-4">"{{
+                                            key }}":</span>
+                                        <span
+                                            class="md:w-2/3 break-words text-blue-600 dark:text-blue-400 font-mono font-bold flex items-center gap-2">
+                                            <span>{{ val !== null && val !== undefined && val !== '' ? val : 'null'
+                                                }}</span>
+                                            <Badge
+                                                v-if="slotProps.data.accion === 'UPDATE' && String(val) !== String(getParsedData(slotProps.data.datos_anteriores)[key])"
+                                                value="Modificado" severity="info" class="text-xs" />
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <pre v-else
+                                class="bg-surface-900 text-blue-300 p-4 rounded-lg overflow-x-auto text-sm font-mono shadow">
 {{ formatJSON(slotProps.data.datos_nuevos) }}
                             </pre>
                         </div>
 
-                        <div v-if="slotProps.data.accion === 'DELETE'" class="hidden md:block flex justify-center items-center opacity-50">
+                        <div v-if="slotProps.data.accion === 'DELETE'"
+                            class="hidden md:block flex justify-center items-center opacity-50">
                             <div class="text-center text-red-500">
                                 <i class="pi pi-trash text-6xl mb-2"></i>
                                 <p class="font-bold">Registro Destruido</p>
@@ -199,6 +205,22 @@ const filtros = ref({
 const pageConfig = ref({
     page: 1,
 });
+
+const showJson = ref({});
+
+const toggleJsonView = (id) => {
+    showJson.value[id] = !showJson.value[id];
+};
+
+const getParsedData = (obj) => {
+    if (!obj) return {};
+    try {
+        const parsed = typeof obj === 'string' ? JSON.parse(obj) : obj;
+        return parsed || {};
+    } catch (e) {
+        return { error: 'No se pudo parsear el objeto.' };
+    }
+};
 
 onMounted(async () => {
     // Seguridad adicional: Sólo ADMIN
@@ -275,7 +297,7 @@ const formatearFechaCompleta = (fechaStr) => {
 };
 
 const getAccionSeverity = (accion) => {
-    switch(accion) {
+    switch (accion) {
         case 'CREATE': return 'success';
         case 'UPDATE': return 'info';
         case 'DELETE': return 'danger';
@@ -284,7 +306,7 @@ const getAccionSeverity = (accion) => {
 };
 
 const getAccionIcon = (accion) => {
-    switch(accion) {
+    switch (accion) {
         case 'CREATE': return 'pi pi-plus';
         case 'UPDATE': return 'pi pi-sync';
         case 'DELETE': return 'pi pi-trash';
