@@ -26,6 +26,7 @@ OWN_APPS = [
     'Notificaciones',
     'EvolucionNexus',
     'Menus',
+    'AuditoriaGlobal',
 ]
 
 AUTH_USER_MODEL = 'Usuarios.Usuarios'
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'Usuarios.middleware.SessionTokenMiddleware',  # Middleware personalizado para session_token
+    'AuditoriaGlobal.middleware.AuditMiddleware',  # <--- Middleware de captura ThreadLocal
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

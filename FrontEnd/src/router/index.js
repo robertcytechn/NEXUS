@@ -67,6 +67,16 @@ const router = createRouter({
                         requiresAuth: true,
                         roles: ['all']
                     }
+                },
+                {
+                    path: '/mando-central/auditoria',
+                    name: 'auditoriaGlobal',
+                    component: () => import('@/views/MandoCentral/AuditoriaGlobal.vue'),
+                    meta: {
+                        title: 'Ojo de Dios',
+                        requiresAuth: true,
+                        roles: ['ADMINISTRADOR']
+                    }
                 }
             ]
         },
