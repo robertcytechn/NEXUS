@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import EvolucionService from '@/service/EvolucionService';
 import { getUser } from '@/service/api';
-import EvolucionAdn from '@/components/EvolucionAdn.vue';
 
 
 const toast = useToast();
@@ -137,10 +136,16 @@ const getCategoriaSeverity = (categoria) => {
                             operativas.
                         </p>
                     </div>
-                    <!-- Animación ADN pequeña y elegante -->
+                    <!-- Animación ADN pequeña y elegante CSS-only (Ligera para Móvil) -->
                     <div
-                        class="col-span-1 md:col-span-4 h-40 md:h-full w-full relative -mt-6 md:mt-0 xl:scale-125 transform opacity-80 pointer-events-none">
-                        <EvolucionAdn :trigger="null" />
+                        class="col-span-1 md:col-span-4 h-40 md:h-full w-full relative -mt-6 md:mt-0 flex items-center justify-center opacity-80 pointer-events-none overflow-hidden">
+                        <div class="light-dna-container scale-75 md:scale-100">
+                            <div class="dna-strand"></div>
+                            <div class="dna-strand delay-1"></div>
+                            <div class="dna-strand delay-2"></div>
+                            <div class="dna-strand delay-3"></div>
+                            <div class="dna-strand delay-4"></div>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -219,12 +224,19 @@ const getCategoriaSeverity = (categoria) => {
                 <!-- LAYOUT 2 COLUMNAS (FormularioIzq | AdnDer) -->
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
 
-                    <!-- Animación ADN (Arriba en Mobile, Derecha en Desktop) -->
+                    <!-- Animación CSS-only (Arriba en Mobile, Derecha en Desktop) -->
                     <div
                         class="col-span-1 md:col-span-4 order-first md:order-last bg-surface-900 flex items-center justify-center min-h-[160px] md:min-h-full rounded-t-xl md:rounded-t-none md:rounded-r-xl overflow-hidden relative border-l-0 md:border-l-4 border-primary">
-                        <div class="absolute inset-0 opacity-80">
-                            <!-- trigger para "Mutación Reactiva" (Requerimiento 3) -->
-                            <EvolucionAdn :trigger="evolucion" />
+                        <div class="absolute inset-0 opacity-80 flex items-center justify-center">
+                            <!-- Animación CSS mejorada: Sistema Complejo -->
+                            <div class="orbit-container">
+                                <div class="orbit ring-1"></div>
+                                <div class="orbit ring-2"></div>
+                                <div class="orbit ring-3"></div>
+                                <div class="core-node">
+                                    <i class="pi pi-code text-surface-900 text-2xl"></i>
+                                </div>
+                            </div>
                         </div>
                         <div class="absolute bottom-4 text-center w-full z-10 pointer-events-none">
                             <div
@@ -402,5 +414,138 @@ const getCategoriaSeverity = (categoria) => {
 /* Evitar padding del Dialog default para que el panel negro del ADN llegue al borde derecho */
 ::v-deep(.custom-dialog-no-padding .p-dialog-content) {
     padding: 0 !important;
+}
+
+/* --- Animaciones Ligeras CSS-Only --- */
+.light-dna-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    height: 100px;
+}
+
+.dna-strand {
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--p-primary-400), var(--p-primary-600));
+    border-radius: 9999px;
+    animation: wave 1.5s ease-in-out infinite;
+    opacity: 0.7;
+}
+
+.delay-1 {
+    animation-delay: 0.1s;
+}
+
+.delay-2 {
+    animation-delay: 0.2s;
+}
+
+.delay-3 {
+    animation-delay: 0.3s;
+}
+
+.delay-4 {
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        transform: scaleY(0.3);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* --- Animación Modal Compleja CSS-only --- */
+.orbit-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.core-node {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, var(--p-primary-300), var(--p-primary-500));
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 15px var(--p-primary-600);
+    z-index: 10;
+    animation: corePulse 2s infinite ease-in-out alternate;
+}
+
+.orbit {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px dashed var(--p-primary-600);
+    opacity: 0.6;
+}
+
+.ring-1 {
+    width: 70px;
+    height: 70px;
+    border-style: solid;
+    border-color: var(--p-primary-400) transparent var(--p-primary-400) transparent;
+    animation: spinRight 4s linear infinite;
+}
+
+.ring-2 {
+    width: 100px;
+    height: 100px;
+    border-color: transparent var(--p-primary-300) transparent var(--p-primary-500);
+    animation: spinLeft 6s linear infinite;
+}
+
+.ring-3 {
+    width: 130px;
+    height: 130px;
+    border: 1px solid var(--p-primary-700);
+    border-top: 3px solid var(--p-primary-300);
+    animation: spinRight 8s linear infinite;
+}
+
+@keyframes spinRight {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinLeft {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes corePulse {
+    0% {
+        transform: scale(0.9);
+        box-shadow: 0 0 10px var(--p-primary-600);
+    }
+
+    100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 25px var(--p-primary-400);
+    }
 }
 </style>

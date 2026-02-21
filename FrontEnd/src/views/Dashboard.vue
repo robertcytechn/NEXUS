@@ -178,8 +178,72 @@ const saveTicket = async () => {
     }
 };
 
+// 4. Botón de Pánico
+const panicDialog = ref(false);
+const panicTicket = ref({ uid_sala: '' });
+const submittedPanic = ref(false);
+
+const openPanicDialog = async () => {
+    panicTicket.value = { uid_sala: '' };
+    submittedPanic.value = false;
+    panicDialog.value = true;
+
+    // Cargar máquinas si no están cargadas
+    if ((maquinas.value.length === 0) && user?.casino) {
+        const res = await getMaquinasPorCasino(user.casino);
+        if (res.exito) {
+            maquinas.value = res.data.maquinas || res.data;
+        } else {
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las máquinas', life: 3000 });
+        }
+    }
+};
+
+const savePanicTicket = async () => {
+    submittedPanic.value = true;
+
+    if (panicTicket.value.uid_sala) {
+        const searchUid = panicTicket.value.uid_sala.trim().toUpperCase();
+        const maquinaSeleccionada = maquinas.value.find(m => m.uid_sala.toUpperCase() === searchUid);
+
+        if (!maquinaSeleccionada) {
+            toast.add({ severity: 'error', summary: 'Error', detail: `No se encontró una máquina con el UID: ${searchUid}`, life: 3000 });
+            return;
+        }
+
+        const result = await crearTicket({
+            maquinaId: maquinaSeleccionada.id,
+            maquinaUid: maquinaSeleccionada.uid_sala,
+            categoria: 'otros',
+            subcategoria: 'Ticket Rápido',
+            prioridad: 'emergencia',
+            descripcionBase: 'Ticket generado automáticamente desde el botón de acceso rápido del dashboard. Revisar de inmediato.',
+            estadoMaquina: 'DAÑADA',
+            reportanteId: user.id,
+            notasSeguimiento: '',
+            incrementarContador: true,
+            actualizarEstado: true
+        });
+
+        if (result.exito) {
+            toast.add({ severity: 'success', summary: 'Ticket Rápido Creado', detail: `Folio: ${result.ticket.folio}`, life: 4000 });
+            panicDialog.value = false;
+            loadDashboardData();
+        } else {
+            toast.add({ severity: 'error', summary: 'Error', detail: result.detalle || result.error, life: 3000 });
+        }
+    }
+};
+
 const quickActions = computed(() => {
     const actions = [
+        {
+            label: 'Ticket Rápido',
+            icon: 'pi pi-bolt',
+            action: openPanicDialog,
+            color: 'bg-red-500',
+            allowed: true
+        },
         {
             label: 'Nuevo Ticket',
             icon: 'pi pi-ticket',
@@ -267,7 +331,7 @@ const handleAction = (actionFn) => {
         <div class="col-span-12">
             <div class="card">
                 <div class="font-semibold text-xl mb-4">Accesos Rápidos</div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 transition-all">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 transition-all">
                     <div v-for="action in quickActions" :key="action.label"
                         class="flex flex-col items-center p-4 border rounded-xl cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800 transition-transform hover:scale-105"
                         @click="handleAction(action.action)">
@@ -440,6 +504,29 @@ const handleAction = (actionFn) => {
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="evolucionDialog = false" />
                 <Button label="Enviar Reporte" icon="pi pi-send" severity="primary" @click="saveEvolucion" />
+            </template>
+        </Dialog>
+
+        <!-- Dialog: Ticket Rápido -->
+        <Dialog v-model:visible="panicDialog" :style="{ width: '400px' }" :modal="true" header="Ticket Rápido">
+            <div class="flex flex-col gap-4 items-center text-center p-4">
+                <i class="pi pi-bolt text-red-500 text-6xl mb-2"></i>
+                <p class="text-surface-600 dark:text-surface-300">
+                    Ingrese el UID de la máquina para generar un ticket de alta prioridad de forma inmediata. La máquina
+                    debe
+                    pertenecer a su casino asignado.
+                </p>
+                <div class="w-full">
+                    <label class="block font-medium mb-1 text-left">UID de la Máquina</label>
+                    <InputText v-model="panicTicket.uid_sala" fluid placeholder="Ej: MQ-001" autofocus
+                        :invalid="submittedPanic && !panicTicket.uid_sala" @keyup.enter="savePanicTicket" />
+                    <small class="text-red-500 text-left block"
+                        v-if="submittedPanic && !panicTicket.uid_sala">Requerido.</small>
+                </div>
+            </div>
+            <template #footer>
+                <Button label="Cancelar" text severity="secondary" @click="panicDialog = false" />
+                <Button label="Generar Ticket" icon="pi pi-bolt" severity="danger" @click="savePanicTicket" />
             </template>
         </Dialog>
 
