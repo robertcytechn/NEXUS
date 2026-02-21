@@ -10,6 +10,7 @@ import { useToast } from 'primevue/usetoast';
 
 // Components
 // Auto-imported in this project structure (matching Usuarios.vue)
+import DashboardCharts from '@/components/DashboardCharts.vue';
 
 const router = useRouter();
 const user = getUser();
@@ -404,6 +405,11 @@ const handleAction = (actionFn) => {
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Dashboard Charts (New) -->
+        <div v-if="user?.casino" class="col-span-12">
+            <DashboardCharts :casinoId="user.casino" />
         </div>
 
         <!-- Activity Feed -->

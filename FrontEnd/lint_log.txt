@@ -1,0 +1,223 @@
+
+> sakai-vue@5.0.0 lint
+> eslint --fix . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore
+
+
+D:\OT\FrontEnd\extract_icons.js
+  1:1  error  Parsing error: The keyword 'const' is reserved
+
+D:\OT\FrontEnd\src\App.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\AppBreadcrumb.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\AppSearch.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\BlockViewer.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\DashboardCharts.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\DataTableToolbar.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\DnaBackground.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\EvolucionAdn.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\FloatingConfigurator.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\components\TopBarraHerramientas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\composables\useResponsiveDataTable.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\layout\AppConfigurator.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppFooter.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppLayout.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppMenu.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppMenuItem.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppSidebar.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\AppTopbar.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\layout\composables\layout.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\main.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\router\index.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\CountryService.js
+  1:1  error  Parsing error: The keyword 'export' is reserved
+
+D:\OT\FrontEnd\src\service\CustomerService.js
+  1:1  error  Parsing error: The keyword 'export' is reserved
+
+D:\OT\FrontEnd\src\service\EvolucionService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\NodeService.js
+  1:1  error  Parsing error: The keyword 'export' is reserved
+
+D:\OT\FrontEnd\src\service\PhotoService.js
+  1:1  error  Parsing error: The keyword 'export' is reserved
+
+D:\OT\FrontEnd\src\service\ProductService.js
+  1:1  error  Parsing error: The keyword 'export' is reserved
+
+D:\OT\FrontEnd\src\service\api.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\ejemplos-notificaciones.js
+  19:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\infraestructuraService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\inventarioSalaService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\mapaService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\maquinaService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\modeloService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\notificationService.js
+  40:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\proveedorService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\ticketService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\service\usuarioService.js
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+D:\OT\FrontEnd\src\views\CentroServicios\IncidenciasInfraestructura.vue
+  2:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\InventarioSala.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\MantenimientosPreventivos.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\MapaSala.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\Maquinas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\ModelosMaquinas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\Proveedores.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\Tickets.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\CentroServicios\Usuarios.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\Dashboard.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\BitacoraTecnica.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Casinos.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\GestorMenus.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\IncidentesInfraestructura.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\MantenimientosPreventivos.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Maquinas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\ModelosMaquinas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Proveedores.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Roles.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Tickets.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\MandoCentral\Usuarios.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\NotificacionDetail.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\Operatividad\AuditoriasExternas.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\Operatividad\RelevosTurnos.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\EvolucionNexus.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\NotFound.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\Profile.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\auth\Access.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\auth\Error.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\auth\Login.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\public\ManualUsuario.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\src\views\pages\public\lisencia.vue
+  1:1  error  Parsing error: Unexpected token <
+
+D:\OT\FrontEnd\vite.config.mjs
+  1:1  error  Parsing error: The keyword 'import' is reserved
+
+Ô£û 72 problems (72 errors, 0 warnings)
+

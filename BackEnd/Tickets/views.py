@@ -205,3 +205,203 @@ class TicketViewSet(viewsets.ModelViewSet):
                 {'error': f'Error al obtener historial: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=False, methods=['get'], url_path='dashboard-charts/(?P<casino_id>[^/.]+)')
+    def dashboard_charts(self, request, casino_id=None):
+        """
+        Devuelve datos para las gráficas del dashboard filtradas por casino y fecha dinámica.
+        Query params permitidos:
+          - filtro_tipo: 'dia', 'semana', 'mes' (default: 'mes')
+          - fecha: YYYY-MM-DD (usado si filtro_tipo='dia')
+          - mes: 1-12 (usado si filtro_tipo='semana' o 'mes')
+          - semana: 1-4 (usado si filtro_tipo='semana')
+          - anio: YYYY (por defecto año actual)
+        """
+        from datetime import timedelta, date, datetime
+        from django.utils import timezone
+        from django.db.models import Count, Q, Avg, F, ExpressionWrapper, DurationField
+        from Maquinas.models import Maquina
+        from BitacoraTecnica.models import BitacoraTecnica
+        from IncidenciasInfraestructura.models import IncidenciaInfraestructura
+        from MantenimientosPreventivos.models import MantenimientoPreventivo
+        from calendar import monthrange
+        
+        if not casino_id:
+            return Response({'error': 'Se requiere el ID del casino'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Parámetros Base
+        filtro_tipo = request.query_params.get('filtro_tipo', 'mes')
+        hoy = timezone.localdate()
+        anio = int(request.query_params.get('anio', hoy.year))
+        
+        # Inicializamos rangos de fecha limite
+        fecha_inicio = hoy
+        fecha_fin = hoy + timedelta(days=1) # Exclusivo para gte / lt
+        
+        try:
+            if filtro_tipo == 'dia':
+                str_fecha = request.query_params.get('fecha')
+                if str_fecha:
+                    fecha_inicio = datetime.strptime(str_fecha, '%Y-%m-%d').date()
+                else:
+                    fecha_inicio = hoy
+                fecha_fin = fecha_inicio + timedelta(days=1)
+                
+            elif filtro_tipo == 'semana':
+                mes = int(request.query_params.get('mes', hoy.month))
+                semana_idx = int(request.query_params.get('semana', 1)) # 1 a 4
+                
+                # Calculamos el inicio del mes
+                primer_dia_mes = date(anio, mes, 1)
+                
+                # Estimamos semanas por bloques de 7 días (para mantener simpleza)
+                dia_comienzo = 1 + (semana_idx - 1) * 7
+                # Si se pasa del mes, lo topamos al final
+                ultimo_dia_mes = monthrange(anio, mes)[1]
+                
+                if dia_comienzo > ultimo_dia_mes:
+                     dia_comienzo = ultimo_dia_mes - 6 if ultimo_dia_mes - 6 > 0 else 1
+                
+                fecha_inicio = date(anio, mes, dia_comienzo)
+                
+                # Si es la semana 4, abarcamos hasta fin de mes
+                if semana_idx >= 4:
+                    fecha_fin = date(anio, mes, ultimo_dia_mes) + timedelta(days=1)
+                else:
+                    fecha_fin = fecha_inicio + timedelta(days=7)
+                    if fecha_fin.month != mes: # No pasarse de mes
+                        fecha_fin = date(anio, mes, ultimo_dia_mes) + timedelta(days=1)
+                        
+            else: # filtro_tipo == 'mes' o default
+                mes = int(request.query_params.get('mes', hoy.month))
+                fecha_inicio = date(anio, mes, 1)
+                ultimo_dia_mes = monthrange(anio, mes)[1]
+                fecha_fin = date(anio, mes, ultimo_dia_mes) + timedelta(days=1)
+                
+        except ValueError as e:
+            return Response({'error': f'Parámetros de fecha inválidos: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Convertimos a datetimes con timezone para filtros precisos django __gte __lt
+        tz = timezone.get_current_timezone()
+        dt_inicio = timezone.make_aware(datetime.combine(fecha_inicio, datetime.min.time()), tz)
+        dt_fin = timezone.make_aware(datetime.combine(fecha_fin, datetime.min.time()), tz)
+            
+        # 1. Fallas por Categoría (Tickets creados en el periodo)
+        tickets_periodo_creados = Ticket.objects.filter(
+            maquina__casino_id=casino_id,
+            creado_en__gte=dt_inicio,
+            creado_en__lt=dt_fin,
+            esta_activo=True
+        )
+        
+        categorias_dict = dict(Ticket.CATEGORIAS_CHOICES)
+        fallas_raw = list(tickets_periodo_creados.values('categoria').annotate(total=Count('id')).order_by('-total'))
+        fallas_categoria = [
+            {'categoria': c['categoria'], 'label': categorias_dict.get(c['categoria'], c['categoria']), 'total': c['total']}
+            for c in fallas_raw
+        ]
+        
+        # 1b. Top 5 Máquinas Problemáticas (NUEVO)
+        maquinas_problematicas_raw = list(tickets_periodo_creados.values(
+            'maquina__uid_sala', 
+            'maquina__modelo__nombre_modelo'
+        ).annotate(
+            total=Count('id')
+        ).order_by('-total')[:5])
+        
+        top_maquinas = [
+            {
+                'uid_sala': m['maquina__uid_sala'], 
+                'modelo': m['maquina__modelo__nombre_modelo'], 
+                'total': m['total']
+            } for m in maquinas_problematicas_raw
+        ]
+        
+        # 2. Resolución y MTTR (Cerrados en el periodo)
+        tickets_creados_count = tickets_periodo_creados.count()
+        
+        tickets_cerrados_query = Ticket.objects.filter(
+            maquina__casino_id=casino_id,
+            estado_ciclo='cerrado',
+            modificado_en__gte=dt_inicio, # Usamos modificacion como fecha de cierre proxy (y suelto para MTTR real)
+            modificado_en__lt=dt_fin,
+            esta_activo=True
+        )
+        tickets_cerrados_count = tickets_cerrados_query.count()
+        
+        # Cálculo de MTTR (Mean Time To Repair) - NUEVO
+        mttr_horas = 0
+        if tickets_cerrados_count > 0:
+            # Anotar el tiempo empleado en cada ticket
+            tickets_con_tiempo = tickets_cerrados_query.annotate(
+                tiempo_reparacion=ExpressionWrapper(
+                    F('modificado_en') - F('creado_en'),
+                    output_field=DurationField()
+                )
+            )
+            promedio_str = tickets_con_tiempo.aggregate(promedio=Avg('tiempo_reparacion'))['promedio']
+            if promedio_str:
+                mttr_horas = round(promedio_str.total_seconds() / 3600.0, 1)
+
+        # 3. Preventivos vs Correctivos - NUEVO
+        preventivos_count = MantenimientoPreventivo.objects.filter(
+            maquina__casino__id=casino_id,
+            fecha_mantenimiento__gte=fecha_inicio,
+            fecha_mantenimiento__lt=fecha_fin,
+            esta_activo=True
+        ).count()
+        
+        # 4. Técnico más activo
+        tecnicos_activos = list(BitacoraTecnica.objects.filter(
+            ticket__maquina__casino_id=casino_id,
+            creado_en__gte=dt_inicio,
+            creado_en__lt=dt_fin
+        ).values(
+            'usuario_tecnico__nombres', 
+            'usuario_tecnico__apellido_paterno'
+        ).annotate(
+            total_intervenciones=Count('id')
+        ).order_by('-total_intervenciones')[:5])
+        
+        tecnicos = []
+        for t in tecnicos_activos:
+            nombre = f"{t['usuario_tecnico__nombres']} {t['usuario_tecnico__apellido_paterno'] or ''}".strip()
+            tecnicos.append({
+                'nombre': nombre,
+                'total': t['total_intervenciones']
+            })
+            
+        # 5. Estado de la Sala (Instantánea actual, no depende del rango de fechas)
+        maquinas_estado = list(Maquina.objects.filter(
+            casino_id=casino_id,
+            esta_activo=True
+        ).values('estado_actual').annotate(total=Count('id')))
+        
+        # 6. Incidencias de Infraestructura (Inciadas en el periodo)
+        incidencias = IncidenciaInfraestructura.objects.filter(
+            casino_id=casino_id,
+            hora_inicio__gte=dt_inicio,
+            hora_inicio__lt=dt_fin,
+            esta_activo=True
+        ).count()
+        
+        return Response({
+            'periodo': {
+                'tipo': filtro_tipo,
+                'rango': f"{fecha_inicio.strftime('%Y-%m-%d')} a {fecha_fin.strftime('%Y-%m-%d')}"
+            },
+            'fallas_categoria': fallas_categoria,
+            'top_maquinas': top_maquinas,
+            'resolucion': {
+                'creados': tickets_creados_count,
+                'cerrados': tickets_cerrados_count
+            },
+            'mantenimientos': {
+                'preventivos': preventivos_count,
+                'correctivos': tickets_cerrados_count
+            },
+            'mttr_horas': mttr_horas,
+            'tecnicos_activos': tecnicos,
+            'estado_sala': maquinas_estado,
+            'incidencias_infra': incidencias
+        })

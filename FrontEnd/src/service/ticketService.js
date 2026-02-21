@@ -151,7 +151,7 @@ async function validarMaquinaParaTicket(maquinaId, maquinaUid) {
         if (ticketsAbiertos.length > 0) {
             const folios = ticketsAbiertos.map(t => t.folio).join(', ');
             const plural = ticketsAbiertos.length > 1 ? 's' : '';
-            
+
             return {
                 valido: false,
                 error: `Ticket${plural} ya abierto${plural}`,
@@ -237,9 +237,9 @@ export async function crearBitacoraTecnica({
             'dañada': 'DAÑADA',
             'mantenimiento': 'MANTENIMIENTO'
         };
-        
-        const estadoMaquinaFinal = finalizaTicket 
-            ? 'OPERATIVA' 
+
+        const estadoMaquinaFinal = finalizaTicket
+            ? 'OPERATIVA'
             : estadoMaquinaMapping[estadoMaquinaResultante];
 
         if (!maquinaId || isNaN(Number(maquinaId))) {
@@ -278,7 +278,7 @@ export async function crearBitacoraTecnica({
         return {
             exito: true,
             bitacora: responseBitacora.data,
-            mensaje: finalizaTicket 
+            mensaje: finalizaTicket
                 ? 'Bitácora guardada y ticket cerrado correctamente'
                 : 'Bitácora guardada correctamente'
         };
@@ -320,8 +320,40 @@ export const TIPOS_TICKET = {
     }
 };
 
+/**
+ * Obtener datos para las gráficas del dashboard con filtros avanzados
+ * @param {number} casinoId - ID del casino
+ * @param {Object} filtros - Opciones de filtrado
+ * @param {string} filtros.filtroTipo - 'dia', 'semana' o 'mes'
+ * @param {string} filtros.fecha - 'YYYY-MM-DD'
+ * @param {number} filtros.mes - 1-12
+ * @param {number} filtros.semana - 1-4
+ * @param {number} filtros.anio - YYYY
+ * @returns {Promise<Object>} Datos para las gráficas
+ */
+export async function getDashboardChartsData(casinoId, filtros = {}) {
+    try {
+        const { filtroTipo = 'mes', fecha, mes, semana, anio } = filtros;
+
+        const params = { filtro_tipo: filtroTipo };
+        if (fecha) params.fecha = fecha;
+        if (mes) params.mes = mes;
+        if (semana) params.semana = semana;
+        if (anio) params.anio = anio;
+
+        const response = await api.get(`tickets/dashboard-charts/${casinoId}/`, {
+            params
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener datos de gráficas:', error);
+        throw error;
+    }
+}
+
 export default {
     crearTicket,
     crearBitacoraTecnica,
+    getDashboardChartsData,
     TIPOS_TICKET
 };
