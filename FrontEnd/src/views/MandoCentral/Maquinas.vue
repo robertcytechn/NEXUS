@@ -101,7 +101,7 @@ const cargarDatos = async () => {
 
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos necesarios', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los datos necesarios', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -221,7 +221,7 @@ const toggleActivarMaquina = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Máquina ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} la máquina`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} la máquina`, life: 3000 });
             } finally {
                 loading.value = false;
             }

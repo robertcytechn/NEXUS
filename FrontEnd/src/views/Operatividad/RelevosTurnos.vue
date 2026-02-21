@@ -36,7 +36,7 @@ onMounted(async () => {
     if (casinoId.value) {
         await cargarRelevos();
     } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No tiene un casino asignado.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No tiene un casino asignado.', life: 3000 });
     }
 });
 
@@ -55,7 +55,7 @@ const cargarRelevos = async () => {
         relevos.value = (response.data.results || response.data).slice(0, 10);
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los relevos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los relevos', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -180,7 +180,7 @@ const deleteRelevo = async () => {
         relevo.value = {};
         await cargarRelevos();
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar el registro', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo eliminar el registro', life: 3000 });
     } finally {
         loading.value = false;
     }

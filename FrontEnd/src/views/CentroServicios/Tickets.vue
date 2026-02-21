@@ -130,7 +130,7 @@ const cargarDatos = async () => {
             toast.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'Usuario sin casino asignado. Contacte al administrador.',
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Usuario sin casino asignado. Contacte al administrador.',
                 life: 5000
             });
             return;
@@ -175,7 +175,7 @@ const cargarDatos = async () => {
             );
         }
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los tickets', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los tickets', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -337,7 +337,7 @@ const desactivarTicket = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: 'Ticket desactivado correctamente', life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo desactivar el ticket', life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo desactivar el ticket', life: 3000 });
             } finally {
                 loading.value = false;
             }
@@ -364,7 +364,7 @@ const cargarBitacoras = async (ticketId) => {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'No se pudo cargar el historial de intervenciones',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el historial de intervenciones',
             life: 3000
         });
     } finally {
@@ -399,7 +399,7 @@ const guardarBitacora = async () => {
         toast.add({
             severity: 'error',
             summary: 'Sesión No Válida',
-            detail: 'No hay una sesión activa. Por favor, inicia sesión nuevamente.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No hay una sesión activa. Por favor, inicia sesión nuevamente.',
             life: 5000
         });
         return;

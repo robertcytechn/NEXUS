@@ -79,7 +79,7 @@ const onUploadAvatar = async (event) => {
             toast.add({ severity: 'error', summary: 'Error', detail: result.error, life: 3000 });
         }
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Ocurrió un error al subir la imagen', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Ocurrió un error al subir la imagen', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -106,7 +106,7 @@ const onChangePassword = async () => {
             toast.add({ severity: 'error', summary: 'Error', detail: result.error, life: 3000 });
         }
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al cambiar la contraseña', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Error al cambiar la contraseña', life: 3000 });
     } finally {
         loading.value = false;
     }

@@ -463,7 +463,7 @@ const cargarHistorialBitacora = async (ticketId) => {
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 
-            detail: 'No se pudo cargar el historial de bitácora', 
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el historial de bitácora', 
             life: 3000 
         });
     } finally {
@@ -499,7 +499,7 @@ const guardarEntrada = async () => {
         toast.add({ 
             severity: 'error', 
             summary: 'Sesión No Válida', 
-            detail: 'No hay una sesión activa. Por favor, inicia sesión nuevamente.', 
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No hay una sesión activa. Por favor, inicia sesión nuevamente.', 
             life: 5000 
         });
         setTimeout(() => {
@@ -604,7 +604,7 @@ const guardarEntrada = async () => {
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 
-            detail: error.response?.data?.detail || error.response?.data?.usuario_tecnico?.[0] || 'No se pudo guardar la entrada de bitácora', 
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || 'No se pudo guardar la entrada de bitácora', 
             life: 4000 
         });
     } finally {
@@ -695,7 +695,7 @@ onMounted(() => {
         toast.add({ 
             severity: 'error', 
             summary: 'Sesión No Válida', 
-            detail: 'Debes iniciar sesión para acceder a esta página', 
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Debes iniciar sesión para acceder a esta página', 
             life: 3000 
         });
         setTimeout(() => {

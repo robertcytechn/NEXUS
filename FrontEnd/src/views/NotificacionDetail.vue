@@ -78,7 +78,7 @@ const cargarNotificacion = async () => {
             toast.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'No se pudo cargar la notificación',
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la notificación',
                 life: 3000
             });
         }
@@ -87,7 +87,7 @@ const cargarNotificacion = async () => {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Ocurrió un error al cargar la notificación',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Ocurrió un error al cargar la notificación',
             life: 3000
         });
     } finally {

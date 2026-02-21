@@ -68,7 +68,7 @@ const cargarDatos = async () => {
             toast.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'Usuario sin casino asignado. Contacte al administrador.',
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Usuario sin casino asignado. Contacte al administrador.',
                 life: 5000
             });
             return;
@@ -85,7 +85,7 @@ const cargarDatos = async () => {
         }
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los proveedores', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los proveedores', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -166,7 +166,7 @@ const toggleActivarProveedor = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Proveedor ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el proveedor`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el proveedor`, life: 3000 });
             } finally {
                 loading.value = false;
             }

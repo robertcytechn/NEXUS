@@ -358,7 +358,7 @@ async function levantarIncidencia() {
         detalleDialog.value = false;
         cargarMapa();
     } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el ticket', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo crear el ticket', life: 4000 });
     } finally {
         loading.value = false;
     }
@@ -376,7 +376,7 @@ async function exportarPDF() {
         toast.add({ severity: 'success', summary: '✓ PDF exportado', detail: 'El mapa se descargó correctamente', life: 3000 });
     } catch (err) {
 
-        toast.add({ severity: 'error', summary: 'Error al exportar', detail: err?.message || 'No se pudo generar el PDF', life: 5000 });
+        toast.add({ severity: 'error', summary: 'Error al exportar', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || 'No se pudo generar el PDF', life: 5000 });
     } finally {
         loading.value = false;
     }

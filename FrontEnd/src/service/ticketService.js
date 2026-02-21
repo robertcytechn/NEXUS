@@ -267,10 +267,10 @@ export async function crearBitacoraTecnica({
 
             await api.put(`tickets/${ticketId}/`, ticketUpdate);
         } else {
-            // Solo actualizar a 'en_proceso' si está en 'abierto'
+            // Solo actualizar a 'proceso' si está en 'abierto'
             if (ticketActual && ticketActual.estado_ciclo === 'abierto') {
                 await api.patch(`tickets/${ticketId}/`, {
-                    estado_ciclo: 'en_proceso'
+                    estado_ciclo: 'proceso'
                 });
             }
         }

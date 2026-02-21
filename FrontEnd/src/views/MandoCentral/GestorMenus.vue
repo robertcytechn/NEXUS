@@ -35,10 +35,10 @@ onMounted(async () => {
         if (response.success && response.data) {
             rolesList.value = response.data.map(r => ({ name: r.nombre, code: r.nombre }));
         } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los roles', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los roles', life: 3000 });
         }
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Fallo al conectar con el servidor', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Fallo al conectar con el servidor', life: 3000 });
     }
 
     if (menuData.value.length > 0) {
@@ -52,7 +52,7 @@ const saveConfig = async () => {
         await api.post('menus/', menuData.value);
         toast.add({ severity: 'success', summary: 'Éxito', detail: 'Configuración guardada. Refresque la página para ver cambios en el menú.', life: 4000 });
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se guardó en el servidor.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se guardó en el servidor.', life: 3000 });
     }
 };
 

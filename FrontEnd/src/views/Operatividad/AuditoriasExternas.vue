@@ -80,7 +80,7 @@ onMounted(async () => {
     if (casinoId.value) {
         await cargarAuditorias();
     } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No tiene un casino asignado.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No tiene un casino asignado.', life: 3000 });
     }
 });
 
@@ -95,7 +95,7 @@ const cargarAuditorias = async () => {
         auditorias.value = response.data.results || response.data;
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las auditorías', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar las auditorías', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -156,7 +156,7 @@ const saveAuditoria = async () => {
         const salida = new Date(auditoria.value.hora_salida);
         
         if (salida <= entrada) {
-            toast.add({ severity: 'error', summary: 'Error de Validación', detail: 'La hora de salida debe ser posterior a la hora de entrada', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error de Validación', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'La hora de salida debe ser posterior a la hora de entrada', life: 3000 });
             return;
         }
     }
@@ -188,7 +188,7 @@ const saveAuditoria = async () => {
         await cargarAuditorias();
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al guardar la auditoría', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Error al guardar la auditoría', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -227,7 +227,7 @@ const deleteAuditoria = async () => {
         auditoria.value = {};
         await cargarAuditorias();
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar el registro', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo eliminar el registro', life: 3000 });
     } finally {
         loading.value = false;
     }

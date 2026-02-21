@@ -267,7 +267,7 @@ const loadData = async () => {
         }
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos de las gráficas', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los datos de las gráficas', life: 3000 });
     } finally {
         loading.value = false;
     }

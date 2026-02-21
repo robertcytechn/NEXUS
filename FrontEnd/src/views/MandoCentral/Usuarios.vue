@@ -69,7 +69,7 @@ const cargarUsuarios = async () => {
         actualizarGraficas();
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la lista de usuarios', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la lista de usuarios', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -137,7 +137,7 @@ const saveUsuario = async () => {
         
         // Validación de contraseña para nuevos usuarios
         if (!usuario.value.id && !usuario.value.password) {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'La contraseña es obligatoria para nuevos usuarios', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'La contraseña es obligatoria para nuevos usuarios', life: 3000 });
             return;
         }
 
@@ -200,7 +200,7 @@ const toggleActivarUsuario = (data) => {
                 cargarUsuarios();
             } catch (error) {
 
-                toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el usuario`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el usuario`, life: 3000 });
             } finally {
                 loading.value = false;
             }

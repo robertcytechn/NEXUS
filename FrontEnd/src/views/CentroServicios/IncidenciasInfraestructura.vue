@@ -75,7 +75,7 @@ const cargarIncidencias = async () => {
         toast.add({ 
             severity: 'error', 
             summary: 'Error', 
-            detail: 'No se pudo cargar la lista de incidencias', 
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la lista de incidencias', 
             life: 3000 
         });
     } finally {
@@ -170,7 +170,7 @@ const saveIncidencia = async () => {
             toast.add({ 
                 severity: 'error', 
                 summary: 'Error', 
-                detail: 'No se pudo guardar la incidencia', 
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo guardar la incidencia', 
                 life: 3000 
             });
         } finally {

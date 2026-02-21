@@ -90,7 +90,7 @@ const cargarDatos = async () => {
 
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los datos', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -227,14 +227,14 @@ const saveTicket = async () => {
                 toast.add({
                     severity: 'error',
                     summary: errorData.error || 'Error de validación',
-                    detail: errorData.mensaje || 'No se pudo guardar el ticket',
+                    detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || 'No se pudo guardar el ticket',
                     life: 5000
                 });
             } else {
                 toast.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'No se pudo guardar el ticket',
+                    detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo guardar el ticket',
                     life: 3000
                 });
             }
@@ -261,7 +261,7 @@ const toggleActivarTicket = (data) => {
                 cargarDatos();
             } catch (error) {
 
-                toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} el ticket`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el ticket`, life: 3000 });
             } finally {
                 loading.value = false;
             }
@@ -287,7 +287,7 @@ const cargarHistorialBitacora = async (ticketId) => {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'No se pudo cargar el historial de bitácora',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el historial de bitácora',
             life: 3000
         });
     } finally {

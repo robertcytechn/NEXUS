@@ -60,7 +60,7 @@ onMounted(async () => {
     if (casinoId.value) {
         await cargarMantenimientos();
     } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No tiene un casino asignado para ver mantenimientos.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No tiene un casino asignado para ver mantenimientos.', life: 3000 });
     }
 });
 
@@ -76,7 +76,7 @@ const cargarMantenimientos = async () => {
         mantenimientos.value = response.data.results || response.data;
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los mantenimientos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los mantenimientos', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -151,7 +151,7 @@ const saveMantenimiento = async () => {
         await cargarMantenimientos();
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Error al guardar el mantenimiento', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Error al guardar el mantenimiento', life: 3000 });
     } finally {
         loading.value = false;
     }
@@ -189,7 +189,7 @@ const deleteMantenimiento = async () => {
         mantenimiento.value = {};
         await cargarMantenimientos();
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar el registro', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo eliminar el registro', life: 3000 });
     } finally {
         loading.value = false;
     }

@@ -39,7 +39,7 @@ const cargarUsuario = () => {
         toast.add({
             severity: 'error',
             summary: 'Usuario no encontrado',
-            detail: 'No se encontró información de usuario. Por favor inicie sesión.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se encontró información de usuario. Por favor inicie sesión.',
             life: 5000
         });
         return;
@@ -49,7 +49,7 @@ const cargarUsuario = () => {
         toast.add({
             severity: 'error',
             summary: 'Casino no asignado',
-            detail: 'Su usuario no tiene un casino asignado. Contacte al administrador para resolver este problema.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Su usuario no tiene un casino asignado. Contacte al administrador para resolver este problema.',
             life: 6000
         });
     }
@@ -60,7 +60,7 @@ const abrirPanico = () => {
         toast.add({
             severity: 'error',
             summary: 'Casino no identificado',
-            detail: 'No puede crear tickets sin un casino asignado. Cierre sesión y vuelva a iniciar sesión, o contacte al administrador.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No puede crear tickets sin un casino asignado. Cierre sesión y vuelva a iniciar sesión, o contacte al administrador.',
             life: 6000
         });
         return;
@@ -104,7 +104,7 @@ const crearTicketPanico = async () => {
         toast.add({
             severity: 'error',
             summary: 'Casino no identificado',
-            detail: 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
             life: 5000
         });
         return;
@@ -114,7 +114,7 @@ const crearTicketPanico = async () => {
         toast.add({
             severity: 'error',
             summary: 'Usuario no autenticado',
-            detail: 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
             life: 5000
         });
         return;
@@ -144,7 +144,7 @@ const crearTicketPanico = async () => {
             toast.add({
                 severity: 'error',
                 summary: 'Máquina no encontrada',
-                detail: `El UID "${uidMaquina.value.trim()}" no existe en este casino.`,
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `El UID "${uidMaquina.value.trim()}" no existe en este casino.`,
                 life: 6000
             });
             loading.value = false;

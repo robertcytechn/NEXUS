@@ -105,7 +105,7 @@ const cargarDatos = async () => {
             toast.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'Usuario sin casino asignado. Contacte al administrador.',
+                detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Usuario sin casino asignado. Contacte al administrador.',
                 life: 5000
             });
             return;
@@ -145,7 +145,7 @@ const cargarDatos = async () => {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'No se pudieron cargar los datos necesarios',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los datos necesarios',
             life: 3000
         });
     } finally {
@@ -268,7 +268,7 @@ const toggleActivarMaquina = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Máquina ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: `No se pudo ${accion} la máquina`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} la máquina`, life: 3000 });
             } finally {
                 loading.value = false;
             }
@@ -291,7 +291,7 @@ const verDetalleMaquina = async (data) => {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'No se pudo cargar el historial de tickets',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el historial de tickets',
             life: 3000
         });
     } finally {
@@ -317,7 +317,7 @@ const levantarIncidencia = async () => {
         toast.add({
             severity: 'error',
             summary: 'Casino no identificado',
-            detail: 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
             life: 5000
         });
         return;
@@ -328,7 +328,7 @@ const levantarIncidencia = async () => {
         toast.add({
             severity: 'error',
             summary: 'Usuario no autenticado',
-            detail: 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
+            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
             life: 5000
         });
         return;

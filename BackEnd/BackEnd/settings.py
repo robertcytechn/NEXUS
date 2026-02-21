@@ -152,4 +152,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [],
     # Usuario no autenticado se trata como AnonymousUser
     'UNAUTHENTICATED_USER': 'django.contrib.auth.models.AnonymousUser',
+    # Manejador global de excepciones para estandarizar las respuestas JSON
+    'EXCEPTION_HANDLER': 'BackEnd.exceptions.custom_exception_handler',
 }
