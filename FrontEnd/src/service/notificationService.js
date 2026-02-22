@@ -474,22 +474,12 @@ export const fetchNotificacionById = async (notificacionId) => {
  * 
  * @param {Object} notificacionData - Datos de la notificación
  * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ * @deprecated Las notificaciones ahora se generan automáticamente desde
+ *             el backend (Django Signals). No usar este método.
  */
-export const crearNotificacion = async (notificacionData) => {
-  try {
-    const response = await notificationApi.post('notificaciones/', notificacionData);
-    return {
-      success: true,
-      data: response.data
-    };
-  } catch (error) {
-    console.error('Error al crear notificación:', error.response?.data);
-    return {
-      success: false,
-      error: error.response?.data?.error || error.response?.data?.detail || 'Error al crear notificación'
-    };
-  }
-};
+// crearNotificacion fue eliminado intencionalmente.
+// Las notificaciones se crean en el backend vía Django Signals.
+// Ver: Tickets/signals.py, TareasEspeciales/signals.py, etc.
 
 /**
  * Actualizar una notificación existente (Solo Administradores)
@@ -656,7 +646,6 @@ export default {
   crearLecturaNotificacion,
   fetchMisLecturas,
   fetchNotificacionById,
-  crearNotificacion,
   actualizarNotificacion,
   eliminarNotificacion,
   marcarTodasLeidas,

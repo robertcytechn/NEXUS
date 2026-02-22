@@ -2,7 +2,6 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import api, { getUser } from '@/service/api';
 import { guardarUsuario } from '@/service/usuarioService';
-import { crearNotificacion } from '@/service/notificationService';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -172,28 +171,6 @@ const saveUsuario = async () => {
             detail: resultado.mensaje,
             life: 3000
         });
-
-        // Enviar notificaciones al crear un usuario nuevo
-        if (!esEdicion) {
-            const nombreNuevo = `${u.nombres} ${u.apellido_paterno}`.trim();
-            const rolesDestino = ['GERENCIA', 'SUP SISTEMAS', 'SUPERVISOR SALA', 'DB ADMIN', 'ADMINISTRADOR'];
-
-            // Obtener IDs de los roles destinatarios desde la lista cargada
-            const rolesNotificar = roles.value.filter(r => rolesDestino.includes(r.nombre));
-
-            // Crear una notificación por cada rol (no bloqueante)
-            rolesNotificar.forEach(rol => {
-                crearNotificacion({
-                    titulo: 'Nuevo Usuario Registrado',
-                    contenido: `Se ha registrado al usuario "${nombreNuevo}" (${u.username}) en el casino ${usuarioActual.value?.casino_nombre || ''}.`,
-                    nivel: 'informativa',
-                    tipo: 'sistema',
-                    casino_destino: casinoUsuario.value,
-                    rol_destino: rol.id,
-                    es_global: false
-                }).catch(err => console.error('Error al notificar:', err));
-            });
-        }
 
         usuarioDialog.value = false;
         usuarioForm.value = {};
