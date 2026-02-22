@@ -94,10 +94,12 @@ const cargarDatos = async () => {
         ]);
 
         if (resTareas.success) {
-            tareas.value = resTareas.data;
-        }
-        if (resCasinos.data) {
-            casinos.value = resCasinos.data.filter(c => c.esta_activo);
+            // Filtrar tareas por el casino del usuario si no es un rol global
+            if (user?.casino) {
+                tareas.value = resTareas.data.filter(t => t.casino === user.id_casino || t.casino === user.casino);
+            } else {
+                tareas.value = resTareas.data;
+            }
         }
     } catch (error) {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Fallo al cargar la información', life: 3000 });
@@ -129,7 +131,7 @@ const openNew = () => {
     tarea.value = {
         prioridad: 'media',
         estatus: 'pendiente',
-        casino: user?.casino // Pre-llenar si aplica
+        casino: user?.casino // Asignar casino del usuario
     };
     submitted.value = false;
     tareaDialog.value = true;
@@ -330,10 +332,9 @@ onMounted(() => {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block font-bold mb-1">Casino / Sucursal</label>
-                            <Select v-model="tarea.casino" :options="casinos" optionLabel="nombre" optionValue="id"
-                                placeholder="Selecciona un Casino" fluid :invalid="submitted && !tarea.casino"
-                                :disabled="!canEditCreate" />
-                            <small class="text-red-500" v-if="submitted && !tarea.casino">Requerido.</small>
+                            <InputText :value="user?.casino_nombre" disabled fluid
+                                class="bg-surface-100 dark:bg-surface-800" />
+                            <small class="text-surface-500">Asignado automáticamente.</small>
                         </div>
                         <div>
                             <label class="block font-bold mb-1">Prioridad</label>

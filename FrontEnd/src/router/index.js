@@ -48,46 +48,7 @@ const router = createRouter({
             path: '/',
             component: AppLayout,
             children: [
-                ...dynamicRoutes,
-                {
-                    path: '/profile',
-                    name: 'profile',
-                    component: () => import('@/views/pages/Profile.vue'),
-                    meta: {
-                        title: 'Mi Perfil',
-                        requiresAuth: true,
-                        roles: ['all']
-                    }
-                },
-                {
-                    path: '/notificaciones/:id',
-                    component: () => import('@/views/NotificacionDetail.vue'),
-                    meta: {
-                        title: 'Detalle de Notificación',
-                        requiresAuth: true,
-                        roles: ['all']
-                    }
-                },
-                {
-                    path: '/mando-central/auditoria',
-                    name: 'auditoriaGlobal',
-                    component: () => import('@/views/MandoCentral/AuditoriaGlobal.vue'),
-                    meta: {
-                        title: 'Ojo de Dios',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR']
-                    }
-                },
-                {
-                    path: '/mando-central/tareas-especiales',
-                    name: 'tareasEspeciales',
-                    component: () => import('@/views/MandoCentral/TareasEspeciales.vue'),
-                    meta: {
-                        title: 'Tareas Especiales',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA']
-                    }
-                }
+                ...dynamicRoutes
             ]
         },
         {
