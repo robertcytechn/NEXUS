@@ -1,6 +1,6 @@
 # Manual del Desarrollador — Sistema de Notificaciones (Django Signals)
 
-> **Versión**: 2.0 — Sistema reactivo con Django Signals  
+> **Versión**: 2.2 — Mecanismo de sesión localStorage documentado  
 > **Fecha**: Febrero 2026  
 
 ---
@@ -35,6 +35,173 @@ Usuario ve la campana con el contador y abre las notificaciones
 
 ---
 
+## Sesión sin Django Sessions — Cómo funciona con localStorage
+
+> **Este sistema NO usa las sesiones nativas de Django.** La identidad del usuario se gestiona completamente con un token UUID almacenado en el `localStorage` del navegador. Los signals no necesitan leer `localStorage` porque son código 100% servidor; el token es el puente entre el navegador y `request.user` en Django.
+
+### Qué se guarda en localStorage tras el login
+
+Cuando el usuario inicia sesión, el backend devuelve este objeto y el frontend lo distribuye en tres claves de `localStorage`:
+
+```
+localStorage['token']         → UUID de sesión  (ej: "06567153-156a-42ec-b8a5-a7fa2eecf3ee")
+localStorage['refresh_token'] → UUID de refresco (ej: "72b2704a-3b44-447d-9cda-d571fdbf778d")
+localStorage['user']          → JSON con datos completos del usuario
+```
+
+El objeto `user` en JSON contiene **todo lo necesario** para identificar al usuario en el frontend:
+
+```json
+{
+  "id": 1,
+  "username": "robertcyby",
+  "nombres": "Cy",
+  "apellido_paterno": "Tamayo",
+  "nombre_completo": "Cy Tamayo Montejano",
+  "casino": 1,
+  "casino_nombre": "Crown City",
+  "rol": 3,
+  "rol_nombre": "TECNICO",
+  "esta_activo": true,
+  "EULAAceptada": true
+}
+```
+
+### Cómo el token viaja del navegador a Django
+
+Cada petición HTTP que hace el frontend (Axios) pasa por un **interceptor** que lee el token de `localStorage` e inyecta el header `Authorization`:
+
+```javascript
+// Dentro del interceptor de Axios (notificationService.js y api.js)
+notificationApi.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');  // ← Lee de localStorage
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;  // ← Lo inyecta en el header
+    }
+    return config;
+});
+```
+
+Esto ocurre de forma **automática y transparente** en cada llamada a cualquier endpoint, incluyendo `GET /api/notificaciones/`.
+
+### Cómo Django convierte el token en request.user
+
+El backend tiene dos capas que procesan el header `Authorization: Bearer {token}`:
+
+**Capa 1 — Middleware** (`Usuarios/middleware.py`): Se ejecuta en *cada* request antes de llegar a la vista:
+
+```python
+class SessionTokenMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        token = auth_header.split()[1]  # Extrae el UUID del header
+        
+        # Busca el usuario en la BD por su session_token
+        user = Usuarios.objects.select_related('casino', 'rol').get(
+            session_token=token,
+            esta_activo=True
+        )
+        request.user = user  # ← Asigna el usuario con casino y rol ya cargados
+```
+
+**Capa 2 — Autenticación DRF** (`Usuarios/authentication.py`): Para que Django REST Framework también reconozca el usuario:
+
+```python
+class SessionTokenAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        token = request.META.get('HTTP_AUTHORIZATION', '').split()[1]
+        user = Usuarios.objects.select_related('casino', 'rol').get(
+            session_token=token, esta_activo=True
+        )
+        return (user, token)  # ← DRF recibe al usuario autenticado
+```
+
+Ambas capas hacen `select_related('casino', 'rol')`, lo que significa que cuando la vista accede a `request.user.casino` o `request.user.rol`, **no hace consultas adicionales a la BD**.
+
+### Cómo esto filtra las notificaciones
+
+La vista de notificaciones (`Notificaciones/views.py`) usa `request.user` directamente para filtrar:
+
+```python
+def get_queryset(self):
+    user = self.request.user  # ← El usuario fue asignado por el middleware/authentication
+
+    return Notificacion.objects.filter(
+        Q(es_global=True)                                         # ← Todos
+        | Q(usuario_destino=user)                                 # ← ID del user de localStorage
+        | Q(casino_destino=user.casino, rol_destino=user.rol)     # ← Casino + Rol del user
+        | Q(casino_destino=user.casino, rol_destino__isnull=True) # ← Todo el casino
+    ).filter(esta_activo=True)
+```
+
+`user.casino` y `user.rol` son los **objetos FK del modelo** ya cargados desde la BD — no vienen de localStorage. El frontend nunca envía el casino o el rol en la petición; el backend los deduce internamente a partir del token.
+
+### Diagrama completo: de localStorage a la notificación filtrada
+
+```
+NAVEGADOR                          DJANGO BACKEND
+─────────────────                  ──────────────────────────────────────────
+localStorage['token']
+      │
+      ▼ (Axios interceptor)
+Authorization: Bearer UUID  ──────► SessionTokenMiddleware
+                                           │
+                                           │  SELECT * FROM usuarios
+                                           │  WHERE session_token = UUID
+                                           │  AND esta_activo = TRUE
+                                           ▼
+                                    request.user = Usuarios(
+                                        id=1, casino=Casino(id=1),
+                                        rol=Rol(nombre='TECNICO')
+                                    )
+                                           │
+                                           ▼
+                                    NotificacionViewSet.get_queryset()
+                                           │
+                                           │  FILTER WHERE:
+                                           │   es_global=True
+                                           │   OR usuario_destino=1
+                                           │   OR (casino_destino=1 AND rol_destino=3)
+                                           │   OR (casino_destino=1 AND rol_destino=NULL)
+                                           ▼
+                                    [ Solo las notificaciones del usuario ]
+                                           │
+                                           ▼
+HTTP Response JSON  ◄─────────────  serializer.data (con campo 'leido' calculado)
+      │
+      ▼
+AppTopbar.vue muestra badge y lista
+```
+
+### Por qué los signals NO necesitan localStorage
+
+Los signals son funciones Python que se ejecutan en el servidor cuando Django guarda un modelo. En ese momento **no existe ningún navegador ni sesión**: es simplemente el ORM procesando una operación en la base de datos.
+
+Los signals obtienen el casino, el técnico o el usuario directamente desde la instancia del modelo:
+
+```python
+# ✅ Los signals leen de la instancia del modelo, no de localStorage
+casino = instance.maquina.casino      # ForeignKey del modelo Ticket
+tecnico = instance.tecnico_asignado   # ForeignKey del modelo Ticket
+casino = instance.casino              # ForeignKey del modelo TareaEspecial
+```
+
+La cadena completa es:
+
+```
+Signal crea Notificacion(casino_destino=Casino_A, rol_destino=TECNICO)
+                    ↓
+           Base de datos (sys_notificaciones)
+                    ↓
+ Técnico del Casino_A hace polling (su localStorage tiene token del Casino_A)
+                    ↓
+ Django resuelve token → request.user.casino = Casino_A, request.user.rol = TECNICO
+                    ↓
+ Filtro coincide → la notificación aparece ✅
+```
+
+---
+
 ## Modelo de datos
 
 ### `Notificacion` (tabla: `sys_notificaciones`)
@@ -59,6 +226,54 @@ Usuario ve la campana con el contador y abre las notificaciones
 | **Todo un casino** | `casino_destino=instancia_casino` |
 | **Un rol en un casino** | `casino_destino=casino`, `rol_destino=rol` |
 | **Todos en el sistema** | `es_global=True` |
+
+---
+
+## ✅ Garantía de Aislamiento por Casino
+
+> **Regla fundamental:** Una notificación creada en el Casino A **nunca** puede ser vista por un usuario del Casino B, a menos que sea `es_global=True` o un mensaje de Dirección (`es_del_director=True`).
+
+### Cómo funciona el aislamiento
+
+El filtro en `Notificaciones/views.py` (`get_queryset`) aplica esta lógica:
+
+```python
+Notificacion.objects.filter(
+    Q(es_global=True)                                         # 1. Globales: todos
+    | Q(usuario_destino=user)                                 # 2. Personal: solo ese usuario
+    | Q(casino_destino=user.casino, rol_destino=user.rol)     # 3. Casino + Rol exactos
+    | Q(casino_destino=user.casino, rol_destino__isnull=True) # 4. Todo el casino
+)
+```
+
+Si un signal crea `casino_destino=Casino_A, rol_destino=TECNICO`, **solo** los técnicos del Casino A la ven. Un técnico del Casino B no la verá jamás.
+
+### Estado de los signals actuales
+
+| Signal | Fuente del Casino | ¿Puede haber fuga? |
+|--------|-------------------|--------------------|
+| Tickets | `instance.maquina.casino` | ❌ No |
+| TareasEspeciales | `instance.casino` | ❌ No |
+| IncidenciasInfraestructura | `instance.casino` | ❌ No |
+| Wiki | `instance.casino_origen` (o `es_global=True` explícito) | ❌ No |
+| Usuarios | `instance.casino` | ❌ No |
+
+### Regla obligatoria para nuevos signals
+
+Siempre que notifiques por rol, pasa **ambos** campos juntos:
+
+```python
+# ✅ CORRECTO
+Notificacion.objects.create(
+    casino_destino = instance.casino,  # ← OBLIGATORIO
+    rol_destino    = rol,              # ← OBLIGATORIO junto con casino_destino
+)
+
+# ❌ INCORRECTO — sin casino, el filtro de la vista no aplica correctamente
+Notificacion.objects.create(
+    rol_destino = rol,  # Sin casino_destino → puede llegar a todos con ese rol
+)
+```
 
 ---
 
@@ -284,6 +499,52 @@ count_despues = Notificacion.objects.count()
 print(f"Notificaciones después: {count_despues}")
 print(f"Nuevas notificaciones creadas: {count_despues - count_antes}")
 ```
+
+---
+
+---
+
+## Página de Notificaciones Especiales (Admin)
+
+Se ha creado una página de administración para enviar notificaciones manuales sin tocar el código.
+
+### Ruta de acceso
+
+```
+/mando-central/notificaciones-especiales
+```
+
+**Archivo:** `FrontEnd/src/views/MandoCentral/NotificacionesEspeciales.vue`
+
+### Roles con acceso
+
+`ADMINISTRADOR`, `DB ADMIN`, `GERENCIA`, `SUP SISTEMAS`
+
+### Tipos de alcance disponibles en el formulario
+
+| Tipo | Descripción | Campos requeridos |
+|------|-------------|-------------------|
+| **Global** | Todos los usuarios del sistema, todos los casinos | Solo título y contenido |
+| **Dirección** | Global + permanece 7 días (tipo DIRECTOR) | Solo título y contenido |
+| **Por Casino** | Todos los usuarios de un casino específico | `casino_destino` |
+| **Rol + Casino** | Un rol específico dentro de un casino | `casino_destino` + `rol_destino` |
+| **Personal** | Un usuario en particular | Seleccionar casino → seleccionar usuario |
+
+### Cómo agregar la ruta al menú de la BD
+
+Desde el panel de administración de Menús del sistema, agrega una entrada con:
+
+```json
+{
+  "label": "Notificaciones Especiales",
+  "icon": "pi pi-megaphone",
+  "to": "/mando-central/notificaciones-especiales",
+  "componentPath": "/src/views/MandoCentral/NotificacionesEspeciales.vue",
+  "roles": ["ADMINISTRADOR", "DB ADMIN", "GERENCIA", "SUP SISTEMAS"]
+}
+```
+
+> La ruta ya está registrada estáticamente en `FrontEnd/src/router/index.js`, por lo que funciona de inmediato incluso sin la entrada en el menú.
 
 ---
 
