@@ -314,7 +314,7 @@ const quickActions = computed(() => {
             icon: 'pi pi-wrench',
             action: openExpressDialog,
             color: 'bg-indigo-500',
-            allowed: hasRoleAccess(['TECNICO', 'SUP SISTEMAS'])
+            allowed: hasRoleAccess(['TECNICO', 'SUP SISTEMAS', 'ADMINISTRADOR', 'DB ADMIN'])
         },
         {
             label: 'Nuevo Ticket',

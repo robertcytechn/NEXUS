@@ -77,6 +77,16 @@ const router = createRouter({
                         requiresAuth: true,
                         roles: ['ADMINISTRADOR']
                     }
+                },
+                {
+                    path: '/mando-central/tareas-especiales',
+                    name: 'tareasEspeciales',
+                    component: () => import('@/views/MandoCentral/TareasEspeciales.vue'),
+                    meta: {
+                        title: 'Tareas Especiales',
+                        requiresAuth: true,
+                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA']
+                    }
                 }
             ]
         },
