@@ -1,6 +1,6 @@
 # Manual del Desarrollador — Sistema de Notificaciones (Django Signals)
 
-> **Versión**: 2.2 — Mecanismo de sesión localStorage documentado  
+> **Versión**: 2.3 — Tarea programada de limpieza automática añadida  
 > **Fecha**: Febrero 2026  
 
 ---
@@ -441,6 +441,112 @@ notificar_rol_casino(
 | `'urgente'` | Requiere acción **inmediata**: incidencia crítica, operación afectada | 🔴 Rojo |
 | `'alerta'` | Requiere atención pronto: nuevo ticket, nueva tarea | 🟡 Naranja |
 | `'informativa'` | Solo para conocimiento: cierre, registro nuevo, wiki | 🔵 Azul |
+
+---
+
+## Limpieza Automática de Notificaciones (Tarea Programada)
+
+Para mantener la base de datos limpia se creó un **Management Command de Django** que se ejecuta diariamente a medianoche. Elimina físicamente los registros de `sys_notificaciones` (y en cascada sus registros de lectura en `sys_notificaciones_usuarios`).
+
+### Reglas de retención
+
+| Tipo | Condición | Tiempo de vida |
+|------|-----------|----------------|
+| **Leída** (existe registro en `NotificacionUsuario`) | Normal | 48 horas desde creación |
+| **No leída** (sin registro en `NotificacionUsuario`) | Normal | 72 horas desde creación |
+| **Global** (`es_global=True`) | Cualquier estado | 7 días desde creación |
+| **De Dirección** (`es_del_director=True`) | Cualquier estado | 7 días desde creación |
+
+### Archivos involucrados
+
+| Archivo | Propósito |
+|---------|-----------|
+| `BackEnd/Notificaciones/management/commands/limpiar_notificaciones.py` | El command Django |
+| `BackEnd/scripts/limpiar_notificaciones.ps1` | Script PowerShell para el Programador de Tareas |
+| `BackEnd/logs/notificaciones/` | Logs de cada ejecución (rotación automática de 30 archivos) |
+
+### Cómo ejecutarlo manualmente
+
+```bash
+cd BackEnd
+python manage.py limpiar_notificaciones
+```
+
+Para revisar qué se eliminaría **sin hacer cambios** (modo seguro):
+
+```bash
+python manage.py limpiar_notificaciones --dry-run
+```
+
+### Programarlo en Windows (una sola vez, como Administrador)
+
+Abre PowerShell **como Administrador** y pega este bloque completo:
+
+```powershell
+$action  = New-ScheduledTaskAction `
+               -Execute "powershell.exe" `
+               -Argument "-NonInteractive -File `"D:\OT\BackEnd\scripts\limpiar_notificaciones.ps1`""
+$trigger = New-ScheduledTaskTrigger -Daily -At "00:00"
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+Register-ScheduledTask `
+    -TaskName   "NEXUS - Limpieza Notificaciones" `
+    -Action     $action `
+    -Trigger    $trigger `
+    -Settings   $settings `
+    -RunLevel   Highest `
+    -Force
+```
+
+Esto crea la tarea **"NEXUS - Limpieza Notificaciones"** que se ejecuta cada día a las 00:00 h.
+
+Para ejecutarla manualmente desde PowerShell:
+
+```powershell
+Start-ScheduledTask -TaskName "NEXUS - Limpieza Notificaciones"
+```
+
+Para leer el último log generado:
+
+```powershell
+Get-Content (Get-ChildItem D:\OT\BackEnd\logs\notificaciones\ | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
+```
+
+Para eliminar la tarea si ya no se necesita:
+
+```powershell
+Unregister-ScheduledTask -TaskName "NEXUS - Limpieza Notificaciones" -Confirm:$false
+```
+
+### Si el servidor es Linux (producción)
+
+Agrega esta línea al crontab del usuario que corre el backend:
+
+```bash
+# Limpieza diaria de notificaciones a medianoche
+0 0 * * * /ruta/al/venv/bin/python /ruta/al/proyecto/BackEnd/manage.py limpiar_notificaciones >> /ruta/al/proyecto/BackEnd/logs/notificaciones/limpieza.log 2>&1
+```
+
+Para editar el crontab:
+
+```bash
+crontab -e
+```
+
+### ⚠️ Ajuste importante: el script necesita la ruta de tu venv
+
+Antes de programar la tarea, abre `BackEnd/scripts/limpiar_notificaciones.ps1` y verifica esta línea:
+
+```powershell
+$VENV_PYTHON = "D:\OT\.venv\Scripts\python.exe"   # ← Ajusta si tu venv está en otra ruta
+```
+
+Para encontrar la ruta exacta de Python en tu entorno activo:
+
+```powershell
+where.exe python
+# o si el venv ya está activo:
+(Get-Command python).Source
+```
 
 ---
 

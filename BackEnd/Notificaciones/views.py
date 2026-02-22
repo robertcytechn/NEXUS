@@ -1,8 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils import timezone
-from datetime import timedelta
 from django.db.models import Q, Exists, OuterRef
 from .models import Notificacion, NotificacionUsuario
 from .serializers import NotificacionSerializer, NotificacionUsuarioSerializer
@@ -20,29 +18,13 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         - es_global == True
         - destino_casino == user.casino Y destino_rol == user.rol
         - destino_usuario == user.id
-        
-        Auto-limpieza: Desactivar notificaciones caducadas en cada consulta.
+
+        La limpieza/eliminación de notificaciones obsoletas ya NO se hace aquí.
+        Se delega al comando: python manage.py limpiar_notificaciones
+        Programado diariamente a medianoche via Programador de Tareas de Windows.
+        Ver: BackEnd/scripts/limpiar_notificaciones.ps1
         """
         user = self.request.user
-        ahora = timezone.now()
-        
-        # Auto-limpieza de notificaciones caducadas
-        limite_normales = ahora - timedelta(hours=48)
-        limite_director = ahora - timedelta(days=7)
-        
-        # Desactivar notificaciones normales con más de 48 horas
-        Notificacion.objects.filter(
-            tipo__in=['ticket', 'infraestructura', 'wiki', 'sistema'],
-            creado_en__lt=limite_normales,
-            esta_activo=True
-        ).update(esta_activo=False)
-        
-        # Desactivar notificaciones DIRECTOR con más de 7 días
-        Notificacion.objects.filter(
-            tipo='DIRECTOR',
-            creado_en__lt=limite_director,
-            esta_activo=True
-        ).update(esta_activo=False)
         
         # Filtro principal por identidad
         return Notificacion.objects.filter(
