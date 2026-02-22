@@ -331,7 +331,7 @@ const quickActions = computed(() => {
             allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS']) // Ampliado para coincidir con Usuarios.vue
         },
         {
-            label: 'Reportar Error',
+            label: 'Reportar Error en el sistema',
             icon: 'pi pi-exclamation-circle',
             action: openEvolucionDialog,
             color: 'bg-orange-500',
@@ -563,7 +563,7 @@ const handleAction = (actionFn) => {
 
         <!-- Dialog: Reportar Error (Evolución) -->
         <Dialog v-model:visible="evolucionDialog" :style="{ width: '500px' }" :modal="true"
-            header="Reportar Incidencia Rápida">
+            header="Reportar Incidencia Rápida (error en el sistema)">
             <div class="flex flex-col gap-4">
                 <div>
                     <label class="block font-medium mb-1">Título</label>

@@ -50,16 +50,6 @@ const router = createRouter({
             children: [
                 ...dynamicRoutes,
                 // ── Rutas estáticas de administración (no dependen del menú de BD) ──
-                {
-                    path: '/mando-central/notificaciones-especiales',
-                    name: 'notificacionesEspeciales',
-                    component: () => import('@/views/MandoCentral/NotificacionesEspeciales.vue'),
-                    meta: {
-                        title: 'Notificaciones Especiales',
-                        requiresAuth: true,
-                        roles: ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS']
-                    }
-                }
             ]
         },
         {
