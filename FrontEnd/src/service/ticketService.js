@@ -294,6 +294,90 @@ export async function crearBitacoraTecnica({
 }
 
 /**
+ * Función compuesta para el "Ticket Express / Cierre Rápido"
+ * Levanta un ticket y acto seguido genera su bitácora de resolución o proceso.
+ * Usado por Técnicos para agilizar operaciones en piso.
+ */
+export async function crearTicketConBitacora({
+    maquinaId,
+    maquinaUid,
+    categoria,
+    subcategoria = 'Ticket Express',
+    descripcionProblema,
+    usuarioTecnicoId,
+    tipoIntervencion,
+    descripcionTrabajo,
+    resultadoIntervencion, // 'exitosa', 'parcial', 'pendiente'
+    estadoMaquinaResultante, // 'OPERATIVA', 'DAÑADA', etc.
+    finalizaTicket = true, // Por defecto se asume que un cierre express finaliza el ticket
+    explicacionCierre = ''
+}) {
+    try {
+        // 1. Crear el Ticket base (asumimos prioridad media inicial y estado dañado)
+        const ticketRes = await crearTicket({
+            maquinaId,
+            maquinaUid,
+            categoria,
+            subcategoria,
+            prioridad: 'media',
+            descripcionBase: descripcionProblema,
+            estadoMaquina: 'DAÑADA',
+            reportanteId: usuarioTecnicoId,
+            notasSeguimiento: 'Creado vía Cierre Express',
+            incrementarContador: true,
+            actualizarEstado: false // Lo actualizaremos al final con la bitácora
+        });
+
+        if (!ticketRes.exito) {
+            return ticketRes; // Propagar error de validación (ej. Ticket abierto existente)
+        }
+
+        const nuevoTicket = ticketRes.ticket;
+
+        // 2. Crear la Bitácora vinculada al ticket recién nacido
+        const bitacoraRes = await crearBitacoraTecnica({
+            ticketId: nuevoTicket.id,
+            maquinaId: maquinaId,
+            usuarioTecnicoId: usuarioTecnicoId,
+            tipoIntervencion,
+            descripcionTrabajo,
+            resultadoIntervencion,
+            estadoMaquinaResultante: estadoMaquinaResultante.toLowerCase(),
+            finalizaTicket,
+            explicacionCierre,
+            ticketActual: nuevoTicket // Pasa el objeto para forzar la transición a cerrado o proceso
+        });
+
+        if (!bitacoraRes.exito) {
+            // Si la bitácora falló, el ticket quedó huérfano y abierto. 
+            // Retornamos exito parcial para que UI sepa
+            return {
+                exito: false,
+                alerta: true,
+                error: 'Ticket creado pero bitácora falló',
+                detalle: bitacoraRes.detalle || 'El ticket se generó con Folio ' + nuevoTicket.folio + ' pero no se pudo adjuntar el reporte técnico. Hágalo manualmente.',
+                ticketFallido: nuevoTicket
+            };
+        }
+
+        return {
+            exito: true,
+            ticket: nuevoTicket,
+            bitacora: bitacoraRes.bitacora,
+            mensaje: bitacoraRes.mensaje
+        };
+
+    } catch (error) {
+        console.error('Error en crearTicketConBitacora:', error);
+        return {
+            exito: false,
+            error: 'Excepción de Red/Servidor',
+            detalle: error.message
+        };
+    }
+}
+
+/**
  * Tipos de ticket predefinidos para facilitar la creación
  */
 export const TIPOS_TICKET = {

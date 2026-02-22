@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUser, hasRoleAccess, fetchRoles } from '@/service/api';
 import { getDashboardStats, guardarUsuario } from '@/service/usuarioService';
-import { crearTicket } from '@/service/ticketService';
+import { crearTicket, crearTicketConBitacora } from '@/service/ticketService';
 import { getMaquinasPorCasino } from '@/service/maquinaService';
 import EvolucionService from '@/service/EvolucionService';
 import { useToast } from 'primevue/usetoast';
@@ -236,6 +236,70 @@ const savePanicTicket = async () => {
     }
 };
 
+// 5. Cierre / Ticket Express (Técnico)
+const expressDialog = ref(false);
+const expressData = ref({ uid_sala: '', descripcion: '', estado_final: 'operativa' });
+const submittedExpress = ref(false);
+const estadosFinales = ref([
+    { label: 'Solucionado - Máquina Operativa', value: 'operativa' },
+    { label: 'Pendiente - Sigue Dañada', value: 'dañada' },
+    { label: 'Parcial - Dañada pero Operando', value: 'dañada_operativa' }
+]);
+
+const openExpressDialog = async () => {
+    expressData.value = { uid_sala: '', descripcion: '', estado_final: 'operativa' };
+    submittedExpress.value = false;
+    expressDialog.value = true;
+
+    // Cargar máquinas si no están cargadas
+    if ((maquinas.value.length === 0) && user?.casino) {
+        const res = await getMaquinasPorCasino(user.casino);
+        if (res.exito) {
+            maquinas.value = res.data.maquinas || res.data;
+        } else {
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las máquinas', life: 3000 });
+        }
+    }
+};
+
+const saveExpressTicket = async () => {
+    submittedExpress.value = true;
+
+    if (expressData.value.uid_sala && expressData.value.descripcion) {
+        const searchUid = expressData.value.uid_sala.trim().toUpperCase();
+        const maquinaSeleccionada = maquinas.value.find(m => m.uid_sala.toUpperCase() === searchUid);
+
+        if (!maquinaSeleccionada) {
+            toast.add({ severity: 'error', summary: 'Error', detail: `No se encontró máquina con el UID: ${searchUid}`, life: 3000 });
+            return;
+        }
+
+        const isClosed = expressData.value.estado_final === 'operativa';
+
+        const result = await crearTicketConBitacora({
+            maquinaId: maquinaSeleccionada.id,
+            maquinaUid: maquinaSeleccionada.uid_sala,
+            categoria: 'otros', // Por defecto para algo exprés
+            descripcionProblema: `Ticket Express por Técnico: ${expressData.value.descripcion}`,
+            usuarioTecnicoId: user.id,
+            tipoIntervencion: 'Mantenimiento Correctivo', // Estándar para este flujo
+            descripcionTrabajo: expressData.value.descripcion,
+            resultadoIntervencion: expressData.value.estado_final === 'operativa' ? 'exitosa' : 'pendiente',
+            estadoMaquinaResultante: expressData.value.estado_final,
+            finalizaTicket: isClosed,
+            explicacionCierre: isClosed ? 'Cerrado mediante flujo express en Dashboard.' : ''
+        });
+
+        if (result.exito) {
+            toast.add({ severity: 'success', summary: 'Cierre Express Exitoso', detail: `Folio: ${result.ticket.folio} procesado.`, life: 4000 });
+            expressDialog.value = false;
+            loadDashboardData();
+        } else {
+            toast.add({ severity: 'error', summary: 'Error en Proceso Compuesto', detail: result.detalle || result.error, life: 5000 });
+        }
+    }
+};
+
 const quickActions = computed(() => {
     const actions = [
         {
@@ -244,6 +308,13 @@ const quickActions = computed(() => {
             action: openPanicDialog,
             color: 'bg-red-500',
             allowed: true
+        },
+        {
+            label: 'Reporte Técnico',
+            icon: 'pi pi-wrench',
+            action: openExpressDialog,
+            color: 'bg-indigo-500',
+            allowed: hasRoleAccess(['TECNICO', 'SUP SISTEMAS'])
         },
         {
             label: 'Nuevo Ticket',
@@ -533,6 +604,42 @@ const handleAction = (actionFn) => {
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="panicDialog = false" />
                 <Button label="Generar Ticket" icon="pi pi-bolt" severity="danger" @click="savePanicTicket" />
+            </template>
+        </Dialog>
+
+        <!-- Dialog: Cierre Express / Reporte Técnico -->
+        <Dialog v-model:visible="expressDialog" :style="{ width: '450px' }" :modal="true"
+            header="Reporte Técnico Express">
+            <div class="flex flex-col gap-4 p-2">
+                <p class="text-surface-600 dark:text-surface-300 mb-2">
+                    Abre un ticket y anexa tu resolución en un solo paso.
+                </p>
+                <div>
+                    <label class="block font-medium mb-1">UID de la Máquina</label>
+                    <InputText v-model="expressData.uid_sala" fluid placeholder="Ej: MQ-001" autofocus
+                        :invalid="submittedExpress && !expressData.uid_sala" />
+                    <small class="text-red-500 block" v-if="submittedExpress && !expressData.uid_sala">El UID es
+                        obligatorio.</small>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Problema y Solución</label>
+                    <Textarea v-model="expressData.descripcion" rows="4" fluid
+                        placeholder="Describe qué estaba fallando y cómo lo solucionaste..."
+                        :invalid="submittedExpress && !expressData.descripcion" />
+                    <small class="text-red-500 block" v-if="submittedExpress && !expressData.descripcion">Debes
+                        justificar la
+                        bitácora.</small>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Estado de la Máquina</label>
+                    <Select v-model="expressData.estado_final" :options="estadosFinales" optionLabel="label"
+                        optionValue="value" fluid />
+                </div>
+            </div>
+            <template #footer>
+                <Button label="Cancelar" text severity="secondary" @click="expressDialog = false" />
+                <Button label="Cerrar Incidencia" icon="pi pi-check-circle" severity="success"
+                    @click="saveExpressTicket" />
             </template>
         </Dialog>
 
