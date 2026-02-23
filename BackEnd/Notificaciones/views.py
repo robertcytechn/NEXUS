@@ -26,13 +26,19 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         
-        # Filtro principal por identidad
+        # Filtro principal por identidad:
+        # 1. Notificaciones globales.
+        # 2. Notificaciones personales para este usuario.
+        # 3. Notificaciones para el rol del usuario en su casino.
+        # 4. Notificaciones para todo el casino (sin rol específico).
+        #    OJO: se excluye usuario_destino__isnull=False para que las
+        #    notificaciones personales no "filtren" por esta condición.
         return Notificacion.objects.filter(
             Q(es_global=True) |
             Q(usuario_destino=user) |
             Q(casino_destino=user.casino, rol_destino=user.rol) |
-            Q(casino_destino=user.casino, rol_destino__isnull=True)
-        ).filter(esta_activo=True).order_by('-creado_en')
+            Q(casino_destino=user.casino, rol_destino__isnull=True, usuario_destino__isnull=True)
+        ).filter(esta_activo=True).distinct().order_by('-creado_en')
 
     def get_serializer_context(self):
         """
@@ -41,6 +47,15 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+    def perform_create(self, serializer):
+        """
+        Sobrescribe el guardado para registrar quién creó la notificación.
+        """
+        user = self.request.user
+        serializer.save(
+            creado_por=user.username if hasattr(user, 'username') else str(user)
+        )
 
     @action(detail=True, methods=['patch'], url_path='marcar-leida')
     def marcar_leida(self, request, pk=None):
@@ -84,8 +99,8 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             Q(es_global=True) |
             Q(usuario_destino=user) |
             Q(casino_destino=user.casino, rol_destino=user.rol) |
-            Q(casino_destino=user.casino, rol_destino__isnull=True)
-        ).filter(esta_activo=True).annotate(
+            Q(casino_destino=user.casino, rol_destino__isnull=True, usuario_destino__isnull=True)
+        ).filter(esta_activo=True).distinct().annotate(
             leido=Exists(lectura_exists)
         ).filter(leido=False).count()
         

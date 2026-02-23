@@ -157,9 +157,9 @@ watch(alcance, () => {
     }
 });
 
-// Carga usuarios cuando se elige casino en modo personal o rol_casino
+// Carga usuarios SOLO en modo personal (el casino se usa únicamente como filtro de UI)
 watch(() => form.value.casino_destino, (nuevoId) => {
-    if (mostrarUsuario.value || mostrarRol.value) {
+    if (mostrarUsuario.value) {
         cargarUsuariosDeCasino(nuevoId);
     }
 });
@@ -182,6 +182,12 @@ const enviarNotificacion = async () => {
 
     enviando.value = true;
     try {
+        // Para notificaciones personales el casino se usa solo como filtro UI
+        // y NO debe enviarse al backend; si lo incluimos, la condición
+        // Q(casino_destino, rol_destino__isnull=True) haría visible la
+        // notificación a TODOS los usuarios del casino.
+        const esPersonal = alcance.value === 'personal';
+
         const payload = {
             titulo:    form.value.titulo.trim(),
             contenido: form.value.contenido.trim(),
@@ -189,7 +195,7 @@ const enviarNotificacion = async () => {
             tipo:      form.value.tipo,
             es_global:       form.value.es_global,
             es_del_director: form.value.es_del_director,
-            casino_destino:  form.value.casino_destino  || null,
+            casino_destino:  esPersonal ? null : (form.value.casino_destino  || null),
             rol_destino:     form.value.rol_destino     || null,
             usuario_destino: form.value.usuario_destino || null,
         };
