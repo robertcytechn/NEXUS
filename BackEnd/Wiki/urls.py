@@ -1,9 +1,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import WikiTecnicaViewSet
+from .views import WikiCentroMandoViewSet, WikiCentroServiciosViewSet
 
 router = DefaultRouter()
-router.register(r'wiki', WikiTecnicaViewSet, basename='wiki')
+
+# Centro de Mando — solo administrador puede acceder
+router.register(r'wiki/centro-mando', WikiCentroMandoViewSet, basename='wiki-centro-mando')
+
+# Centro de Servicios — todos los técnicos autenticados
+router.register(r'wiki/centro-servicios', WikiCentroServiciosViewSet, basename='wiki-centro-servicios')
 
 urlpatterns = [
     path('', include(router.urls)),

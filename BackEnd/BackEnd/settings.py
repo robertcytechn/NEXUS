@@ -27,6 +27,7 @@ OWN_APPS = [
     'EvolucionNexus',
     'Menus',
     'AuditoriaGlobal',
+    'Gamificacion',
 ]
 
 AUTH_USER_MODEL = 'Usuarios.Usuarios'

@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/', include('EvolucionNexus.urls')),
     path('api/', include('Menus.urls')),
     path('api/', include('AuditoriaGlobal.urls')),
+    path('api/', include('Gamificacion.urls')),
 ]
 
 from django.conf import settings

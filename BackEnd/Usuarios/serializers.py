@@ -9,17 +9,23 @@ class UsuariosSerializer(serializers.ModelSerializer):
     rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
     casino_nombre = serializers.CharField(source='casino.nombre', read_only=True)
     avatar = serializers.SerializerMethodField()
+    # ── Gamificación ──────────────────────────────────────────────────────────
+    rango_gamificacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Usuarios
         fields = [
-            'id', 'username', 'email', 'nombres', 
+            'id', 'username', 'email', 'nombres',
             'apellido_paterno', 'apellido_materno', 'nombre_completo',
-            'casino', 'casino_nombre', 'rol', 'rol_nombre', 'esta_activo', 
+            'casino', 'casino_nombre', 'rol', 'rol_nombre', 'esta_activo',
             'creado_en', 'modificado_en', 'creado_por', 'modificado_por',
-            'ultima_ip', 'user_agent', 'requiere_cambio_password', 
+            'ultima_ip', 'user_agent', 'requiere_cambio_password',
             'password', 'session_token', 'refresh_token', 'intentos_fallidos', 'EULAAceptada',
-            'avatar'
+            'avatar',
+            # Gamificación
+            'puntos_gamificacion',
+            'puntos_gamificacion_historico',
+            'rango_gamificacion',
         ]
         
         extra_kwargs = {
@@ -34,6 +40,8 @@ class UsuariosSerializer(serializers.ModelSerializer):
             'refresh_token': {'read_only': True},
             'intentos_fallidos': {'read_only': True},
             'EULAAceptada': {'read_only': True},
+            # El histórico es inmutable desde la API; lo gestiona el modelo
+            'puntos_gamificacion_historico': {'read_only': True},
         }
 
     def get_nombre_completo(self, obj):
@@ -49,6 +57,10 @@ class UsuariosSerializer(serializers.ModelSerializer):
         # Fallback sin request (ej. login que no pasa context)
         from django.conf import settings
         return f"{settings.MEDIA_URL}{obj.avatar.name}"
+
+    def get_rango_gamificacion(self, obj):
+        """Expone el rango RPG calculado dinámicamente desde el modelo."""
+        return obj.rango_gamificacion
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)

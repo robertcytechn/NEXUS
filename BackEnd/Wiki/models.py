@@ -12,6 +12,13 @@ class WikiTecnica(ModeloBase):
         ('error_code', 'Diccionario de Códigos de Error'),
     ]
 
+    ESTADO_CHOICES = [
+        ('pendiente_revision', 'Pendiente de Revisión'),
+        ('aprobada', 'Aprobada'),
+        ('publicada', 'Publicada'),
+        ('rechazada', 'Rechazada'),
+    ]
+
     # Relaciones y Atributos verticalizados
     autor = models.ForeignKey(
         Usuarios,
@@ -59,16 +66,52 @@ class WikiTecnica(ModeloBase):
         help_text="Documento oficial con la resolución o manual técnico"
     )
 
+    # ─── Flujo de aprobación y gamificación ─────────────────────────────────
+    estado = models.CharField(
+        max_length=30,
+        choices=ESTADO_CHOICES,
+        default='pendiente_revision',
+        db_index=True,
+        verbose_name="Estado de la Guía",
+        help_text="Ciclo de vida: pendiente_revision → aprobada → publicada (o rechazada)"
+    )
+
     puntos_reconocimiento = models.PositiveIntegerField(
         default=0,
-        verbose_name="Puntos de Medalla",
-        help_text="Puntos acumulados por la utilidad de esta guía para el equipo"
+        verbose_name="Puntos de Reconocimiento",
+        help_text="Puntos que el administrador asigna al técnico autor al publicar la guía. "
+                  "Se suman automáticamente a puntos_gamificacion del usuario."
+    )
+
+    revisada_por = models.ForeignKey(
+        Usuarios,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='guias_revisadas',
+        verbose_name="Revisada por",
+        help_text="Administrador que aprobó, rechazó o publicó la guía"
+    )
+
+    fecha_revision = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Revisión",
+        help_text="Fecha y hora en que el administrador tomó acción sobre la guía"
+    )
+
+    nota_revision = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Nota del Revisor",
+        help_text="Comentario del administrador al aprobar, rechazar o publicar la guía"
     )
 
     class Meta:
         db_table = 'wiki_tecnica'
         verbose_name = "Guía Técnica"
         verbose_name_plural = "Wiki de Conocimiento"
+        ordering = ['-creado_en']
 
     def __str__(self):
-        return f"{self.titulo_guia} - {self.autor.username}"
+        return f"{self.titulo_guia} — {self.autor.username} [{self.get_estado_display()}]"
