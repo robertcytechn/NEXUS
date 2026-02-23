@@ -7,7 +7,10 @@ import { useToast } from 'primevue/usetoast';
 // ─── Usuario y permisos ───────────────────────────────────────────────────────
 const usuario     = computed(() => getUser());
 const rol         = computed(() => usuario.value?.rol_nombre || '');
-const esTecnico   = computed(() => rol.value === 'TECNICO');
+const esTecnico         = computed(() => rol.value === 'TECNICO');
+const puedeEnviarGuia   = computed(() =>
+    ['TECNICO', 'SUP SISTEMAS', 'DB ADMIN', 'ADMINISTRADOR'].includes(rol.value)
+);
 const puedeVerWiki = computed(() =>
     ['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS', 'SUPERVISOR SALA', 'TECNICO'].includes(rol.value)
 );
@@ -22,7 +25,8 @@ const loading      = ref(false);
 const loadingPropuestas = ref(false);
 const reglas       = ref([]);
 
-const tabActivo = ref(0); // 0=Wiki Publicada, 1=Mis Propuestas (solo técnicos)
+const tabActivo    = ref(0); // 0=Wiki Publicada, 1=Mis Propuestas (solo técnicos)
+const mostrarGuia  = ref(false);
 
 // Filtros de la galería
 const filtroBusqueda = ref('');
@@ -185,7 +189,7 @@ const enviarPropuesta = async () => {
 
 // ─── Tab cambio ───────────────────────────────────────────────────────────────
 watch(tabActivo, (val) => {
-    if (val === 1 && esTecnico.value && misPropuestas.value.length === 0) {
+    if (val === 1 && puedeEnviarGuia.value && misPropuestas.value.length === 0) {
         cargarMisPropuestas();
     }
 });
@@ -221,7 +225,7 @@ onMounted(cargarDatos);
                     </div>
                 </div>
                 <Button
-                    v-if="esTecnico"
+                    v-if="puedeEnviarGuia"
                     icon="pi pi-upload"
                     label="Enviar mi Guía"
                     severity="primary"
@@ -229,8 +233,113 @@ onMounted(cargarDatos);
                 />
             </div>
 
+            <!-- ── ¿Cómo funciona? ─────────────────────────────────────── -->
+            <div class="card !p-0 overflow-hidden border border-blue-200 dark:border-blue-800">
+                <!-- Cabecera toggle -->
+                <button
+                    class="w-full flex items-center justify-between px-5 py-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-left"
+                    @click="mostrarGuia = !mostrarGuia"
+                >
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-question-circle text-blue-600 dark:text-blue-300" />
+                        <span class="font-semibold text-blue-800 dark:text-blue-200 text-sm">¿Cómo funciona la Wiki Técnica?</span>
+                    </div>
+                    <i :class="mostrarGuia ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" class="text-blue-500 text-sm" />
+                </button>
+
+                <!-- Contenido expandible -->
+                <div v-if="mostrarGuia" class="p-5 flex flex-col gap-5">
+
+                    <!-- ¿Qué es? -->
+                    <p class="text-sm text-surface-600 dark:text-surface-300 m-0 leading-relaxed">
+                        La <strong>Wiki Técnica NEXUS</strong> es la base de conocimiento del equipo de mantenimiento.
+                        Aquí encontrarás guías paso a paso para diagnóstico, reparación y configuración de máquinas de casino,
+                        todas revisadas y aprobadas por el equipo de administración antes de ser publicadas.
+                    </p>
+
+                    <!-- Flujo en tarjetas -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="rounded-xl p-4 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700">
+                            <div class="text-2xl mb-2">📖</div>
+                            <h4 class="text-sm font-bold text-surface-800 dark:text-surface-100 m-0 mb-1">1. Consulta las guías</h4>
+                            <p class="text-xs text-surface-500 m-0 leading-relaxed">
+                                Busca por modelo, categoría o palabra clave. Abre cualquier guía publicada y
+                                descarga el PDF para tenerla a mano en sala.
+                            </p>
+                        </div>
+                        <div class="rounded-xl p-4 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700">
+                            <div class="text-2xl mb-2">✍️</div>
+                            <h4 class="text-sm font-bold text-surface-800 dark:text-surface-100 m-0 mb-1">2. Envía tu propuesta</h4>
+                            <p class="text-xs text-surface-500 m-0 leading-relaxed">
+                                Si sabes algo que no está documentado, haz clic en <em>"Enviar mi Guía"</em>.
+                                Completa el formulario y adjunta tu documento PDF con el procedimiento.
+                            </p>
+                        </div>
+                        <div class="rounded-xl p-4 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700">
+                            <div class="text-2xl mb-2">🔍</div>
+                            <h4 class="text-sm font-bold text-surface-800 dark:text-surface-100 m-0 mb-1">3. Revisión y aprobación</h4>
+                            <p class="text-xs text-surface-500 m-0 leading-relaxed">
+                                El equipo de administración revisa tu guía. Puede aprobarla, pedir correcciones
+                                o rechazarla con una nota explicativa.
+                            </p>
+                        </div>
+                        <div class="rounded-xl p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700">
+                            <div class="text-2xl mb-2">🏅</div>
+                            <h4 class="text-sm font-bold text-blue-800 dark:text-blue-200 m-0 mb-1">4. Se publica y ganas puntos</h4>
+                            <p class="text-xs text-blue-700 dark:text-blue-300 m-0 leading-relaxed">
+                                Cuando tu guía se publica, recibes <strong>puntos de reconocimiento</strong>
+                                que suman a tu ranking de gamificación NEXUS.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Estados de propuesta -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-surface-700 dark:text-surface-200 mb-2">Estados de tu propuesta</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="flex items-center gap-2 bg-surface-100 dark:bg-surface-800 rounded-lg px-3 py-2">
+                                <span class="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+                                <span class="text-xs font-medium">Pendiente de Revisión</span>
+                                <span class="text-xs text-surface-400">— En espera de que administración la evalúe</span>
+                            </div>
+                            <div class="flex items-center gap-2 bg-surface-100 dark:bg-surface-800 rounded-lg px-3 py-2">
+                                <span class="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                                <span class="text-xs font-medium">Aprobada</span>
+                                <span class="text-xs text-surface-400">— Validada, lista para publicación</span>
+                            </div>
+                            <div class="flex items-center gap-2 bg-surface-100 dark:bg-surface-800 rounded-lg px-3 py-2">
+                                <span class="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                                <span class="text-xs font-medium">Publicada</span>
+                                <span class="text-xs text-surface-400">— Visible para todo el equipo + puntos acreditados</span>
+                            </div>
+                            <div class="flex items-center gap-2 bg-surface-100 dark:bg-surface-800 rounded-lg px-3 py-2">
+                                <span class="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                                <span class="text-xs font-medium">Rechazada</span>
+                                <span class="text-xs text-surface-400">— Se incluye nota con el motivo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ejemplo real -->
+                    <div class="rounded-xl border border-dashed border-blue-300 dark:border-blue-700 p-4 bg-blue-50/40 dark:bg-blue-900/10">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="pi pi-lightbulb text-yellow-500" />
+                            <span class="text-sm font-semibold text-surface-700 dark:text-surface-200">Ejemplo de uso real</span>
+                        </div>
+                        <div class="flex flex-col gap-2 text-xs text-surface-600 dark:text-surface-300 leading-relaxed">
+                            <p class="m-0">🔧 <strong>Juan</strong> (técnico) detecta un problema recurrente en las máquinas <em>IGT S2000</em>:
+                            el display principal reinicia sólo cuando la temperatura supera los 40 °C.</p>
+                        <p class="m-0">📝 Documenta el procedimiento de reemplazo del capacitor CE47 y lo sube como guía con su PDF adjunto.</p>
+                            <p class="m-0">✅ Administración la revisa, la aprueba y la publica con <strong>75 puntos</strong> de reconocimiento.</p>
+                            <p class="m-0">🏅 Juan recibe 75 puntos que se suman a su historial y lo acercan al siguiente rango RPG.</p>
+                            <p class="m-0">📚 Todos los técnicos del casino ya pueden consultar la guía y resolver el mismo problema en minutos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── Banner de Reglas (solo técnicos) ──────────────────── -->
-            <div v-if="esTecnico && reglas.length"
+            <div v-if="puedeEnviarGuia && reglas.length"
                  class="card !p-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
                 <div class="flex items-center gap-2 mb-4">
                     <i class="pi pi-info-circle text-blue-600 text-lg" />
@@ -264,7 +373,7 @@ onMounted(cargarDatos);
                     @click="tabActivo = 0"
                 />
                 <Button
-                    v-if="esTecnico"
+                    v-if="puedeEnviarGuia"
                     label="📋 Mis Propuestas"
                     :severity="tabActivo === 1 ? 'primary' : 'secondary'"
                     :outlined="tabActivo !== 1"
@@ -326,7 +435,7 @@ onMounted(cargarDatos);
                 <div v-else-if="guiasFiltradas.length === 0" class="card text-center py-12">
                     <i class="pi pi-book text-5xl text-surface-200 mb-4 block" />
                     <p class="text-surface-400 font-medium">No hay guías publicadas con esos filtros.</p>
-                    <p v-if="esTecnico" class="text-sm text-surface-400 mt-1">
+                    <p v-if="puedeEnviarGuia" class="text-sm text-surface-400 mt-1">
                         ¿Conoces la solución? <span class="text-primary-600 cursor-pointer font-semibold" @click="abrirPropuesta">Envía tu guía.</span>
                     </p>
                 </div>
@@ -399,9 +508,9 @@ onMounted(cargarDatos);
             </template>
 
             <!-- ═════════════════════════════════════════════════════════ -->
-            <!-- TAB 1: Mis Propuestas (técnicos)                          -->
+            <!-- TAB 1: Mis Propuestas                                    -->
             <!-- ═════════════════════════════════════════════════════════ -->
-            <template v-if="tabActivo === 1 && esTecnico">
+            <template v-if="tabActivo === 1 && puedeEnviarGuia">
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-semibold text-surface-800 dark:text-surface-100 m-0">Mis Propuestas Enviadas</h3>
@@ -484,15 +593,20 @@ onMounted(cargarDatos);
         </Dialog>
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- Dialog: Enviar Propuesta (solo técnicos)                           -->
+        <!-- Dialog: Enviar Propuesta de Guía                                   -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <Dialog v-model:visible="dialogPropuesta" modal :style="{ width: '90vw', maxWidth: '560px' }"
+        <Dialog v-model:visible="dialogPropuesta" modal :style="{ width: '90vw', maxWidth: '580px' }"
             header="📤 Enviar Propuesta de Guía Técnica">
             <div class="flex flex-col gap-5">
                 <!-- Aviso informativo -->
-                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
-                    <i class="pi pi-info-circle mr-2" />
-                    Tu guía será revisada por el administrador antes de publicarse. Si es aprobada, recibirás puntos de gamificación.
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-200">
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-info-circle mt-0.5 shrink-0" />
+                        <div>
+                            <p class="m-0 font-semibold mb-1">¿Cómo funciona?</p>
+                            <p class="m-0">Tu guía será revisada por el equipo de administración antes de publicarse en la Wiki. Si es aprobada y publicada, recibirás puntos de reconocimiento que suman a tu rango en el sistema de gamificación NEXUS.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Título -->
@@ -541,25 +655,30 @@ onMounted(cargarDatos);
                     <FileUpload
                         mode="basic"
                         accept="application/pdf"
-                        :maxFileSize="10000000"
-                        chooseLabel="Seleccionar PDF"
+                        :maxFileSize="10485760"
+                        chooseLabel="Seleccionar PDF (máx. 10 MB)"
                         class="w-full"
                         :auto="false"
                         @select="onFileSelect"
+                        :class="{ 'p-invalid': submitted && !archivoPdf }"
                     />
-                    <small v-if="archivoPdf" class="text-green-600">
-                        <i class="pi pi-check-circle mr-1" />{{ archivoPdf.name }}
-                    </small>
+                    <div v-if="archivoPdf" class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-3 py-2">
+                        <i class="pi pi-file-pdf text-red-500" />
+                        <span class="text-sm text-green-700 dark:text-green-300 font-medium flex-1 truncate">{{ archivoPdf.name }}</span>
+                        <span class="text-xs text-surface-400">{{ (archivoPdf.size / 1024 / 1024).toFixed(2) }} MB</span>
+                        <Button icon="pi pi-times" text severity="secondary" size="small" @click="archivoPdf = null" class="!p-1" />
+                    </div>
                     <small v-if="submitted && !archivoPdf" class="text-red-500">
-                        El archivo PDF es obligatorio.
+                        <i class="pi pi-exclamation-circle mr-1" />El archivo PDF es obligatorio.
                     </small>
+                    <small class="text-surface-400">Solo archivos PDF. Tamaño máximo: 10 MB.</small>
                 </div>
             </div>
 
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogPropuesta = false" :disabled="loadingEnvio" />
                 <Button
-                    label="Enviar Propuesta"
+                    label="Enviar para Revisión"
                     icon="pi pi-send"
                     severity="primary"
                     @click="enviarPropuesta"

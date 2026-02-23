@@ -12,8 +12,11 @@ from .serializers import (
 )
 
 
-def _es_gerencia(user) -> bool:
-    return user.rol.nombre == 'GERENCIA'
+_ROLES_TIENDA = {'GERENCIA', 'ADMINISTRADOR', 'DB ADMIN'}
+
+
+def _tiene_acceso_tienda(user) -> bool:
+    return user.rol.nombre in _ROLES_TIENDA
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -34,41 +37,41 @@ class RecompensaGerenciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if not _es_gerencia(self.request.user):
+        if not _tiene_acceso_tienda(self.request.user):
             return RecompensaGamificacion.objects.none()
         return RecompensaGamificacion.objects.filter(
             casino=self.request.user.casino
         ).select_related('casino')
 
-    def _check_gerencia(self, request):
-        if not _es_gerencia(request.user):
+    def _check_acceso(self, request):
+        if not _tiene_acceso_tienda(request.user):
             return Response(
-                {'error': 'Acceso denegado. Solo el personal de Gerencia puede gestionar las recompensas.'},
+                {'error': 'Acceso denegado. Solo Gerencia, Administrador o DB Admin pueden gestionar las recompensas.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
         return None
 
     def create(self, request, *args, **kwargs):
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         kwargs['partial'] = True
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         return super().destroy(request, *args, **kwargs)
@@ -84,7 +87,7 @@ class RecompensaGerenciaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='toggle-activo')
     def toggle_activo(self, request, pk=None):
         """Activa o desactiva una recompensa sin eliminarla."""
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         recompensa = self.get_object()
@@ -98,7 +101,7 @@ class RecompensaGerenciaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='canjes')
     def historial_canjes(self, request):
         """Lista todos los canjes realizados en el casino de la gerencia."""
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         canjes = CanjeRecompensa.objects.filter(
@@ -111,7 +114,7 @@ class RecompensaGerenciaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='canjes/(?P<canje_id>[^/.]+)/entregar')
     def entregar_canje(self, request, pk=None, canje_id=None):
         """Gerencia marca un canje como 'entregado'."""
-        err = self._check_gerencia(request)
+        err = self._check_acceso(request)
         if err:
             return err
         try:
