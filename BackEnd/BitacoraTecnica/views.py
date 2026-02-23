@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .models import BitacoraTecnica
 from .serializers import BitacoraTecnicaSerializer
 from Usuarios.models import Usuarios
+from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
 
 class BitacoraTecnicaViewSet(viewsets.ModelViewSet):
     """
@@ -42,6 +43,15 @@ class BitacoraTecnicaViewSet(viewsets.ModelViewSet):
                 )
             else:
                 serializer.save(creado_por='sistema')
+
+    def create(self, request, *args, **kwargs):
+        limpiar_puntos_context()
+        response = super().create(request, *args, **kwargs)
+        puntos = get_puntos_context()
+        if puntos:
+            response.data['puntos_nexus'] = puntos
+            limpiar_puntos_context()
+        return response
 
     def list(self, request, *args, **kwargs):
         # Filtro rápido por ticket en URL: ?ticket={id}

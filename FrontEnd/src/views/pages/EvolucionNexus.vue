@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import EvolucionService from '@/service/EvolucionService';
 import { getUser } from '@/service/api';
 
@@ -80,6 +81,7 @@ const saveEvolucion = () => {
             evolucionService.createEvolucion(evolucion.value).then((data) => {
                 evoluciones.value.unshift(data);
                 toast.add({ severity: 'success', summary: 'Exitoso', detail: 'Registro Creado', life: 3000 });
+                mostrarToastPuntos(toast, data?.puntos_nexus);
                 evolucionDialog.value = false;
                 evolucion.value = {};
             });

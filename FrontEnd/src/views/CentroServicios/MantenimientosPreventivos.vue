@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import { useConfirm } from 'primevue/useconfirm';
 import api, { getUser, hasRoleAccess } from '@/service/api';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
@@ -142,8 +143,9 @@ const saveMantenimiento = async () => {
             await api.put(`mantenimientos-preventivos/${mantenimiento.value.id}/`, payload);
             toast.add({ severity: 'success', summary: 'Éxito', detail: 'Mantenimiento actualizado', life: 3000 });
         } else {
-            await api.post('mantenimientos-preventivos/', payload);
+            const resNuevo = await api.post('mantenimientos-preventivos/', payload);
             toast.add({ severity: 'success', summary: 'Éxito', detail: 'Mantenimiento creado', life: 3000 });
+            mostrarToastPuntos(toast, resNuevo.data?.puntos_nexus);
         }
 
         mantenimientoDialog.value = false;

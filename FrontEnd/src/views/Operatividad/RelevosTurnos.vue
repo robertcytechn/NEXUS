@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import api, { getUser, hasRoleAccess } from '@/service/api';
 
 const toast = useToast();
@@ -120,8 +121,9 @@ const saveRelevo = async () => {
             await api.put(`relevos-turnos/${relevo.value.id}/`, payload);
             toast.add({ severity: 'success', summary: 'Éxito', detail: 'Relevo actualizado', life: 3000 });
         } else {
-            await api.post('relevos-turnos/', payload);
+            const resRelevo = await api.post('relevos-turnos/', payload);
             toast.add({ severity: 'success', summary: 'Éxito', detail: 'Relevo de turno registrado correctamente', life: 3000 });
+            mostrarToastPuntos(toast, resRelevo.data?.puntos_nexus);
         }
 
         relevoDialog.value = false;

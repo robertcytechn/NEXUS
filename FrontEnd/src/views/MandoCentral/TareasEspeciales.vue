@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
@@ -208,6 +209,7 @@ const procesarTareaTecnica = async () => {
 
     if (res.success) {
         toast.add({ severity: 'success', summary: 'Tarea Actualizada', detail: 'Progreso guardado correctamente', life: 3000 });
+        mostrarToastPuntos(toast, res.data?.puntos_nexus);
         btnTecnicoDialog.value = false;
         cargarDatos();
     } else {

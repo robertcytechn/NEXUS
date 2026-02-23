@@ -1,6 +1,8 @@
 from rest_framework import viewsets
+from rest_framework.response import Response
 from .models import MantenimientoPreventivo
 from .serializers import MantenimientoPreventivoSerializer
+from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
 
 class MantenimientoPreventivoViewSet(viewsets.ModelViewSet):
     """
@@ -18,6 +20,15 @@ class MantenimientoPreventivoViewSet(viewsets.ModelViewSet):
         serializer.save(
             creado_por=self.request.user.username
         )
+
+    def create(self, request, *args, **kwargs):
+        limpiar_puntos_context()
+        response = super().create(request, *args, **kwargs)
+        puntos = get_puntos_context()
+        if puntos:
+            response.data['puntos_nexus'] = puntos
+            limpiar_puntos_context()
+        return response
 
     def get_queryset(self):
         """

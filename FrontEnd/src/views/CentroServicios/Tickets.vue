@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import api, { getUser } from '@/service/api';
 import { crearBitacoraTecnica } from '@/service/ticketService';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -464,6 +465,7 @@ const guardarBitacora = async () => {
             detail: resultado.mensaje,
             life: 3000
         });
+        mostrarToastPuntos(toast, resultado.puntos_nexus);
 
         // Recargar bitácoras y actualizar el detalle del ticket
         await cargarBitacoras(ticketDetalle.value.id);

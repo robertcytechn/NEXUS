@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions
 from .models import EvolucionNexus
 from .serializers import EvolucionNexusSerializer
+from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
 
 class EvolucionNexusViewSet(viewsets.ModelViewSet):
     serializer_class = EvolucionNexusSerializer
@@ -24,3 +25,12 @@ class EvolucionNexusViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        limpiar_puntos_context()
+        response = super().create(request, *args, **kwargs)
+        puntos = get_puntos_context()
+        if puntos:
+            response.data['puntos_nexus'] = puntos
+            limpiar_puntos_context()
+        return response

@@ -229,6 +229,7 @@ export async function crearBitacoraTecnica({
         };
 
         const responseBitacora = await api.post('bitacora-tecnica/', bitacoraData);
+        let puntosNexus = responseBitacora.data?.puntos_nexus || null;
 
         // 3. Actualizar estado de la máquina
         const estadoMaquinaMapping = {
@@ -265,7 +266,19 @@ export async function crearBitacoraTecnica({
                 explicacion_cierre: explicacionCierre
             };
 
-            await api.put(`tickets/${ticketId}/`, ticketUpdate);
+            const responseTicket = await api.put(`tickets/${ticketId}/`, ticketUpdate);
+
+            // Acumular puntos del cierre de ticket con los de bitácora
+            const puntosTicket = responseTicket.data?.puntos_nexus || null;
+            if (puntosNexus && puntosTicket) {
+                puntosNexus = {
+                    ...puntosTicket,
+                    puntos_otorgados: (puntosNexus.puntos_otorgados || 0) + (puntosTicket.puntos_otorgados || 0),
+                    mensaje_nexus: `🏅 +${(puntosNexus.puntos_otorgados || 0) + (puntosTicket.puntos_otorgados || 0)} puntos NEXUS acumulados en esta acción`,
+                };
+            } else {
+                puntosNexus = puntosNexus || puntosTicket;
+            }
         } else {
             // Solo actualizar a 'proceso' si está en 'abierto'
             if (ticketActual && ticketActual.estado_ciclo === 'abierto') {
@@ -280,7 +293,8 @@ export async function crearBitacoraTecnica({
             bitacora: responseBitacora.data,
             mensaje: finalizaTicket
                 ? 'Bitácora guardada y ticket cerrado correctamente'
-                : 'Bitácora guardada correctamente'
+                : 'Bitácora guardada correctamente',
+            puntos_nexus: puntosNexus || undefined,
         };
 
     } catch (error) {

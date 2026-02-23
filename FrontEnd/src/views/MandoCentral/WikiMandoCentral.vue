@@ -4,6 +4,7 @@ import api, { getUser } from '@/service/api';
 import { wikiAdmin } from '@/service/wikiService';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
+import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 
@@ -159,6 +160,7 @@ const confirmarPublicar = async () => {
             detail: data.mensaje || 'La guía fue publicada exitosamente.',
             life: 5000
         });
+        mostrarToastPuntos(toast, data.puntos_nexus);
         dialogPublicar.value = false;
         cargarDatos();
     } catch (e) {

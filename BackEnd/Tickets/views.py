@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Ticket
 from .serializers import TicketSerializer, TicketCentroServiciosSerializer
+from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
 
 import logging
 logger = logging.getLogger(__name__)
@@ -108,6 +109,28 @@ class TicketViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         usuario = self.request.user.username if self.request.user.is_authenticated else 'Sistema'
         serializer.save(modificado_por=usuario)
+
+    def _update_con_puntos(self, request, *args, **kwargs):
+        """Helper compartido por update() y partial_update()."""
+        limpiar_puntos_context()
+        kwargs['partial'] = kwargs.get('partial', False)
+        response = super().update(request, *args, **kwargs)
+        puntos = get_puntos_context()
+        if puntos:
+            # response.data puede ser un ReturnDict (no siempre mutable directamente)
+            try:
+                response.data['puntos_nexus'] = puntos
+            except Exception:
+                pass
+            limpiar_puntos_context()
+        return response
+
+    def update(self, request, *args, **kwargs):
+        return self._update_con_puntos(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self._update_con_puntos(request, *args, **kwargs)
         
 
     @action(detail=True, methods=['patch'], url_path='reabrir')

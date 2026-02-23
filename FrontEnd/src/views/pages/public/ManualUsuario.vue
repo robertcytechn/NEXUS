@@ -43,6 +43,19 @@ const canCreateAuditoria = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB AD
 const canEditAuditoria = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'GERENCIA', 'SUPERVISOR SALA']));
 const canCreateRelevo = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'TECNICO']));
 const canEditRelevo = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS']));
+
+// === PERMISOS: Gamificación ===
+const participaGamificacion = computed(() => hasRoleAccess(['TECNICO', 'SUP SISTEMAS']));
+
+// === PERMISOS: Tienda de Recompensas ===
+const puedeVerTienda = computed(() => hasRoleAccess(['TECNICO', 'SUP SISTEMAS', 'ADMINISTRADOR', 'DB ADMIN', 'GERENCIA']));
+const puedeAdminTienda = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA']));
+const puedeCanjear = computed(() => hasRoleAccess(['TECNICO', 'SUP SISTEMAS']));
+
+// === PERMISOS: Wiki Técnica ===
+const puedeVerWiki = computed(() => hasRoleAccess(['TECNICO', 'SUP SISTEMAS', 'ADMINISTRADOR', 'DB ADMIN', 'GERENCIA']));
+const puedeProponer = computed(() => hasRoleAccess(['TECNICO', 'SUP SISTEMAS', 'ADMINISTRADOR', 'DB ADMIN']));
+const puedePublicarWiki = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN']));
 </script>
 
 <template>
@@ -131,7 +144,18 @@ const canEditRelevo = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN',
                         class="font-semibold m-1 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-lg transition-colors">
                         <i class="pi pi-shield mr-2 text-red-500"></i> Licencia de Uso
                     </Tab>
-                    <!-- Las siguientes pestañas se agregarán aquí en futuras iteraciones -->
+                    <Tab value="14"
+                        class="font-semibold m-1 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-lg transition-colors">
+                        <i class="pi pi-star mr-2 text-yellow-500"></i> Gamificación NEXUS
+                    </Tab>
+                    <Tab value="15"
+                        class="font-semibold m-1 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-lg transition-colors">
+                        <i class="pi pi-shopping-bag mr-2 text-pink-500"></i> Tienda de Recompensas
+                    </Tab>
+                    <Tab value="16"
+                        class="font-semibold m-1 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-lg transition-colors">
+                        <i class="pi pi-book mr-2 text-teal-500"></i> Wiki Técnica
+                    </Tab>
                 </TabList>
 
                 <TabPanels>
@@ -2282,6 +2306,714 @@ const canEditRelevo = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN',
                             </div>
                         </div>
                     </TabPanel>
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         SECCIÓN 14 — GAMIFICACIÓN NEXUS
+                    ═══════════════════════════════════════════════════════════════ -->
+                    <TabPanel value="14" class="p-6">
+                        <div class="flex flex-col gap-6">
+
+                            <!-- Introducción -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                                        <i class="pi pi-star text-2xl"></i>
+                                        <span class="text-xl">¿Qué es la Gamificación NEXUS?</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <p class="text-surface-700 dark:text-surface-300 leading-relaxed">
+                                        La <strong>Gamificación NEXUS</strong> es un sistema de recompensas RPG integrado
+                                        en la plataforma que <strong>premia automáticamente</strong> a los técnicos por
+                                        su trabajo diario. Cada acción relevante suma puntos a tu cuenta sin que tengas
+                                        que hacer nada extra: simplemente trabaja bien y los puntos llegarán solos.
+                                    </p>
+                                    <div v-if="!participaGamificacion"
+                                        class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-xl border-l-4 border-amber-400 flex items-start gap-3">
+                                        <i class="pi pi-info-circle mt-1 text-xl"></i>
+                                        <div>
+                                            <strong class="block mb-1">Nota sobre tu rol:</strong>
+                                            Tu perfil actual no acumula puntos de gamificación. Solo los roles
+                                            <Tag value="TECNICO" severity="warning" class="mx-1 text-xs" /> y
+                                            <Tag value="SUP SISTEMAS" severity="warning" class="mx-1 text-xs" />
+                                            participan en el sistema de rangos.
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Puntos por acción -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <i class="pi pi-bolt text-2xl"></i>
+                                        <span class="text-xl">¿Cómo se ganan los puntos?</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-normal text-surface-600 dark:text-surface-400">
+                                        Los puntos se acreditan <strong>automáticamente</strong> al completar cada acción.
+                                        Verás un toast dorado en pantalla confirmando cada ingreso.
+                                    </p>
+                                </template>
+                                <template #content>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-blue-500">
+                                                <i class="pi pi-file-edit"></i> Bitácora Técnica
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Registrar una entrada de bitácora sobre una intervención en un ticket.</p>
+                                            <Tag value="+2 puntos" severity="success" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-red-500">
+                                                <i class="pi pi-check-circle"></i> Ticket Cerrado
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Cerrar correctamente un ticket de falla con la máquina en estado operativo.</p>
+                                            <Tag value="+2 puntos" severity="success" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-orange-500">
+                                                <i class="pi pi-sync"></i> Relevo de Turno
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Documentar formalmente el traspaso de responsabilidades al terminar el turno.</p>
+                                            <Tag value="+2 puntos" severity="success" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-indigo-500">
+                                                <i class="pi pi-send"></i> Evolución NEXUS
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Enviar un reporte de bug o propuesta de mejora para la plataforma NEXUS.</p>
+                                            <Tag value="+15 puntos" severity="info" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-teal-500">
+                                                <i class="pi pi-check-square"></i> Tarea Especial
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Completar una tarea especial asignada por el supervisor o administrador.</p>
+                                            <Tag value="+20 puntos" severity="info" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-yellow-300 dark:border-yellow-700 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-yellow-600">
+                                                <i class="pi pi-wrench"></i> Mantenimiento Preventivo
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Registrar un mantenimiento preventivo realizado a una máquina de la sala.</p>
+                                            <Tag value="+50 puntos" severity="warn" class="mt-3 text-sm" />
+                                        </div>
+                                        <div class="p-4 border border-purple-200 dark:border-purple-700 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:shadow-md transition-shadow md:col-span-2 lg:col-span-3">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-purple-600">
+                                                <i class="pi pi-book"></i> Guía Wiki Publicada
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">Cuando el administrador publica una guía técnica que tú redactaste, recibirás los puntos que él determine según la calidad y utilidad del documento.</p>
+                                            <Tag value="Variable (lo define el admin)" severity="secondary" class="mt-3 text-sm" />
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-xl border-l-4 border-blue-400 flex items-start gap-3">
+                                        <i class="pi pi-info-circle mt-1 text-xl"></i>
+                                        <div class="text-sm">
+                                            <strong class="block mb-1">💡 Consejo:</strong>
+                                            Si cierras un ticket (bitácora + cierre en la misma acción), acumulas
+                                            <strong>+4 puntos</strong> de un solo movimiento.
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Tipos de puntos -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                                        <i class="pi pi-database text-2xl"></i>
+                                        <span class="text-xl">Tipos de puntos</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="p-4 border border-green-200 dark:border-green-700 rounded-xl bg-green-50 dark:bg-green-900/20">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-green-600">
+                                                <i class="pi pi-shopping-cart"></i> Puntos Disponibles
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Son los puntos que tienes para gastar en la Tienda de Recompensas.
+                                                <strong>Suben</strong> al ganar reconocimientos y
+                                                <strong>bajan</strong> al canjear recompensas.
+                                            </p>
+                                        </div>
+                                        <div class="p-4 border border-purple-200 dark:border-purple-700 rounded-xl bg-purple-50 dark:bg-purple-900/20">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-purple-600">
+                                                <i class="pi pi-history"></i> Puntos Históricos
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                El total acumulado de toda tu trayectoria en NEXUS.
+                                                <strong>Nunca disminuyen</strong>, ni al canjear recompensas.
+                                                Son los que determinan tu <strong>rango</strong>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Tabla de rangos -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                                        <i class="pi pi-trophy text-2xl"></i>
+                                        <span class="text-xl">Rangos de Gamificación</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-normal text-surface-600 dark:text-surface-400">
+                                        Los rangos suben automáticamente conforme acumulas puntos históricos.
+                                        No hay que hacer nada para "subir de nivel".
+                                    </p>
+                                </template>
+                                <template #content>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr class="bg-surface-100 dark:bg-surface-800">
+                                                    <th class="p-3 text-left border border-surface-200 dark:border-surface-700">Nivel</th>
+                                                    <th class="p-3 text-left border border-surface-200 dark:border-surface-700">Rango</th>
+                                                    <th class="p-3 text-center border border-surface-200 dark:border-surface-700">Insignia</th>
+                                                    <th class="p-3 text-right border border-surface-200 dark:border-surface-700">Puntos mínimos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="border border-surface-200 dark:border-surface-700 bg-yellow-50 dark:bg-yellow-900/20">
+                                                    <td class="p-3 font-bold text-center">10</td>
+                                                    <td class="p-3 font-bold text-yellow-700 dark:text-yellow-300">Leyenda de NEXUS</td>
+                                                    <td class="p-3 text-center text-xl">⭐⭐⭐⭐⭐</td>
+                                                    <td class="p-3 text-right font-mono">4,500</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700">
+                                                    <td class="p-3 font-bold text-center">9</td>
+                                                    <td class="p-3 font-bold">Guardián del Casino</td>
+                                                    <td class="p-3 text-center text-xl">⭐⭐⭐⭐</td>
+                                                    <td class="p-3 text-right font-mono">3,600</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
+                                                    <td class="p-3 font-bold text-center">8</td>
+                                                    <td class="p-3 font-bold">Arquitecto de Sala</td>
+                                                    <td class="p-3 text-center text-xl">🔷🔷🔷🔷</td>
+                                                    <td class="p-3 text-right font-mono">2,800</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700">
+                                                    <td class="p-3 font-bold text-center">7</td>
+                                                    <td class="p-3 font-bold">Maestro Electrónico</td>
+                                                    <td class="p-3 text-center text-xl">🔷🔷🔷</td>
+                                                    <td class="p-3 text-right font-mono">2,100</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
+                                                    <td class="p-3 font-bold text-center">6</td>
+                                                    <td class="p-3 font-bold">Técnico Élite</td>
+                                                    <td class="p-3 text-center text-xl">🔷🔷</td>
+                                                    <td class="p-3 text-right font-mono">1,500</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700">
+                                                    <td class="p-3 font-bold text-center">5</td>
+                                                    <td class="p-3 font-bold">Especialista en Hardware</td>
+                                                    <td class="p-3 text-center text-xl">🔷</td>
+                                                    <td class="p-3 text-right font-mono">1,000</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
+                                                    <td class="p-3 font-bold text-center">4</td>
+                                                    <td class="p-3 font-bold">Operador de Máquinas</td>
+                                                    <td class="p-3 text-center text-xl">🔶🔶🔶</td>
+                                                    <td class="p-3 text-right font-mono">600</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700">
+                                                    <td class="p-3 font-bold text-center">3</td>
+                                                    <td class="p-3 font-bold">Técnico de Soporte</td>
+                                                    <td class="p-3 text-center text-xl">🔶🔶</td>
+                                                    <td class="p-3 text-right font-mono">300</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50">
+                                                    <td class="p-3 font-bold text-center">2</td>
+                                                    <td class="p-3 font-bold">Aprendiz de Sala</td>
+                                                    <td class="p-3 text-center text-xl">🔶</td>
+                                                    <td class="p-3 text-right font-mono">100</td>
+                                                </tr>
+                                                <tr class="border border-surface-200 dark:border-surface-700">
+                                                    <td class="p-3 font-bold text-center">1</td>
+                                                    <td class="p-3 font-bold text-surface-500">Novato de Mantenimiento</td>
+                                                    <td class="p-3 text-center text-xl">🔩</td>
+                                                    <td class="p-3 text-right font-mono">0</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-4 p-4 bg-surface-50 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
+                                        <p class="text-sm text-surface-600 dark:text-surface-400">
+                                            <i class="pi pi-info-circle mr-2 text-blue-500"></i>
+                                            Tu rango actual y la barra de progreso hacia el siguiente nivel se muestran
+                                            en la <strong>Tienda de Recompensas</strong>.
+                                        </p>
+                                    </div>
+                                </template>
+                            </Card>
+
+                        </div>
+                    </TabPanel>
+
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         SECCIÓN 15 — TIENDA DE RECOMPENSAS
+                    ═══════════════════════════════════════════════════════════════ -->
+                    <TabPanel value="15" class="p-6">
+                        <div class="flex flex-col gap-6">
+
+                            <!-- Introducción -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-pink-600 dark:text-pink-400">
+                                        <i class="pi pi-info-circle text-2xl"></i>
+                                        <span class="text-xl">¿Qué es e información general?</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <p class="text-surface-700 dark:text-surface-300 leading-relaxed">
+                                        La <strong>Tienda de Recompensas</strong> permite a los técnicos canjear sus
+                                        <strong>puntos NEXUS disponibles</strong> por recompensas reales: días libres
+                                        adicionales, bonos de alimentación, membresías y más, según lo que la gerencia
+                                        de cada casino configure.
+                                    </p>
+                                    <div class="mt-4 p-4 bg-pink-50 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 rounded-xl border-l-4 border-pink-400 flex items-start gap-3">
+                                        <i class="pi pi-shield mt-1 text-xl"></i>
+                                        <div class="text-sm">
+                                            <strong class="block mb-1">Regla importante:</strong>
+                                            Canjear recompensas descuenta de tus <strong>puntos disponibles</strong>,
+                                            pero <strong>nunca afecta tu rango</strong>. Los puntos históricos siempre
+                                            se mantienen sin importar cuánto canjees.
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Lo que puedes hacer -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <i class="pi pi-cog text-2xl"></i>
+                                        <span class="text-xl">Lo que puedes hacer</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div v-if="puedeCanjear"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-pink-500">
+                                                <i class="pi pi-shopping-bag mr-2"></i> Canjear Recompensas
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Explora el catálogo de tu casino, revisa el costo en puntos de cada
+                                                recompensa y haz clic en <Tag value="Canjear" severity="danger" class="mx-1 text-xs" />
+                                                cuando tengas suficientes puntos disponibles.
+                                            </p>
+                                        </div>
+                                        <div v-if="puedeCanjear"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-primary">
+                                                <i class="pi pi-list mr-2"></i> Historial de Canjes
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                En la sección <strong>"Mis Canjes"</strong> de la tienda puedes ver
+                                                todos los canjes realizados y su estado actual (Pendiente / Entregado /
+                                                Cancelado).
+                                            </p>
+                                        </div>
+                                        <div v-if="puedeAdminTienda"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-blue-500">
+                                                <i class="pi pi-plus mr-2"></i> Crear Recompensas
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Tu perfil puede crear nuevas recompensas para los técnicos de tu casino.
+                                                Define el título, descripción, costo en puntos y stock disponible.
+                                            </p>
+                                        </div>
+                                        <div v-if="puedeAdminTienda"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-orange-500">
+                                                <i class="pi pi-check-circle mr-2"></i> Confirmar Entregas
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Cuando entregues físicamente una recompensa al técnico, marca el canje
+                                                como <Tag value="Entregado" severity="success" class="mx-1 text-xs" />
+                                                desde el panel de administración.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Estados de un canje -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                                        <i class="pi pi-tag text-2xl"></i>
+                                        <span class="text-xl">Estados de un canje</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <ul class="flex flex-col gap-3">
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm flex items-start gap-4">
+                                            <Tag value="Pendiente" severity="warn" class="mt-1 text-xs shrink-0" />
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                El canje fue realizado y los puntos ya fueron descontados. El
+                                                administrador aún no ha entregado la recompensa físicamente.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm flex items-start gap-4">
+                                            <Tag value="Entregado" severity="success" class="mt-1 text-xs shrink-0" />
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                El administrador confirmó que la recompensa fue entregada al técnico.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm flex items-start gap-4">
+                                            <Tag value="Cancelado" severity="danger" class="mt-1 text-xs shrink-0" />
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                El canje fue cancelado antes de la entrega.
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </template>
+                            </Card>
+
+                            <!-- Formulario: Crear recompensa (solo admin) -->
+                            <Card v-if="puedeAdminTienda"
+                                class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                                        <i class="pi pi-file-edit text-2xl"></i>
+                                        <span class="text-xl">Formulario: Crear una recompensa nueva</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-normal text-surface-600 dark:text-surface-400">
+                                        Al hacer clic en <strong>"+ Nueva Recompensa"</strong>, el sistema solicitará:
+                                    </p>
+                                </template>
+                                <template #content>
+                                    <ul class="flex flex-col gap-4">
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-tag text-primary"></i>
+                                                <strong class="text-lg">Título</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Nombre atractivo y claro. Ej: <em>"Día libre adicional"</em>,
+                                                <em>"Bono de alimentación $200"</em>.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-align-left text-primary"></i>
+                                                <strong class="text-lg">Descripción</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Explica qué incluye, cómo se reclama y si aplican condiciones o fechas
+                                                de vigencia.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-star text-primary"></i>
+                                                <strong class="text-lg">Costo en Puntos</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Cuántos puntos disponibles debe gastar el técnico para canjearla.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-box text-primary"></i>
+                                                <strong class="text-lg">Stock</strong>
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Cantidad máxima de canjes permitidos. Si se deja vacío, el stock es
+                                                <strong>ilimitado</strong>.
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </template>
+                            </Card>
+
+                        </div>
+                    </TabPanel>
+
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         SECCIÓN 16 — WIKI TÉCNICA
+                    ═══════════════════════════════════════════════════════════════ -->
+                    <TabPanel value="16" class="p-6">
+                        <div class="flex flex-col gap-6">
+
+                            <!-- Introducción -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-teal-600 dark:text-teal-400">
+                                        <i class="pi pi-info-circle text-2xl"></i>
+                                        <span class="text-xl">¿Qué es e información general?</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <p class="text-surface-700 dark:text-surface-300 leading-relaxed">
+                                        La <strong>Wiki Técnica</strong> es la base de conocimiento colectivo del equipo.
+                                        Contiene guías de reparación, manuales de configuración, procedimientos de
+                                        limpieza y diccionarios de códigos de error escritos por los mismos técnicos,
+                                        validados y publicados por el administrador.
+                                    </p>
+                                    <div class="mt-4 p-4 bg-teal-50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 rounded-xl border-l-4 border-teal-400 flex items-start gap-3">
+                                        <i class="pi pi-globe mt-1 text-xl"></i>
+                                        <div class="text-sm">
+                                            <strong class="block mb-1">Wiki compartida:</strong>
+                                            Las guías son visibles para <strong>todos los casinos</strong>.
+                                            Puedes filtrar por casino de origen para ver las soluciones registradas
+                                            en cada sucursal específica.
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Flujo de vida de una guía -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                                        <i class="pi pi-arrows-v text-2xl"></i>
+                                        <span class="text-xl">Ciclo de vida de una guía</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <div class="flex flex-col md:flex-row items-center justify-around gap-4 py-2">
+                                        <div class="flex flex-col items-center gap-2 text-center">
+                                            <div class="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                                                <i class="pi pi-upload text-2xl text-blue-500"></i>
+                                            </div>
+                                            <Tag value="Pendiente de Revisión" severity="secondary" class="text-xs" />
+                                            <p class="text-xs text-surface-500 max-w-32">El técnico sube el PDF y envía la propuesta</p>
+                                        </div>
+                                        <i class="pi pi-arrow-right text-surface-400 hidden md:block text-2xl"></i>
+                                        <i class="pi pi-arrow-down text-surface-400 md:hidden text-2xl"></i>
+                                        <div class="flex flex-col items-center gap-2 text-center">
+                                            <div class="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                                <i class="pi pi-check text-2xl text-green-500"></i>
+                                            </div>
+                                            <Tag value="Aprobada" severity="success" class="text-xs" />
+                                            <p class="text-xs text-surface-500 max-w-32">El admin revisó y aprobó, aún no es pública</p>
+                                        </div>
+                                        <i class="pi pi-arrow-right text-surface-400 hidden md:block text-2xl"></i>
+                                        <i class="pi pi-arrow-down text-surface-400 md:hidden text-2xl"></i>
+                                        <div class="flex flex-col items-center gap-2 text-center">
+                                            <div class="w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+                                                <i class="pi pi-globe text-2xl text-yellow-500"></i>
+                                            </div>
+                                            <Tag value="Publicada" severity="warn" class="text-xs" />
+                                            <p class="text-xs text-surface-500 max-w-32">Visible para todos + puntos acreditados al autor</p>
+                                        </div>
+                                        <div class="hidden md:flex items-center text-surface-300">|</div>
+                                        <div class="flex flex-col items-center gap-2 text-center">
+                                            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                                                <i class="pi pi-times text-2xl text-red-500"></i>
+                                            </div>
+                                            <Tag value="Rechazada" severity="danger" class="text-xs" />
+                                            <p class="text-xs text-surface-500 max-w-32">El admin rechazó con una nota de retroalimentación</p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Lo que puedes hacer -->
+                            <Card class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <i class="pi pi-cog text-2xl"></i>
+                                        <span class="text-xl">Lo que puedes hacer</span>
+                                    </div>
+                                </template>
+                                <template #content>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div v-if="puedeVerWiki"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-teal-500">
+                                                <i class="pi pi-list mr-2"></i> Consultar guías publicadas
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Accede al catálogo completo de guías publicadas. Filtra por modelo de
+                                                máquina, categoría, casino de origen o usa el buscador de texto libre.
+                                            </p>
+                                        </div>
+                                        <div v-if="puedeVerWiki"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-blue-500">
+                                                <i class="pi pi-download mr-2"></i> Descargar PDF
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Cada guía publicada tiene un botón para descargar el PDF original
+                                                directamente en tu dispositivo.
+                                            </p>
+                                        </div>
+                                        <div v-if="puedeProponer"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-purple-500">
+                                                <i class="pi pi-upload mr-2"></i> Proponer nueva guía
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Usa el botón <Tag value="+ Proponer Guía" severity="primary" class="mx-1 text-xs" />
+                                                para subir un PDF con tu documentación técnica. El administrador la
+                                                revisará y, si la aprueba y publica, recibirás puntos NEXUS.
+                                            </p>
+                                        </div>
+                                        <div v-if="puedePublicarWiki"
+                                            class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900 hover:shadow-md transition-shadow">
+                                            <h3 class="font-bold mb-3 flex items-center text-yellow-500">
+                                                <i class="pi pi-star mr-2"></i> Aprobar, Publicar y Rechazar
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Tu perfil puede revisar las guías en estado <Tag value="Pendiente" severity="secondary" class="mx-1 text-xs" />,
+                                                aprobarlas, publicarlas asignando puntos al autor, o rechazarlas con
+                                                una nota de retroalimentación.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Formulario: proponer guía -->
+                            <Card v-if="puedeProponer"
+                                class="border border-surface-200 dark:border-surface-700 shadow-none bg-surface-50 dark:bg-surface-800/50">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                                        <i class="pi pi-file-edit text-2xl"></i>
+                                        <span class="text-xl">Formulario: Proponer una guía técnica</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-normal text-surface-600 dark:text-surface-400">
+                                        Al hacer clic en <strong>"+ Proponer Guía"</strong>, el sistema pedirá:
+                                    </p>
+                                </template>
+                                <template #content>
+                                    <ul class="flex flex-col gap-4">
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-pencil text-primary"></i>
+                                                <strong class="text-lg">Título de la Guía</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Debe ser claro y específico. Incluye el código de error o el modelo de
+                                                máquina. Ej: <em>"Solución error E-34 en IGT Gemini 2"</em>.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-sitemap text-primary"></i>
+                                                <strong class="text-lg">Categoría</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <div class="flex flex-wrap gap-2 mt-2">
+                                                <Tag value="Guía de Reparación" severity="danger" class="text-xs" />
+                                                <Tag value="Manual de Configuración" severity="info" class="text-xs" />
+                                                <Tag value="Procedimiento de Limpieza" severity="success" class="text-xs" />
+                                                <Tag value="Diccionario de Códigos de Error" severity="warn" class="text-xs" />
+                                            </div>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-desktop text-primary"></i>
+                                                <strong class="text-lg">Modelo de Máquina</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Selecciona el modelo exacto de máquina al que aplica la guía.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-building text-primary"></i>
+                                                <strong class="text-lg">Casino de Origen</strong>
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Casino donde ocurrió el caso y se desarrolló la solución documentada.
+                                            </p>
+                                        </li>
+                                        <li class="p-4 bg-surface-0 dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <i class="pi pi-file-pdf text-primary"></i>
+                                                <strong class="text-lg">Archivo PDF</strong>
+                                                <Tag value="Obligatorio" severity="danger" class="text-xs" rounded />
+                                            </div>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Sube el documento en formato PDF con el procedimiento completo.
+                                                Asegúrate de que sea legible, con pasos numerados y resultados
+                                                verificados.
+                                            </p>
+                                        </li>
+                                    </ul>
+
+                                    <!-- Buenas prácticas -->
+                                    <div class="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                                        <h4 class="font-bold text-green-700 dark:text-green-300 mb-3 flex items-center gap-2">
+                                            <i class="pi pi-lightbulb"></i> Buenas prácticas para que aprueben tu guía
+                                        </h4>
+                                        <ul class="space-y-2 text-sm text-surface-600 dark:text-surface-400">
+                                            <li class="flex items-start gap-2">
+                                                <i class="pi pi-check-circle text-green-500 mt-0.5 shrink-0"></i>
+                                                <span><strong>Título específico:</strong> incluye el código de error o el modelo exacto.</span>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="pi pi-check-circle text-green-500 mt-0.5 shrink-0"></i>
+                                                <span><strong>PDF legible:</strong> letras de tamaño adecuado, fotos del procedimiento si es posible.</span>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="pi pi-check-circle text-green-500 mt-0.5 shrink-0"></i>
+                                                <span><strong>Pasos numerados:</strong> ordenados lógicamente de inicio a fin.</span>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="pi pi-check-circle text-green-500 mt-0.5 shrink-0"></i>
+                                                <span><strong>Soluciones verificadas:</strong> documenta solo procedimientos que ya probaste y funcionaron.</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </Card>
+
+                            <!-- Sección para administradores: publicar con puntos -->
+                            <Card v-if="puedePublicarWiki"
+                                class="border border-surface-200 dark:border-surface-700 shadow-none">
+                                <template #title>
+                                    <div class="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                                        <i class="pi pi-star-fill text-2xl"></i>
+                                        <span class="text-xl">Publicar guía y otorgar puntos</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-normal text-surface-600 dark:text-surface-400">
+                                        Al publicar una guía aprobada, debes indicar cuántos puntos NEXUS
+                                        recibirá el técnico autor como reconocimiento.
+                                    </p>
+                                </template>
+                                <template #content>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="p-4 border border-surface-200 dark:border-surface-700 rounded-xl bg-surface-0 dark:bg-surface-900">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-surface-700 dark:text-surface-200">
+                                                <i class="pi pi-info-circle text-blue-500"></i> ¿Cómo funciona?
+                                            </h3>
+                                            <ol class="text-sm text-surface-600 dark:text-surface-400 space-y-2 list-decimal list-inside">
+                                                <li>Abre la guía en estado <Tag value="Aprobada" severity="success" class="mx-1 text-xs" /> o <Tag value="Pendiente" severity="secondary" class="mx-1 text-xs" /></li>
+                                                <li>Haz clic en el botón <strong>"Publicar"</strong></li>
+                                                <li>Selecciona los puntos a otorgar (25, 50, 75 ó 100)</li>
+                                                <li>Confirma. La guía queda pública y los puntos se acreditan al autor</li>
+                                            </ol>
+                                        </div>
+                                        <div class="p-4 border border-yellow-200 dark:border-yellow-700 rounded-xl bg-yellow-50 dark:bg-yellow-900/20">
+                                            <h3 class="font-bold mb-2 flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                                                <i class="pi pi-shield"></i> Impacto en la cuenta del técnico
+                                            </h3>
+                                            <p class="text-sm text-surface-600 dark:text-surface-400">
+                                                Los puntos asignados se suman tanto a sus
+                                                <strong>puntos disponibles</strong> (para canjear en la tienda) como a
+                                                su <strong>historial acumulado</strong> (para su rango). La publicación
+                                                de una buena guía puede subir significativamente el nivel del técnico.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </Card>
+
+                        </div>
+                    </TabPanel>
+
                 </TabPanels>
             </Tabs>
         </div>

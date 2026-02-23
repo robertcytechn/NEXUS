@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -137,23 +138,44 @@ class WikiCentroMandoViewSet(viewsets.ModelViewSet):
         guia.modificado_por = request.user.username
         guia.save()
 
-        # Otorgar puntos al autor
+        # Otorgar puntos al autor de forma atómica (ambos campos)
+        puntos_nexus = None
         if puntos > 0:
-            autor = guia.autor
-            autor.puntos_gamificacion += puntos
-            autor.save(update_fields=['puntos_gamificacion'])
+            from Usuarios.models import Usuarios
+            Usuarios.objects.filter(pk=guia.autor.pk).update(
+                puntos_gamificacion=F('puntos_gamificacion') + puntos,
+                puntos_gamificacion_historico=F('puntos_gamificacion_historico') + puntos,
+            )
+            guia.autor.refresh_from_db(fields=['puntos_gamificacion', 'puntos_gamificacion_historico'])
 
-        return Response(
-            {
-                'mensaje': (
-                    f'¡La guía "{guia.titulo_guia}" ha sido publicada! '
-                    f'Se otorgaron {puntos} puntos de gamificación a {guia.autor.username}.'
-                ),
+            try:
+                rango = guia.autor.rango_gamificacion
+            except Exception:
+                rango = {}
+
+            puntos_nexus = {
                 'puntos_otorgados': puntos,
-                'puntos_totales_autor': guia.autor.puntos_gamificacion,
-            },
-            status=status.HTTP_200_OK
-        )
+                'puntos_totales': guia.autor.puntos_gamificacion,
+                'puntos_historico': guia.autor.puntos_gamificacion_historico,
+                'rango_nivel': rango.get('nivel', 1),
+                'rango_titulo': rango.get('titulo', ''),
+                'usuario': guia.autor.username,
+                'motivo': f'guía técnica publicada: {guia.titulo_guia}',
+                'mensaje_nexus': f'🏅 +{puntos} puntos NEXUS — guía técnica publicada',
+            }
+
+        resp_data = {
+            'mensaje': (
+                f'¡La guía "{guia.titulo_guia}" ha sido publicada! '
+                f'Se otorgaron {puntos} puntos de gamificación a {guia.autor.username}.'
+            ),
+            'puntos_otorgados': puntos,
+            'puntos_totales_autor': guia.autor.puntos_gamificacion,
+        }
+        if puntos_nexus:
+            resp_data['puntos_nexus'] = puntos_nexus
+
+        return Response(resp_data, status=status.HTTP_200_OK)
 
     # ── Rechazar guía ────────────────────────────────────────────────────────
     @action(detail=True, methods=['post'], url_path='rechazar')

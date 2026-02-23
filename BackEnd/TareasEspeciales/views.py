@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import TareaEspecial
 from .serializers import TareaEspecialSerializer
+from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
 
 class TareaEspecialViewSet(viewsets.ModelViewSet):
     """
@@ -34,3 +35,21 @@ class TareaEspecialViewSet(viewsets.ModelViewSet):
             serializer.save(
                 modificado_por=self.request.user.username
             )
+
+    def _update_con_puntos(self, request, *args, **kwargs):
+        """Helper compartido por update() y partial_update()."""
+        limpiar_puntos_context()
+        kwargs['partial'] = kwargs.get('partial', False)
+        response = super().update(request, *args, **kwargs)
+        puntos = get_puntos_context()
+        if puntos:
+            response.data['puntos_nexus'] = puntos
+            limpiar_puntos_context()
+        return response
+
+    def update(self, request, *args, **kwargs):
+        return self._update_con_puntos(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self._update_con_puntos(request, *args, **kwargs)
