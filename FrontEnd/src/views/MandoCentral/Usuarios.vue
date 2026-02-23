@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import api from '@/service/api';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
+import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import Chart from 'primevue/chart';
@@ -49,6 +50,7 @@ watch(() => toolbarRef.value?.busquedaGlobal, (nuevoValor) => {
 const columnas = ref([
     { field: 'username', label: 'Usuario', visible: true },
     { field: 'nombre_completo', label: 'Nombre Completo', visible: true },
+    { field: 'rango_gamificacion', label: 'Rango', visible: true },
     { field: 'email', label: 'Email', visible: true },
     { field: 'rol_nombre', label: 'Rol', visible: true },
     { field: 'casino_nombre', label: 'Casino', visible: true },
@@ -516,6 +518,18 @@ onMounted(() => {
                 <Column v-if="esColumnaVisible('nombre_completo')" field="nombre_completo" header="Nombre Completo" sortable style="min-width: 14rem">
                     <template #body="{ data }">
                         {{ data.nombres }} {{ data.apellido_paterno }} {{ data.apellido_materno }}
+                    </template>
+                </Column>
+
+                <Column v-if="esColumnaVisible('rango_gamificacion')" field="rango_gamificacion" header="Rango" sortable style="min-width: 11rem">
+                    <template #body="{ data }">
+                        <InsigniaRangoAnimada
+                            v-if="data.rango_gamificacion"
+                            :nivel="data.rango_gamificacion.nivel"
+                            :nombreRango="data.rango_gamificacion.titulo"
+                            :compact="true"
+                        />
+                        <span v-else class="text-surface-400 text-sm">—</span>
                     </template>
                 </Column>
 

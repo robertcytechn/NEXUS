@@ -89,6 +89,35 @@ export const removeUser = () => {
     localStorage.removeItem('user');
 };
 
+/**
+ * Devuelve el rango de gamificación del usuario desde localStorage.
+ * El backend ya lo incluye en la respuesta del login (UsuariosSerializer),
+ * por lo que no requiere ninguna petición adicional al servidor.
+ *
+ * @returns {{ nivel: number, titulo: string, insignia: string, puntos_min: number, puntos_sig: number|null, progreso_pct: number }}
+ */
+export const getRangoUsuario = () => {
+    const user = getUser();
+    if (!user || !user.rango_gamificacion) {
+        return { nivel: 1, titulo: 'Novato de Mantenimiento', insignia: '🔩', puntos_min: 0, puntos_sig: 100, progreso_pct: 0 };
+    }
+    return user.rango_gamificacion;
+};
+
+/**
+ * Actualiza sólo el rango en el objeto usuario del localStorage.
+ * Útil cuando el sistema de gamificación notifica un cambio de rango
+ * sin necesidad de re-login.
+ * @param {{ nivel: number, titulo: string }} rango
+ */
+export const actualizarRangoLocal = (rango) => {
+    const user = getUser();
+    if (user && rango) {
+        user.rango_gamificacion = { ...user.rango_gamificacion, ...rango };
+        setUser(user);
+    }
+};
+
 // Función para guardar todos los datos del login
 export const saveLoginData = (loginResponse) => {
     const { token, refresh_token, usuario } = loginResponse;

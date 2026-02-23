@@ -7,6 +7,7 @@ import { crearTicket, crearTicketConBitacora } from '@/service/ticketService';
 import { getMaquinasPorCasino } from '@/service/maquinaService';
 import EvolucionService from '@/service/EvolucionService';
 import { useToast } from 'primevue/usetoast';
+import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
 
 // Components
 // Auto-imported in this project structure (matching Usuarios.vue)
@@ -392,7 +393,12 @@ const handleAction = (actionFn) => {
                 <div class="flex items-center justify-between">
                     <div>
                         <div class="text-2xl font-bold mb-1">¡Hola, {{ user?.nombres }}!</div>
-                        <div class="text-surface-500">Bienvenido al Centro de Comando NEXUS.</div>
+                        <div class="text-surface-500 mb-3">Bienvenido al Centro de Comando NEXUS.</div>
+                        <InsigniaRangoAnimada
+                            v-if="user?.rango_gamificacion"
+                            :nivel="user.rango_gamificacion.nivel"
+                            :nombreRango="user.rango_gamificacion.titulo"
+                        />
                     </div>
                     <i class="pi pi-compass text-4xl text-primary opacity-50"></i>
                 </div>

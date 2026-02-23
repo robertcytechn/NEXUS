@@ -3,6 +3,7 @@ import { useLayout } from '@/layout/composables/layout';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AppSearch from '@/components/AppSearch.vue';
+import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
 import { getUser, logout } from '@/service/api';
 import { fetchNotificaciones, marcarNotificacionLeida } from '@/service/notificationService';
 
@@ -19,6 +20,12 @@ const toggleSearch = () => {
 
 const user = getUser();
 const userName = computed(() => user ? `${user.nombres} ${user.apellido_paterno}` : 'Usuario');
+
+// Rango desde localStorage (ya incluido en el objeto usuario del login)
+const rangoUsuario = computed(() => {
+    if (!user || !user.rango_gamificacion) return { nivel: 1, titulo: 'Novato de Mantenimiento' };
+    return user.rango_gamificacion;
+});
 
 const profileItems = computed(() => [
     {
@@ -229,6 +236,15 @@ const onNotificationClick = async (item) => {
                         <i class="pi pi-user"></i>
                         <span>Perfil</span>
                     </button>
+
+                    <!-- Insignia de Rango -->
+                    <div class="flex items-center">
+                        <InsigniaRangoAnimada
+                            :nivel="rangoUsuario.nivel"
+                            :nombreRango="rangoUsuario.titulo"
+                            :compact="true"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

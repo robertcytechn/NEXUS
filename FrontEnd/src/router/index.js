@@ -50,6 +50,16 @@ const router = createRouter({
             children: [
                 ...dynamicRoutes,
                 // ── Rutas estáticas de administración (no dependen del menú de BD) ──
+                {
+                    path: '/profile',
+                    name: 'profile',
+                    component: () => import('@/views/pages/Profile.vue'),
+                    meta: {
+                        title: 'Mi Perfil',
+                        requiresAuth: true,
+                        roles: ['all'] // Acceso para todos los usuarios autenticados
+                    }
+                }
             ]
         },
         {

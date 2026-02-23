@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { getUser, setUser } from '@/service/api';
 import UsuarioService from '@/service/usuarioService';
+import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
 
 const toast = useToast();
 const user = ref({});
@@ -191,7 +192,16 @@ const estadoTicketSeverity = (estado) => {
 
                     <!-- Nombre y username -->
                     <div class="text-900 font-bold text-2xl mb-1 text-center">{{ user.nombre_completo }}</div>
-                    <div class="text-500 font-medium text-base mb-5 text-center">@{{ user.username }}</div>
+                    <div class="text-500 font-medium text-base mb-3 text-center">@{{ user.username }}</div>
+
+                    <!-- Insignia de Rango -->
+                    <div class="mb-5 flex justify-center">
+                        <InsigniaRangoAnimada
+                            v-if="user.rango_gamificacion"
+                            :nivel="user.rango_gamificacion.nivel"
+                            :nombreRango="user.rango_gamificacion.titulo"
+                        />
+                    </div>
 
                     <!-- Datos rápidos -->
                     <div class="w-full border-t border-surface pt-4">
