@@ -24,7 +24,7 @@ app.use(PrimeVue, {
     },
 
     // ========== EFECTOS VISUALES ==========
-    ripple: false, // Habilita el efecto ripple (onda) al hacer clic en botones y componentes
+    ripple: true, // Habilita el efecto ripple (onda) al hacer clic en botones y componentes
 
     // ========== ESTILOS DE INPUT ==========
     inputStyle: 'outlined', // Estilo de los campos de entrada: 'outlined' (con borde) o 'filled' (con fondo)
