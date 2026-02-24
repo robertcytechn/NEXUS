@@ -105,9 +105,9 @@ export const getRangoUsuario = () => {
 };
 
 /**
- * Actualiza sólo el rango en el objeto usuario del localStorage.
- * Útil cuando el sistema de gamificación notifica un cambio de rango
- * sin necesidad de re-login.
+ * Actualiza sólo el rango en el objeto usuario del localStorage
+ * y despacha el evento `nexus:rango-actualizado` para que componentes
+ * como AppTopbar actualicen InsigniaRangoAnimada en tiempo real.
  * @param {{ nivel: number, titulo: string }} rango
  */
 export const actualizarRangoLocal = (rango) => {
@@ -115,6 +115,8 @@ export const actualizarRangoLocal = (rango) => {
     if (user && rango) {
         user.rango_gamificacion = { ...user.rango_gamificacion, ...rango };
         setUser(user);
+        // Notificar a todos los componentes que escuchan (AppTopbar, Dashboard, etc.)
+        window.dispatchEvent(new CustomEvent('nexus:rango-actualizado', { detail: user.rango_gamificacion }));
     }
 };
 

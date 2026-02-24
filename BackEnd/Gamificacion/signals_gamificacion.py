@@ -126,6 +126,9 @@ def otorgar_puntos(user, puntos: int, motivo: str) -> dict | None:
         'puntos_historico': usuario.puntos_gamificacion_historico,
         'rango_nivel': rango.get('nivel', 1),
         'rango_titulo': rango.get('titulo', ''),
+        'rango_insignia': rango.get('insignia', ''),
+        'progreso_pct': rango.get('progreso_pct', 0.0),
+        'puntos_sig': rango.get('puntos_sig', None),
         'usuario': usuario.username,
         'motivo': motivo,
         'mensaje_nexus': f'🏅 +{puntos} puntos NEXUS — {motivo}',
@@ -144,6 +147,35 @@ def otorgar_puntos(user, puntos: int, motivo: str) -> dict | None:
 # SEÑALES
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Signal pre_save para capturar el estado anterior del ticket.
+# NOTA: Tickets/signals.py:ticket_snapshot_pre_save ya captura _prev_estado
+# (se registra antes que esta porque Tickets está antes en INSTALLED_APPS).
+# Aprovechamos ese valor para evitar una consulta SQL duplicada.
+from django.db.models.signals import pre_save
+
+
+@receiver(pre_save, sender='Tickets.Ticket')
+def gamif_ticket_capturar_estado(sender, instance, **kwargs):
+    """
+    Captura el estado anterior del ticket para detección de transición a 'cerrado'.
+    Reutiliza _prev_estado ya capturado por Tickets/signals.py cuando está disponible
+    para evitar una segunda consulta SQL innecesaria.
+    """
+    if hasattr(instance, '_prev_estado'):
+        # ticket_snapshot_pre_save (Tickets.signals) ya corrió y llenó _prev_estado
+        instance._estado_anterior = instance._prev_estado
+        return
+    # Fallback: consultar BD si _prev_estado no está disponible
+    if instance.pk:
+        try:
+            anterior = sender.objects.get(pk=instance.pk)
+            instance._estado_anterior = anterior.estado_ciclo
+        except sender.DoesNotExist:
+            instance._estado_anterior = None
+    else:
+        instance._estado_anterior = None
+
+
 # ── 1. Ticket cerrado → +2 pts al técnico asignado ───────────────────────────
 @receiver(post_save, sender='Tickets.Ticket')
 def gamif_ticket_cerrado(sender, instance, created, **kwargs):
@@ -161,21 +193,6 @@ def gamif_ticket_cerrado(sender, instance, created, **kwargs):
             2,
             'ticket cerrado correctamente',
         )
-
-
-# Signal pre_save para capturar el estado anterior del ticket
-from django.db.models.signals import pre_save
-
-
-@receiver(pre_save, sender='Tickets.Ticket')
-def gamif_ticket_capturar_estado(sender, instance, **kwargs):
-    """Guarda el estado anterior del ticket antes de que se actualice."""
-    if instance.pk:
-        try:
-            anterior = sender.objects.get(pk=instance.pk)
-            instance._estado_anterior = anterior.estado_ciclo
-        except sender.DoesNotExist:
-            instance._estado_anterior = None
 
 
 # ── 2. Bitácora Técnica creada → +2 pts al técnico ───────────────────────────
@@ -208,13 +225,24 @@ def gamif_mantenimiento_creado(sender, instance, created, **kwargs):
 # ── 4. Tarea Especial completada → +20 pts al asignado ───────────────────────
 @receiver(pre_save, sender='TareasEspeciales.TareaEspecial')
 def gamif_tarea_capturar_estado(sender, instance, **kwargs):
-    """Guarda el estado anterior de la tarea antes de actualizarse."""
+    """
+    Captura el estatus anterior de la tarea para detección de transición a 'completada'.
+    Reutiliza _prev_estatus ya capturado por TareasEspeciales/signals.py cuando está
+    disponible para evitar una segunda consulta SQL innecesaria.
+    """
+    if hasattr(instance, '_prev_estatus'):
+        # tarea_snapshot_pre_save (TareasEspeciales.signals) ya corrió
+        instance._estatus_anterior = instance._prev_estatus
+        return
+    # Fallback: consultar BD si _prev_estatus no está disponible
     if instance.pk:
         try:
             anterior = sender.objects.get(pk=instance.pk)
             instance._estatus_anterior = anterior.estatus
         except sender.DoesNotExist:
             instance._estatus_anterior = None
+    else:
+        instance._estatus_anterior = None
 
 
 @receiver(post_save, sender='TareasEspeciales.TareaEspecial')

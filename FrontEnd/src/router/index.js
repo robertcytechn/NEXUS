@@ -59,7 +59,26 @@ const router = createRouter({
                         requiresAuth: true,
                         roles: ['all'] // Acceso para todos los usuarios autenticados
                     }
-                }
+                },
+                {
+                    path: '/profile',
+                    name: 'profile',
+                    component: () => import('@/views/pages/Profile.vue'),
+                    meta: {
+                        title: 'Mi Perfil',
+                        requiresAuth: true,
+                        roles: ['all']
+                    }
+                },
+                {
+                    path: '/notificaciones/:id',
+                    component: () => import('@/views/NotificacionDetail.vue'),
+                    meta: {
+                        title: 'Detalle de Notificación',
+                        requiresAuth: true,
+                        roles: ['all']
+                    }
+                },
             ]
         },
         {

@@ -1,6 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Ticket
 from .serializers import TicketSerializer, TicketCentroServiciosSerializer
 from Gamificacion.signals_gamificacion import get_puntos_context, limpiar_puntos_context
@@ -13,6 +15,8 @@ class TicketViewSet(viewsets.ModelViewSet):
     Controlador para la gestión de incidencias en las máquinas de los casinos.
     """
     serializer_class = TicketSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['maquina', 'esta_activo', 'estado_ciclo', 'prioridad', 'categoria', 'maquina__casino']
 
     def get_queryset(self):
         """Optimización de consultas para las 17 salas."""

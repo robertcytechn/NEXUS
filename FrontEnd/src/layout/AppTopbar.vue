@@ -18,14 +18,22 @@ const toggleSearch = () => {
     searchRef.value.openSearch();
 };
 
-const user = getUser();
-const userName = computed(() => user ? `${user.nombres} ${user.apellido_paterno}` : 'Usuario');
+// user como ref para que rangoUsuario reaccione al evento nexus:rango-actualizado
+const user = ref(getUser());
+const userName = computed(() => user.value ? `${user.value.nombres} ${user.value.apellido_paterno}` : 'Usuario');
 
-// Rango desde localStorage (ya incluido en el objeto usuario del login)
+// Rango reactivo: se actualiza en tiempo real cuando el sistema de gamificación
+// otorga puntos, sin necesidad de re-login.
 const rangoUsuario = computed(() => {
-    if (!user || !user.rango_gamificacion) return { nivel: 1, titulo: 'Novato de Mantenimiento' };
-    return user.rango_gamificacion;
+    const u = user.value;
+    if (!u || !u.rango_gamificacion) return { nivel: 1, titulo: 'Novato de Mantenimiento' };
+    return u.rango_gamificacion;
 });
+
+// Escuchar el evento global emitido por actualizarRangoLocal()
+const _onRangoActualizado = () => { user.value = getUser(); };
+onMounted(() => window.addEventListener('nexus:rango-actualizado', _onRangoActualizado));
+onUnmounted(() => window.removeEventListener('nexus:rango-actualizado', _onRangoActualizado));
 
 const profileItems = computed(() => [
     {

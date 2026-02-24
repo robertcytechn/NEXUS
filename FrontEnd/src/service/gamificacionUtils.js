@@ -7,9 +7,12 @@
  *   import { mostrarToastPuntos } from '@/service/gamificacionUtils'
  *   mostrarToastPuntos(toast, respuesta.data?.puntos_nexus)
  */
+import { actualizarRangoLocal } from '@/service/api';
 
 /**
- * Muestra un toast con el detalle de los puntos NEXUS obtenidos.
+ * Muestra un toast con el detalle de los puntos NEXUS obtenidos y actualiza
+ * el rango en localStorage para que InsigniaRangoAnimada en el Topbar
+ * refleje el cambio sin necesidad de re-login.
  *
  * @param {object} toast       - Instancia de useToast() de PrimeVue.
  * @param {object|null} puntos - Objeto puntos_nexus devuelto por el servidor, o null/undefined.
@@ -29,6 +32,18 @@ export function mostrarToastPuntos(toast, puntos, life = 5000) {
         life,
         group: 'nexus-puntos',
     });
+
+    // Actualizar el rango en localStorage para que InsigniaRangoAnimada
+    // (Topbar, Dashboard, Profile) refleje el nuevo nivel sin re-login.
+    if (puntos.rango_nivel && puntos.rango_titulo) {
+        actualizarRangoLocal({
+            nivel: puntos.rango_nivel,
+            titulo: puntos.rango_titulo,
+            insignia: puntos.rango_insignia || '',
+            progreso_pct: puntos.progreso_pct ?? null,
+            puntos_sig: puntos.puntos_sig ?? null,
+        });
+    }
 }
 
 /**

@@ -145,8 +145,9 @@ async function validarMaquinaParaTicket(maquinaId, maquinaUid) {
             }
         }
 
-        // Filtrar solo tickets que no estén cerrados
-        const ticketsAbiertos = tickets.filter(t => t.estado_ciclo !== 'cerrado');
+        // Filtrar solo tickets que no estén cerrados Y que pertenezcan a esta máquina
+        const maquinaIdNum = parseInt(maquinaId);
+        const ticketsAbiertos = tickets.filter(t => t.maquina === maquinaIdNum && t.estado_ciclo !== 'cerrado');
 
         if (ticketsAbiertos.length > 0) {
             const folios = ticketsAbiertos.map(t => t.folio).join(', ');

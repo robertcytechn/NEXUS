@@ -105,14 +105,18 @@ def wiki_post_publicacion(sender, instance, created, **kwargs):
             es_global=True,
         )
 
-    # Notificación personal al autor con sus puntos ganados
-    if puntos > 0:
+    # Notificación personal al autor con sus puntos ganados.
+    # Usamos instance.puntos_reconocimiento (ya guardado en la guía)
+    # en lugar de autor.puntos_gamificacion, que sería stale en este
+    # punto del signal (la vista otorga los puntos DESPUÉS de guia.save()).
+    puntos_otorgados = instance.puntos_reconocimiento or 0
+    if puntos_otorgados > 0:
         Notificacion.objects.create(
             titulo='🏅 ¡Puntos de Gamificación Otorgados!',
             contenido=(
                 f'Tu guía "{instance.titulo_guia}" fue publicada. '
-                f'¡Se te han otorgado {puntos} puntos de gamificación! '
-                f'Total acumulado: {autor.puntos_gamificacion} puntos.'
+                f'¡Se te han otorgado {puntos_otorgados} puntos de gamificación! '
+                f'Revisa tu perfil para ver tu total actualizado.'
             ),
             nivel='informativa',
             tipo='wiki',
