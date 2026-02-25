@@ -115,12 +115,10 @@ class MauiShareHelper {
     }
 }
 
-// Exportar para usar en Vue
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MauiShareHelper;
-}
+// Exportar como módulo ES6 (requerido por Vite/Vue)
+export default MauiShareHelper;
 
-// Hacer disponible globalmente
+// Hacer disponible globalmente (útil para scripts externos o MAUI)
 if (typeof window !== 'undefined') {
     window.MauiShareHelper = MauiShareHelper;
 }
