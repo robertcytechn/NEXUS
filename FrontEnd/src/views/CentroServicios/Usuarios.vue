@@ -6,6 +6,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { useContactLinks } from '@/composables/useContactLinks';
 
 const usuarios = ref([]);
 const roles = ref([]);
@@ -20,6 +21,7 @@ const filtros = ref({
 });
 const toast = useToast();
 const confirm = useConfirm();
+const { abrirEmail } = useContactLinks(toast);
 const usuarioDialog = ref(false);
 const usuarioForm = ref({});
 const submitted = ref(false);
@@ -41,15 +43,22 @@ const permisos = computed(() => ({
     puedeDesactivar: ['SUP SISTEMAS', 'SUPERVISOR SALA', 'ADMINISTRADOR', 'GERENCIA'].includes(rolUsuario.value)
 }));
 
-// Roles disponibles filtrados según el rol del usuario logueado
+// Roles disponibles filtrados según el rol del usuario logueado (Tarea 6)
 const rolesDisponibles = computed(() => {
-    const esAdminODBA = ['ADMINISTRADOR', 'DB ADMIN'].includes(rolUsuario.value);
-    if (esAdminODBA) {
-        // Admin y DB Admin ven todos los roles (excepto ADMINISTRADOR)
-        return roles.value.filter(r => r.nombre !== 'ADMINISTRADOR');
+    if (['ADMINISTRADOR', 'DB ADMIN'].includes(rolUsuario.value)) {
+        // Admin y DB Admin ven todos los roles disponibles
+        return roles.value;
     }
-    // Los demás solo ven TECNICO y SUPERVISOR SALA
-    return roles.value.filter(r => ['TECNICO', 'SUPERVISOR SALA'].includes(r.nombre));
+    if (rolUsuario.value === 'GERENCIA') {
+        // Gerente puede crear: sup_sistemas, tecnico, supervisor_sala, encargado_area
+        return roles.value.filter(r => ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA'].includes(r.nombre));
+    }
+    if (rolUsuario.value === 'SUP SISTEMAS') {
+        // Sup Sistemas puede crear: tecnico, supervisor_sala, encargado_area
+        return roles.value.filter(r => ['TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA'].includes(r.nombre));
+    }
+    // Si no coincide ningún rol con permisos de creación, no mostrar opciones
+    return [];
 });
 
 // Sincronizar buscador
@@ -299,7 +308,7 @@ onMounted(() => {
                 </Column>
                 <Column v-if="esColumnaVisible('email')" field="email" header="Email" sortable style="min-width: 14rem">
                     <template #body="{ data }">
-                        <a :href="'mailto:' + data.email" class="text-primary-500 hover:underline text-sm">{{ data.email }}</a>
+                        <span class="text-primary-500 hover:underline text-sm cursor-pointer" @click="abrirEmail(data.email)">{{ data.email }}</span>
                     </template>
                 </Column>
                 <Column v-if="esColumnaVisible('rol_nombre')" field="rol_nombre" header="Rol" sortable style="min-width: 10rem">
@@ -420,9 +429,9 @@ onMounted(() => {
                                     <i class="pi pi-envelope text-blue-500 text-sm"></i>
                                     <span class="text-surface-500 dark:text-surface-400 text-xs font-semibold">Email</span>
                                 </div>
-                                <a :href="'mailto:' + usuarioDetalle.email" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
+                                <span class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium cursor-pointer" @click="abrirEmail(usuarioDetalle.email)">
                                     {{ usuarioDetalle.email }}
-                                </a>
+                                </span>
                             </div>
                             <!-- Casino -->
                             <div class="bg-white dark:bg-surface-800 rounded-lg p-3 border border-surface-200 dark:border-surface-700">

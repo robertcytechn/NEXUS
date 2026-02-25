@@ -246,6 +246,79 @@ class UsuariosViewSet(viewsets.ModelViewSet):
             'actividad_reciente': actividad
         })
 
+    @action(detail=False, methods=['get'], url_path='reporte-diario')
+    def reporte_diario(self, request):
+        """
+        Genera el Reporte Diario de Operaciones para el Dashboard.
+        Devuelve:
+          - maquinas_intervenidas: Máquinas que tuvieron alguna entrada de bitácora HOY,
+            con su UID, modelo y última anotación técnica.
+          - incidencias_infra: Incidencias de infraestructura de HOY y AYER.
+
+        Query param requerido: ?casino=<casino_id>
+        """
+        from BitacoraTecnica.models import BitacoraTecnica
+        from IncidenciasInfraestructura.models import IncidenciaInfraestructura
+        from Maquinas.models import Maquina
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.db.models import Prefetch, Max
+
+        casino_id = request.query_params.get('casino')
+        if not casino_id:
+            return Response({'error': 'Se requiere el parámetro casino.'}, status=400)
+
+        hoy = timezone.localdate()
+        ayer = hoy - timedelta(days=1)
+
+        # ── Máquinas intervenidas hoy ─────────────────────────────────────
+        # Obtener IDs de tickets que tienen bitácoras creadas HOY
+        bitacoras_hoy = BitacoraTecnica.objects.filter(
+            creado_en__date=hoy,
+            ticket__maquina__casino_id=casino_id
+        ).select_related('ticket__maquina__modelo')
+
+        # Agrupar por máquina, quedándonos con la última anotación por máquina
+        maquinas_vistas = {}
+        for b in bitacoras_hoy.order_by('ticket__maquina_id', '-creado_en'):
+            maq = b.ticket.maquina
+            if maq.id not in maquinas_vistas:
+                maquinas_vistas[maq.id] = {
+                    'uid': maq.uid_sala,
+                    'modelo': maq.modelo.nombre_modelo if maq.modelo else 'N/A',
+                    'ultima_anotacion': b.descripcion_trabajo[:120] + ('…' if len(b.descripcion_trabajo) > 120 else ''),
+                    'resultado': b.get_resultado_intervencion_display(),
+                    'estado_resultante': b.estado_maquina_resultante,
+                }
+
+        maquinas_intervenidas = list(maquinas_vistas.values())
+
+        # ── Incidencias de infraestructura hoy y ayer ───────────────────
+        incidencias_qs = IncidenciaInfraestructura.objects.filter(
+            casino_id=casino_id,
+            hora_inicio__date__in=[hoy, ayer]
+        ).order_by('-hora_inicio')
+
+        incidencias = []
+        for inc in incidencias_qs:
+            fecha_label = 'Hoy' if inc.hora_inicio.date() == hoy else 'Ayer'
+            incidencias.append({
+                'titulo': inc.titulo,
+                'categoria': inc.get_categoria_display(),
+                'severidad': inc.get_severidad_display(),
+                'descripcion': inc.descripcion[:200] + ('…' if len(inc.descripcion) > 200 else ''),
+                'afecta_operacion': inc.afecta_operacion,
+                'hora_inicio': inc.hora_inicio.strftime('%H:%M'),
+                'hora_fin': inc.hora_fin.strftime('%H:%M') if inc.hora_fin else None,
+                'dia': fecha_label,
+            })
+
+        return Response({
+            'fecha': str(hoy),
+            'maquinas_intervenidas': maquinas_intervenidas,
+            'incidencias_infra': incidencias,
+        })
+
     @action(detail=True, methods=['get'], url_path='estadisticas-perfil')
     def estadisticas_perfil(self, request, pk=None):
         """

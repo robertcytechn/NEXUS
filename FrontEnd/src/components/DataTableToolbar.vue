@@ -71,6 +71,45 @@ const menuExportar = ref();
 const popoverColumnas = ref();
 const busquedaGlobal = ref('');
 
+// Detectar si el navegador soporta Web Share API y puede compartir archivos
+// Esto diferencia desktop (descarga directa) de móvil/WebView (menú compartir nativo)
+const canWebShare = () => {
+    return typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
+};
+
+/**
+ * Intenta compartir un Blob via Web Share API (móvil/WebView).
+ * Si no está disponible, descarga directamente (escritorio).
+ */
+const compartirODescargar = async (blob, nombreArchivo, mimeType) => {
+    if (canWebShare()) {
+        const file = new File([blob], nombreArchivo, { type: mimeType });
+        if (navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: props.tituloReporte });
+                return; // compartido con éxito
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    // Si falla por razones distintas a que el usuario canceló,
+                    // caemos al flujo tradicional de descarga
+                    console.warn('[DataTableToolbar] Web Share falló, descargando directo:', err);
+                }
+                return; // El usuario canceló – no descargar
+            }
+        }
+    }
+    // Descarga tradicional para escritorio
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', nombreArchivo);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 // Nombre del archivo con fecha
 const obtenerNombreArchivo = () => {
     let nombre = props.nombreArchivo;
@@ -83,14 +122,33 @@ const obtenerNombreArchivo = () => {
 };
 
 // Exportar a CSV
-const exportarCSV = () => {
-    if (props.dt && props.dt.exportCSV) {
+const exportarCSV = async () => {
+    if (props.dt && props.dt.exportCSV && !canWebShare()) {
+        // En desktop, usar el exportador nativo del DataTable
         props.dt.exportCSV();
+        return;
     }
+    // En móvil o cuando no hay referencia al DataTable, generar CSV manualmente
+    const columnasVisibles = props.columnas.filter(c => c.visible);
+    if (!props.datos || props.datos.length === 0) return;
+
+    let csv = '\uFEFF';
+    csv += columnasVisibles.map(col => '"' + col.label + '"').join(',') + '\n';
+    props.datos.forEach(fila => {
+        const valores = columnasVisibles.map(col => {
+            let valor = fila[col.field];
+            if (typeof valor === 'boolean') valor = valor ? 'Activo' : 'Inactivo';
+            else if (valor === null || valor === undefined) valor = 'N/A';
+            return '"' + String(valor).replace(/"/g, '""') + '"';
+        });
+        csv += valores.join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    await compartirODescargar(blob, obtenerNombreArchivo() + '.csv', 'text/csv;charset=utf-8;');
 };
 
 // Exportar a Excel mejorado con metadatos
-const exportarExcel = () => {
+const exportarExcel = async () => {
     const columnasVisibles = props.columnas.filter(c => c.visible);
     
     if (!props.datos || props.datos.length === 0) {
@@ -138,16 +196,7 @@ const exportarExcel = () => {
     
     // Descargar archivo
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', obtenerNombreArchivo() + '.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    await compartirODescargar(blob, obtenerNombreArchivo() + '.csv', 'text/csv;charset=utf-8;');
 };
 
 // Exportar a PDF
@@ -156,7 +205,7 @@ const exportarPDF = async () => {
 };
 
 // Exportar a JSON
-const exportarJSON = () => {
+const exportarJSON = async () => {
     const columnasVisibles = props.columnas.filter(c => c.visible);
     
     if (!props.datos || props.datos.length === 0) {
@@ -182,16 +231,7 @@ const exportarJSON = () => {
     
     // Descargar archivo JSON
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', obtenerNombreArchivo() + '.json');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    await compartirODescargar(blob, obtenerNombreArchivo() + '.json', 'application/json');
 };
 
 // Imprimir solo la tabla con columnas seleccionadas
@@ -409,8 +449,8 @@ defineExpose({
                 </div>
             </Popover>
 
-            <!-- Botones Imprimir y Exportar (ocultos en móvil) -->
-            <div class="hidden md:flex items-center gap-2">
+            <!-- Botones Imprimir y Exportar: siempre visibles (Tarea 5: Web Share en móvil) -->
+            <div class="flex items-center gap-2">
                 <Button 
                     v-if="mostrarImprimir"
                     icon="pi pi-print" 

@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUser, hasRoleAccess, fetchRoles } from '@/service/api';
-import { getDashboardStats, guardarUsuario } from '@/service/usuarioService';
+import { getDashboardStats, guardarUsuario, getReporteDiario } from '@/service/usuarioService';
 import { crearTicket, crearTicketConBitacora } from '@/service/ticketService';
 import { getMaquinasPorCasino } from '@/service/maquinaService';
 import EvolucionService from '@/service/EvolucionService';
@@ -21,6 +21,10 @@ const evolucionService = new EvolucionService();
 // Permissions
 const canViewGlobalStats = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA']));
 const canViewTechStats = computed(() => hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA']));
+// Solo roles analíticos ven las gráficas completas (Tarea 3)
+const canViewCharts = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'GERENCIA']));
+// Solo roles de gestión pueden ver el reporte diario (Tarea 4)
+const canViewReporteDiario = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS']));
 
 // Data State
 const stats = ref({
@@ -63,18 +67,26 @@ const usuario = ref({});
 const submittedUsuario = ref(false);
 const roles = ref([]);
 
-// Roles disponibles filtrados según el rol del usuario logueado
+// Roles disponibles filtrados según el rol del usuario logueado (Tarea 6)
 const rolesDisponibles = computed(() => {
     if (!roles.value) return [];
 
     const rolActual = user?.rol_nombre;
-    const esAdminODBA = ['ADMINISTRADOR', 'DB ADMIN'].includes(rolActual);
-    if (esAdminODBA) {
-        // Admin y DB Admin ven todos los roles (excepto ADMINISTRADOR)
-        return roles.value.filter(r => r.nombre !== 'ADMINISTRADOR');
+
+    if (['ADMINISTRADOR', 'DB ADMIN'].includes(rolActual)) {
+        // Admin y DB Admin ven todos los roles disponibles
+        return roles.value;
     }
-    // Los demás solo ven TECNICO y SUPERVISOR SALA
-    return roles.value.filter(r => ['TECNICO', 'SUPERVISOR SALA'].includes(r.nombre));
+    if (rolActual === 'GERENCIA') {
+        // Gerente puede crear: sup_sistemas, tecnico, supervisor_sala, encargado_area
+        return roles.value.filter(r => ['SUP SISTEMAS', 'TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA'].includes(r.nombre));
+    }
+    if (rolActual === 'SUP SISTEMAS') {
+        // Sup Sistemas puede crear: tecnico, supervisor_sala, encargado_area
+        return roles.value.filter(r => ['TECNICO', 'SUPERVISOR SALA', 'ENCARGADO AREA'].includes(r.nombre));
+    }
+    // Por defecto sin permisos para crear
+    return [];
 });
 
 const openUsuarioDialog = async () => {
@@ -304,34 +316,39 @@ const saveExpressTicket = async () => {
 const quickActions = computed(() => {
     const actions = [
         {
+            // Tarea 2: Solo gerente, sup_sistemas, supervisor_sala, jefe_area
             label: 'Ticket Rápido',
             icon: 'pi pi-bolt',
             action: openPanicDialog,
             color: 'bg-red-500',
-            allowed: true
+            allowed: hasRoleAccess(['GERENCIA', 'SUP SISTEMAS', 'SUPERVISOR SALA', 'JEFE AREA'])
         },
         {
+            // Tarea 2: Solo sup_sistemas y tecnico
             label: 'Reporte Técnico',
             icon: 'pi pi-wrench',
             action: openExpressDialog,
             color: 'bg-indigo-500',
-            allowed: hasRoleAccess(['TECNICO', 'SUP SISTEMAS', 'ADMINISTRADOR', 'DB ADMIN'])
+            allowed: hasRoleAccess(['SUP SISTEMAS', 'TECNICO'])
         },
         {
+            // Tarea 2: Solo sup_sistemas y tecnico
             label: 'Nuevo Ticket',
             icon: 'pi pi-ticket',
             action: openTicketDialog,
             color: 'bg-blue-500',
-            allowed: true
+            allowed: hasRoleAccess(['SUP SISTEMAS', 'TECNICO'])
         },
         {
+            // Tarea 2: Solo sup_sistemas, bd_admin, gerente, administrador
             label: 'Crear Usuario',
             icon: 'pi pi-user-plus',
             action: openUsuarioDialog,
             color: 'bg-green-500',
-            allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS']) // Ampliado para coincidir con Usuarios.vue
+            allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS'])
         },
         {
+            // Tarea 2: Visible para TODOS
             label: 'Reportar Error en el sistema',
             icon: 'pi pi-exclamation-circle',
             action: openEvolucionDialog,
@@ -339,11 +356,12 @@ const quickActions = computed(() => {
             allowed: true
         },
         {
+            // Tarea 2: Visible para TODOS
             label: 'Inventario',
             icon: 'pi pi-box',
             action: () => router.push('/centro-servicios/inventario'),
             color: 'bg-purple-500',
-            allowed: hasRoleAccess(['ADMINISTRADOR', 'SUP SISTEMAS', 'TECNICO'])
+            allowed: true
         }
     ];
     return actions.filter(a => a.allowed);
@@ -382,6 +400,91 @@ onMounted(() => {
 const handleAction = (actionFn) => {
     if (actionFn) actionFn();
 };
+
+// ── Reporte Diario (Tarea 4) ─────────────────────────────────────────────────
+const reporteDiarioDialog = ref(false);
+const reporteDiarioData = ref(null);
+const loadingReporte = ref(false);
+
+const openReporteDiario = async () => {
+    reporteDiarioDialog.value = true;
+    if (!reporteDiarioData.value) {
+        await refreshReporteDiario();
+    }
+};
+
+const refreshReporteDiario = async () => {
+    if (!user?.casino) return;
+    loadingReporte.value = true;
+    const res = await getReporteDiario(user.casino);
+    if (res.exito) {
+        reporteDiarioData.value = res.data;
+    } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: res.detalle, life: 3000 });
+    }
+    loadingReporte.value = false;
+};
+
+// Genera el texto plano del reporte para copiar / compartir
+const getReporteTexto = () => {
+    if (!reporteDiarioData.value) return '';
+    const d = reporteDiarioData.value;
+    let txt = `=== REPORTE DIARIO NEXUS === ${d.fecha}\n\n`;
+    txt += `🔧 MÁQUINAS INTERVENIDAS HOY (${d.maquinas_intervenidas.length})\n`;
+    txt += '─'.repeat(40) + '\n';
+    if (d.maquinas_intervenidas.length === 0) {
+        txt += 'Sin intervenciones registradas.\n';
+    } else {
+        d.maquinas_intervenidas.forEach(m => {
+            txt += `• ${m.uid} - ${m.modelo}\n`;
+            txt += `  Última anotación: ${m.ultima_anotacion}\n`;
+            txt += `  Resultado: ${m.resultado} | Estado: ${m.estado_resultante}\n`;
+        });
+    }
+    txt += `\n⚠️ INCIDENCIAS DE INFRAESTRUCTURA (${d.incidencias_infra.length})\n`;
+    txt += '─'.repeat(40) + '\n';
+    if (d.incidencias_infra.length === 0) {
+        txt += 'Sin incidencias de infraestructura.\n';
+    } else {
+        d.incidencias_infra.forEach(inc => {
+            txt += `[${inc.dia}] ${inc.titulo} (${inc.categoria}) - ${inc.severidad}\n`;
+            txt += `  Hora: ${inc.hora_inicio}${inc.hora_fin ? ' - ' + inc.hora_fin : ''}\n`;
+            txt += `  ${inc.descripcion}\n`;
+        });
+    }
+    return txt;
+};
+
+// Copiar al portapapeles — compatible con WebView Android/iOS
+const copiarReporte = async () => {
+    const texto = getReporteTexto();
+    try {
+        await navigator.clipboard.writeText(texto);
+        toast.add({ severity: 'success', summary: 'Copiado', detail: 'Reporte copiado al portapapeles', life: 2000 });
+    } catch {
+        // Fallback para WebViews sin acceso a clipboard API
+        const el = document.createElement('textarea');
+        el.value = texto;
+        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        toast.add({ severity: 'success', summary: 'Copiado', detail: 'Reporte copiado al portapapeles', life: 2000 });
+    }
+};
+
+// Exportar a PDF (solo escritorio — oculto en móvil vía CSS)
+const exportarReportePDF = () => {
+    const texto = getReporteTexto();
+    const ventana = window.open('', '_blank');
+    if (!ventana) return;
+    ventana.document.write(`<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Reporte Diario NEXUS</title>
+    <style>body{font-family:monospace;padding:24px;white-space:pre-wrap;}</style></head>
+    <body>${texto.replace(/</g, '&lt;')}</body></html>`);
+    ventana.document.close();
+    setTimeout(() => { ventana.print(); ventana.close(); }, 250);
+};
 </script>
 
 <template>
@@ -400,7 +503,19 @@ const handleAction = (actionFn) => {
                             :nombreRango="user.rango_gamificacion.titulo"
                         />
                     </div>
-                    <i class="pi pi-compass text-4xl text-primary opacity-50"></i>
+                    <div class="flex flex-col items-end gap-2">
+                        <i class="pi pi-compass text-4xl text-primary opacity-50"></i>
+                        <!-- Botón Reporte Diario – Solo roles de gestión (Tarea 4) -->
+                        <Button
+                            v-if="canViewReporteDiario"
+                            label="Reporte del Día"
+                            icon="pi pi-file-export"
+                            severity="info"
+                            outlined
+                            size="small"
+                            @click="openReporteDiario"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -484,8 +599,8 @@ const handleAction = (actionFn) => {
             </div>
         </div>
 
-        <!-- Dashboard Charts (New) -->
-        <div v-if="user?.casino" class="col-span-12">
+        <!-- Dashboard Charts – Solo roles analíticos (Tarea 3) -->
+        <div v-if="user?.casino && canViewCharts" class="col-span-12">
             <DashboardCharts :casinoId="user.casino" />
         </div>
 
@@ -715,5 +830,89 @@ const handleAction = (actionFn) => {
             </template>
         </Dialog>
 
+        <!-- Dialog: Reporte Diario (Tarea 4) -->
+        <Dialog v-model:visible="reporteDiarioDialog" :style="{ width: '700px' }" :modal="true" header="📊 Reporte Diario de Operaciones">
+            <!-- Toolbar del reporte -->
+            <div class="flex items-center gap-2 mb-4">
+                <Button icon="pi pi-refresh" label="Actualizar" text size="small" @click="refreshReporteDiario" :loading="loadingReporte" />
+                <Button icon="pi pi-copy" label="Copiar" size="small" severity="secondary" outlined @click="copiarReporte" />
+                <!-- Exportar PDF — oculto en móvil mediante media query -->
+                <Button icon="pi pi-file-pdf" label="Exportar PDF" size="small" severity="danger" outlined @click="exportarReportePDF" class="reporte-pdf-btn" />
+            </div>
+
+            <div v-if="loadingReporte" class="flex justify-center p-8">
+                <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+            </div>
+
+            <div v-else-if="reporteDiarioData" class="flex flex-col gap-5">
+                <p class="text-surface-500 text-sm">Fecha: <strong>{{ reporteDiarioData.fecha }}</strong></p>
+
+                <!-- Máquinas Intervenidas -->
+                <div>
+                    <div class="font-semibold text-base mb-2 flex items-center gap-2">
+                        <i class="pi pi-wrench text-indigo-500"></i>
+                        Máquinas Intervenidas Hoy
+                        <span class="text-xs text-surface-400">({{ reporteDiarioData.maquinas_intervenidas.length }})</span>
+                    </div>
+                    <div v-if="reporteDiarioData.maquinas_intervenidas.length === 0" class="text-surface-400 text-sm italic">
+                        Sin intervenciones técnicas registradas hoy.
+                    </div>
+                    <div v-for="m in reporteDiarioData.maquinas_intervenidas" :key="m.uid"
+                        class="mb-2 p-3 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-primary-600 dark:text-primary-400">{{ m.uid }}</span>
+                            <Tag :value="m.estado_resultante" size="small"
+                                :severity="m.estado_resultante === 'operativa' ? 'success' : (m.estado_resultante === 'dañada' ? 'danger' : 'warn')" />
+                        </div>
+                        <div class="text-xs text-surface-500 mb-1">{{ m.modelo }}</div>
+                        <div class="text-sm text-surface-700 dark:text-surface-300">
+                            <i class="pi pi-comment text-xs mr-1"></i>{{ m.ultima_anotacion }}
+                        </div>
+                        <div class="text-xs text-surface-400 mt-1">Resultado: {{ m.resultado }}</div>
+                    </div>
+                </div>
+
+                <!-- Incidencias de Infraestructura -->
+                <div>
+                    <div class="font-semibold text-base mb-2 flex items-center gap-2">
+                        <i class="pi pi-exclamation-triangle text-orange-500"></i>
+                        Incidencias de Infraestructura (Hoy y Ayer)
+                        <span class="text-xs text-surface-400">({{ reporteDiarioData.incidencias_infra.length }})</span>
+                    </div>
+                    <div v-if="reporteDiarioData.incidencias_infra.length === 0" class="text-surface-400 text-sm italic">
+                        Sin incidencias de infraestructura en las últimas 48h.
+                    </div>
+                    <div v-for="(inc, idx) in reporteDiarioData.incidencias_infra" :key="idx"
+                        class="mb-2 p-3 rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-semibold text-sm">{{ inc.titulo }}</span>
+                            <div class="flex items-center gap-1">
+                                <Tag :value="inc.dia" size="small"
+                                    :severity="inc.dia === 'Hoy' ? 'danger' : 'warn'" />
+                            </div>
+                        </div>
+                        <div class="text-xs text-surface-500 mb-1">
+                            {{ inc.categoria }} — {{ inc.severidad }}
+                            <span class="ml-2">{{ inc.hora_inicio }}{{ inc.hora_fin ? ' – ' + inc.hora_fin : '' }}</span>
+                        </div>
+                        <div class="text-sm text-surface-700 dark:text-surface-300">{{ inc.descripcion }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <template #footer>
+                <Button label="Cerrar" text severity="secondary" @click="reporteDiarioDialog = false" />
+            </template>
+        </Dialog>
+
     </div>
 </template>
+
+<style>
+/* Ocultar botón PDF en dispositivos móviles (Tarea 4) */
+@media (max-width: 768px) {
+    .reporte-pdf-btn {
+        display: none !important;
+    }
+}
+</style>

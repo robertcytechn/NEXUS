@@ -6,6 +6,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { useContactLinks } from '@/composables/useContactLinks';
 
 const proveedores = ref([]);
 const casinos = ref([]);
@@ -20,6 +21,7 @@ const filtros = ref({
 });
 const toast = useToast();
 const confirm = useConfirm();
+const { abrirTelefono, abrirEmail } = useContactLinks(toast);
 const proveedorDialog = ref(false);
 const proveedor = ref({});
 const submitted = ref(false);
@@ -255,12 +257,12 @@ onMounted(() => {
                 </Column>
                 <Column v-if="esColumnaVisible('email_corporativo')" field="email_corporativo" header="Email" sortable style="min-width: 14rem">
                     <template #body="{ data }">
-                        <a :href="'mailto:' + data.email_corporativo" class="text-primary-500 hover:underline text-sm">{{ data.email_corporativo }}</a>
+                        <span class="text-primary-500 hover:underline text-sm cursor-pointer" @click="abrirEmail(data.email_corporativo)">{{ data.email_corporativo }}</span>
                     </template>
                 </Column>
                 <Column v-if="esColumnaVisible('telefono_soporte')" field="telefono_soporte" header="Tel. Soporte" sortable style="min-width: 10rem">
                     <template #body="{ data }">
-                        <a v-if="data.telefono_soporte" :href="'tel:' + data.telefono_soporte" class="text-primary-500 hover:underline text-sm">{{ data.telefono_soporte }}</a>
+                        <span v-if="data.telefono_soporte" class="text-primary-500 hover:underline text-sm cursor-pointer" @click="abrirTelefono(data.telefono_soporte)">{{ data.telefono_soporte }}</span>
                         <span v-else class="text-surface-400 text-sm">N/A</span>
                     </template>
                 </Column>
@@ -379,9 +381,9 @@ onMounted(() => {
                                     <i class="pi pi-envelope text-blue-500 text-sm"></i>
                                     <span class="text-surface-500 dark:text-surface-400 text-xs font-semibold">Email Corporativo</span>
                                 </div>
-                                <a :href="'mailto:' + proveedorDetalle.email_corporativo" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
+                                <span class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium cursor-pointer" @click="abrirEmail(proveedorDetalle.email_corporativo)">
                                     {{ proveedorDetalle.email_corporativo }}
-                                </a>
+                                </span>
                             </div>
                             <!-- Teléfono Soporte -->
                             <div class="bg-white dark:bg-surface-800 rounded-lg p-3 border border-surface-200 dark:border-surface-700">
@@ -389,9 +391,9 @@ onMounted(() => {
                                     <i class="pi pi-phone text-green-500 text-sm"></i>
                                     <span class="text-surface-500 dark:text-surface-400 text-xs font-semibold">Tel. Soporte</span>
                                 </div>
-                                <a v-if="proveedorDetalle.telefono_soporte" :href="'tel:' + proveedorDetalle.telefono_soporte" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
+                                <span v-if="proveedorDetalle.telefono_soporte" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium cursor-pointer" @click="abrirTelefono(proveedorDetalle.telefono_soporte)">
                                     {{ proveedorDetalle.telefono_soporte }}
-                                </a>
+                                </span>
                                 <span v-else class="text-surface-400 text-xs">No registrado</span>
                             </div>
                             <!-- Email Soporte -->
@@ -400,9 +402,9 @@ onMounted(() => {
                                     <i class="pi pi-at text-purple-500 text-sm"></i>
                                     <span class="text-surface-500 dark:text-surface-400 text-xs font-semibold">Email Soporte</span>
                                 </div>
-                                <a v-if="proveedorDetalle.email_soporte" :href="'mailto:' + proveedorDetalle.email_soporte" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
+                                <span v-if="proveedorDetalle.email_soporte" class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium cursor-pointer" @click="abrirEmail(proveedorDetalle.email_soporte)">
                                     {{ proveedorDetalle.email_soporte }}
-                                </a>
+                                </span>
                                 <span v-else class="text-surface-400 text-xs">No registrado</span>
                             </div>
                             <!-- Contacto Técnico -->

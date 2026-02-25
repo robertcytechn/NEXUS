@@ -29,19 +29,35 @@ api.interceptors.request.use(
 
 // Interceptor para manejar respuestas y errores
 api.interceptors.response.use(
-  (response) => {
-    return response;
+    (response) => {
+        return response;
     },
     (error) => {
-        // Si el token expiró o no es válido (401)
-        if (error.response && error.response.status === 401) {
-            // Limpiar localStorage
+        const url = error.config?.url || '';
+
+        // Excluir los endpoints de autenticación: un 401 en login es una
+        // respuesta válida (credenciales incorrectas), no una sesión expirada.
+        // También excluimos refresh para evitar bucles.
+        const esEndpointAuth = url.includes('usuarios/login/') || url.includes('usuarios/refresh/');
+
+        // Si el token es inválido (401) o acceso prohibido (403) en cualquier
+        // otro endpoint, significa que la sesión ya no es válida en el servidor
+        // (p.ej. sesión concurrente: otro dispositivo inició sesión con el mismo usuario).
+        if (!esEndpointAuth && error.response && (error.response.status === 401 || error.response.status === 403)) {
+            // Limpiar TODOS los datos de sesión del localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
-    
-            // Opcional: redirigir al login
-            // window.location.href = '/login';
+            localStorage.removeItem('roles');
+
+            // Importar el router dinámicamente para evitar dependencias circulares
+            // y redirigir al login de forma limpia con Vue Router
+            import('@/router').then(({ default: router }) => {
+                // Evitar redirigir si ya estamos en /login
+                if (router.currentRoute.value.path !== '/login') {
+                    router.push('/login');
+                }
+            });
         }
         return Promise.reject(error);
     }

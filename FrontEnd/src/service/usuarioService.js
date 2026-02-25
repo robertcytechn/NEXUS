@@ -224,9 +224,28 @@ export async function obtenerEstadisticasPerfil(id) {
     }
 }
 
+/**
+ * Obtiene el Reporte Diario de Operaciones para el Dashboard.
+ * Incluye máquinas intervenidas hoy e incidencias de infraestructura de hoy y ayer.
+ * @param {number} casinoId
+ */
+export async function getReporteDiario(casinoId) {
+    try {
+        const response = await api.get(`usuarios/reporte-diario/?casino=${casinoId}`);
+        return { exito: true, data: response.data };
+    } catch (error) {
+        return {
+            exito: false,
+            error: 'Error al cargar el reporte diario',
+            detalle: error?.response?.data?.error || 'No se pudo obtener el reporte'
+        };
+    }
+}
+
 export default {
     guardarUsuario,
     getDashboardStats,
+    getReporteDiario,
     subirAvatar,
     cambiarPassword,
     obtenerEstadisticasPerfil
