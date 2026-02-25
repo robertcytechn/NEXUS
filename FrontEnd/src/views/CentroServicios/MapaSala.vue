@@ -6,6 +6,7 @@ import api, { getUser, hasRoleAccess } from '@/service/api';
 import { obtenerMapaCasino, actualizarCoordenadas } from '@/service/mapaService';
 import { crearTicket, TIPOS_TICKET } from '@/service/ticketService';
 import { jsPDF } from 'jspdf';
+import MauiShareHelper from '@/utils/maui-share-helper.js';
 
 // ─── ESTADO PRINCIPAL ─────────────────────────────────────────────────────────
 const toast = useToast();
@@ -519,7 +520,9 @@ async function _dibujarYExportar() {
         }
     }
 
-    pdf.save(`Mapa-${gridConfig.value.nombre}-${new Date().toLocaleDateString('es-MX')}.pdf`);
+    const pdfBlob = pdf.output('blob');
+    const pdfFilename = `Mapa-${gridConfig.value.nombre}-${new Date().toLocaleDateString('es-MX')}.pdf`;
+    await MauiShareHelper.shareFile(pdfBlob, pdfFilename, 'application/pdf');
 }
 
 /**

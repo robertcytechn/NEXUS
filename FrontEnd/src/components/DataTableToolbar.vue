@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import MauiShareHelper from '@/utils/maui-share-helper.js';
 
 const props = defineProps({
     // Referencia al DataTable para exportación
@@ -71,43 +72,12 @@ const menuExportar = ref();
 const popoverColumnas = ref();
 const busquedaGlobal = ref('');
 
-// Detectar si el navegador soporta Web Share API y puede compartir archivos
-// Esto diferencia desktop (descarga directa) de móvil/WebView (menú compartir nativo)
-const canWebShare = () => {
-    return typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
-};
-
 /**
- * Intenta compartir un Blob via Web Share API (móvil/WebView).
- * Si no está disponible, descarga directamente (escritorio).
+ * Comparte o descarga un Blob usando MauiShareHelper.
+ * En MAUI usa el menú nativo de compartir; en web usa descarga tradicional (fallback automático).
  */
 const compartirODescargar = async (blob, nombreArchivo, mimeType) => {
-    if (canWebShare()) {
-        const file = new File([blob], nombreArchivo, { type: mimeType });
-        if (navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({ files: [file], title: props.tituloReporte });
-                return; // compartido con éxito
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    // Si falla por razones distintas a que el usuario canceló,
-                    // caemos al flujo tradicional de descarga
-                    console.warn('[DataTableToolbar] Web Share falló, descargando directo:', err);
-                }
-                return; // El usuario canceló – no descargar
-            }
-        }
-    }
-    // Descarga tradicional para escritorio
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', nombreArchivo);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    await MauiShareHelper.shareFile(blob, nombreArchivo, mimeType);
 };
 
 // Nombre del archivo con fecha
@@ -123,12 +93,8 @@ const obtenerNombreArchivo = () => {
 
 // Exportar a CSV
 const exportarCSV = async () => {
-    if (props.dt && props.dt.exportCSV && !canWebShare()) {
-        // En desktop, usar el exportador nativo del DataTable
-        props.dt.exportCSV();
-        return;
-    }
-    // En móvil o cuando no hay referencia al DataTable, generar CSV manualmente
+    // Siempre generar CSV manualmente para que pase por MauiShareHelper
+    // (que tiene fallback automático para web de escritorio)
     const columnasVisibles = props.columnas.filter(c => c.visible);
     if (!props.datos || props.datos.length === 0) return;
 
