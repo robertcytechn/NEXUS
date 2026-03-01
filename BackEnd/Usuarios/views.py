@@ -251,18 +251,15 @@ class UsuariosViewSet(viewsets.ModelViewSet):
         """
         Genera el Reporte Diario de Operaciones para el Dashboard.
         Devuelve:
-          - maquinas_intervenidas: Máquinas que tuvieron alguna entrada de bitácora HOY,
-            con su UID, modelo y última anotación técnica.
+          - maquinas_danadas: Máquinas del casino con estado DAÑADA o DAÑADA_OPERATIVA.
           - incidencias_infra: Incidencias de infraestructura de HOY y AYER.
 
         Query param requerido: ?casino=<casino_id>
         """
-        from BitacoraTecnica.models import BitacoraTecnica
         from IncidenciasInfraestructura.models import IncidenciaInfraestructura
         from Maquinas.models import Maquina
         from django.utils import timezone
         from datetime import timedelta
-        from django.db.models import Prefetch, Max
 
         casino_id = request.query_params.get('casino')
         if not casino_id:
@@ -271,27 +268,24 @@ class UsuariosViewSet(viewsets.ModelViewSet):
         hoy = timezone.localdate()
         ayer = hoy - timedelta(days=1)
 
-        # ── Máquinas intervenidas hoy ─────────────────────────────────────
-        # Obtener IDs de tickets que tienen bitácoras creadas HOY
-        bitacoras_hoy = BitacoraTecnica.objects.filter(
-            creado_en__date=hoy,
-            ticket__maquina__casino_id=casino_id
-        ).select_related('ticket__maquina__modelo')
+        # ── Máquinas con fallas activas ──────────────────────────────────
+        # Máquinas en estado DAÑADA o DAÑADA_OPERATIVA pertenecientes al casino
+        maquinas_qs = Maquina.objects.filter(
+            casino_id=casino_id,
+            estado_actual__in=['DAÑADA', 'DAÑADA_OPERATIVA'],
+            esta_activo=True,
+        ).select_related('modelo').order_by('uid_sala')
 
-        # Agrupar por máquina, quedándonos con la última anotación por máquina
-        maquinas_vistas = {}
-        for b in bitacoras_hoy.order_by('ticket__maquina_id', '-creado_en'):
-            maq = b.ticket.maquina
-            if maq.id not in maquinas_vistas:
-                maquinas_vistas[maq.id] = {
-                    'uid': maq.uid_sala,
-                    'modelo': maq.modelo.nombre_modelo if maq.modelo else 'N/A',
-                    'ultima_anotacion': b.descripcion_trabajo[:120] + ('…' if len(b.descripcion_trabajo) > 120 else ''),
-                    'resultado': b.get_resultado_intervencion_display(),
-                    'estado_resultante': b.estado_maquina_resultante,
-                }
-
-        maquinas_intervenidas = list(maquinas_vistas.values())
+        maquinas_danadas = []
+        for maq in maquinas_qs:
+            maquinas_danadas.append({
+                'uid': maq.uid_sala,
+                'modelo': maq.modelo.nombre_modelo if maq.modelo else 'N/A',
+                'estado': maq.estado_actual,
+                'estado_display': maq.get_estado_actual_display(),
+                'piso': maq.get_ubicacion_piso_display(),
+                'sala': maq.get_ubicacion_sala_display(),
+            })
 
         # ── Incidencias de infraestructura hoy y ayer ───────────────────
         incidencias_qs = IncidenciaInfraestructura.objects.filter(
@@ -315,7 +309,7 @@ class UsuariosViewSet(viewsets.ModelViewSet):
 
         return Response({
             'fecha': str(hoy),
-            'maquinas_intervenidas': maquinas_intervenidas,
+            'maquinas_danadas': maquinas_danadas,
             'incidencias_infra': incidencias,
         })
 

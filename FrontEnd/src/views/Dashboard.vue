@@ -25,6 +25,8 @@ const canViewTechStats = computed(() => hasRoleAccess(['ADMINISTRADOR', 'SUP SIS
 const canViewCharts = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'SUP SISTEMAS', 'GERENCIA']));
 // Solo roles de gestión pueden ver el reporte diario (Tarea 4)
 const canViewReporteDiario = computed(() => hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS']));
+// Insignia de rango: solo técnicos y sup sistemas participan en gamificación
+const canViewInsignia = computed(() => hasRoleAccess(['SUP SISTEMAS', 'TECNICO']));
 
 // Data State
 const stats = ref({
@@ -348,6 +350,14 @@ const quickActions = computed(() => {
             allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS'])
         },
         {
+            // Tarea 4: Solo roles de gestión
+            label: 'Reporte del Día',
+            icon: 'pi pi-chart-bar',
+            action: openReporteDiario,
+            color: 'bg-teal-500',
+            allowed: hasRoleAccess(['ADMINISTRADOR', 'DB ADMIN', 'GERENCIA', 'SUP SISTEMAS'])
+        },
+        {
             // Tarea 2: Visible para TODOS
             label: 'Reportar Error en el sistema',
             icon: 'pi pi-exclamation-circle',
@@ -430,15 +440,15 @@ const getReporteTexto = () => {
     if (!reporteDiarioData.value) return '';
     const d = reporteDiarioData.value;
     let txt = `=== REPORTE DIARIO NEXUS === ${d.fecha}\n\n`;
-    txt += `🔧 MÁQUINAS INTERVENIDAS HOY (${d.maquinas_intervenidas.length})\n`;
+    txt += `⚠️ MÁQUINAS CON FALLAS ACTIVAS (${d.maquinas_danadas.length})\n`;
     txt += '─'.repeat(40) + '\n';
-    if (d.maquinas_intervenidas.length === 0) {
-        txt += 'Sin intervenciones registradas.\n';
+    if (d.maquinas_danadas.length === 0) {
+        txt += 'Sin máquinas con fallas activas.\n';
     } else {
-        d.maquinas_intervenidas.forEach(m => {
+        d.maquinas_danadas.forEach(m => {
             txt += `• ${m.uid} - ${m.modelo}\n`;
-            txt += `  Última anotación: ${m.ultima_anotacion}\n`;
-            txt += `  Resultado: ${m.resultado} | Estado: ${m.estado_resultante}\n`;
+            txt += `  Estado: ${m.estado_display}\n`;
+            txt += `  Ubicación: ${m.piso} / ${m.sala}\n`;
         });
     }
     txt += `\n⚠️ INCIDENCIAS DE INFRAESTRUCTURA (${d.incidencias_infra.length})\n`;
@@ -498,23 +508,13 @@ const exportarReportePDF = () => {
                         <div class="text-2xl font-bold mb-1">¡Hola, {{ user?.nombres }}!</div>
                         <div class="text-surface-500 mb-3">Bienvenido al Centro de Comando NEXUS.</div>
                         <InsigniaRangoAnimada
-                            v-if="user?.rango_gamificacion"
+                            v-if="user?.rango_gamificacion && canViewInsignia"
                             :nivel="user.rango_gamificacion.nivel"
                             :nombreRango="user.rango_gamificacion.titulo"
                         />
                     </div>
                     <div class="flex flex-col items-end gap-2">
                         <i class="pi pi-compass text-4xl text-primary opacity-50"></i>
-                        <!-- Botón Reporte Diario – Solo roles de gestión (Tarea 4) -->
-                        <Button
-                            v-if="canViewReporteDiario"
-                            label="Reporte del Día"
-                            icon="pi pi-file-export"
-                            severity="info"
-                            outlined
-                            size="small"
-                            @click="openReporteDiario"
-                        />
                     </div>
                 </div>
             </div>
@@ -847,28 +847,28 @@ const exportarReportePDF = () => {
             <div v-else-if="reporteDiarioData" class="flex flex-col gap-5">
                 <p class="text-surface-500 text-sm">Fecha: <strong>{{ reporteDiarioData.fecha }}</strong></p>
 
-                <!-- Máquinas Intervenidas -->
+                <!-- Máquinas con Fallas Activas -->
                 <div>
                     <div class="font-semibold text-base mb-2 flex items-center gap-2">
-                        <i class="pi pi-wrench text-indigo-500"></i>
-                        Máquinas Intervenidas Hoy
-                        <span class="text-xs text-surface-400">({{ reporteDiarioData.maquinas_intervenidas.length }})</span>
+                        <i class="pi pi-exclamation-triangle text-red-500"></i>
+                        Máquinas con Fallas Activas
+                        <span class="text-xs text-surface-400">({{ reporteDiarioData.maquinas_danadas.length }})</span>
                     </div>
-                    <div v-if="reporteDiarioData.maquinas_intervenidas.length === 0" class="text-surface-400 text-sm italic">
-                        Sin intervenciones técnicas registradas hoy.
+                    <div v-if="reporteDiarioData.maquinas_danadas.length === 0" class="text-surface-400 text-sm italic">
+                        Sin máquinas con fallas activas en este casino. ✅
                     </div>
-                    <div v-for="m in reporteDiarioData.maquinas_intervenidas" :key="m.uid"
+                    <div v-for="m in reporteDiarioData.maquinas_danadas" :key="m.uid"
                         class="mb-2 p-3 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
                         <div class="flex items-center justify-between mb-1">
                             <span class="font-bold text-primary-600 dark:text-primary-400">{{ m.uid }}</span>
-                            <Tag :value="m.estado_resultante" size="small"
-                                :severity="m.estado_resultante === 'operativa' ? 'success' : (m.estado_resultante === 'dañada' ? 'danger' : 'warn')" />
+                            <Tag :value="m.estado_display" size="small"
+                                :severity="m.estado === 'DAÑADA' ? 'danger' : 'warn'" />
                         </div>
                         <div class="text-xs text-surface-500 mb-1">{{ m.modelo }}</div>
-                        <div class="text-sm text-surface-700 dark:text-surface-300">
-                            <i class="pi pi-comment text-xs mr-1"></i>{{ m.ultima_anotacion }}
+                        <div class="text-xs text-surface-400 mt-1 flex items-center gap-1">
+                            <i class="pi pi-map-marker text-xs"></i>
+                            {{ m.piso }} — {{ m.sala }}
                         </div>
-                        <div class="text-xs text-surface-400 mt-1">Resultado: {{ m.resultado }}</div>
                     </div>
                 </div>
 

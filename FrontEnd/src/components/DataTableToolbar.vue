@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { jsPDF } from 'jspdf';
 import MauiShareHelper from '@/utils/maui-share-helper.js';
 
 const props = defineProps({
@@ -167,7 +168,117 @@ const exportarExcel = async () => {
 
 // Exportar a PDF
 const exportarPDF = async () => {
+    // En MAUI WebView: generar PDF real con jsPDF y compartir via bridge nativo.
+    // En navegador de escritorio: usar la ventana de impresión tradicional.
+    if (MauiShareHelper.isMauiWebView()) {
+        await _exportarPDFMaui();
+        return;
+    }
     imprimirTabla();
+};
+
+/**
+ * Genera un PDF con jsPDF a partir de los datos del DataTable y lo comparte
+ * usando MauiShareHelper (JS Bridge en MAUI, descarga directa como fallback).
+ * Se usa sólo cuando se detecta el WebView de MAUI para evitar que Android
+ * abra el visor de PDF en lugar de descargar el archivo.
+ */
+const _exportarPDFMaui = async () => {
+    const columnasVisibles = props.columnas.filter(c => c.visible);
+    if (!props.datos || props.datos.length === 0) return;
+
+    const colCount = columnasVisibles.length;
+    const orientation = colCount > 5 ? 'landscape' : 'portrait';
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 30;
+    const usableW = pageW - margin * 2;
+    const colW = usableW / colCount;
+    const rowH = 18;
+    const headerH = 22;
+
+    // ── Título ────────────────────────────────────────────────────────────────
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(15);
+    pdf.setTextColor(15, 23, 42); // slate-900
+    pdf.text(props.tituloReporte, pageW / 2, 38, { align: 'center' });
+
+    // ── Subtítulo fecha ────────────────────────────────────────────────────────
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 116, 139); // slate-500
+    pdf.text(
+        'Generado: ' + new Date().toLocaleString('es-MX') +
+        '  |  Registros: ' + props.datos.length,
+        pageW / 2, 52, { align: 'center' }
+    );
+
+    // ── Línea separadora ──────────────────────────────────────────────────────
+    pdf.setDrawColor(6, 182, 212); // cyan-500
+    pdf.setLineWidth(1);
+    pdf.line(margin, 58, pageW - margin, 58);
+
+    // ── Encabezado de columnas ─────────────────────────────────────────────────
+    let y = 70;
+    pdf.setFillColor(241, 245, 249); // slate-100
+    pdf.rect(margin, y, usableW, headerH, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(51, 65, 85); // slate-700
+    columnasVisibles.forEach((col, i) => {
+        const x = margin + i * colW;
+        // Truncar texto al ancho de la columna
+        const txt = pdf.splitTextToSize(col.label, colW - 6)[0] || '';
+        pdf.text(txt, x + 4, y + 15);
+    });
+    y += headerH;
+
+    // ── Filas de datos ─────────────────────────────────────────────────────────
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    props.datos.forEach((fila, rowIdx) => {
+        // Nueva página si es necesario
+        if (y + rowH > pageH - 30) {
+            pdf.addPage();
+            y = 30;
+        }
+        // Fila par: fondo alternado
+        if (rowIdx % 2 === 1) {
+            pdf.setFillColor(248, 250, 252); // slate-50
+            pdf.rect(margin, y, usableW, rowH, 'F');
+        }
+        // Borde inferior de fila
+        pdf.setDrawColor(226, 232, 240); // slate-200
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, y + rowH, margin + usableW, y + rowH);
+
+        pdf.setTextColor(30, 41, 59); // slate-800
+        columnasVisibles.forEach((col, i) => {
+            let valor = fila[col.field];
+            if (typeof valor === 'boolean') valor = valor ? 'Activo' : 'Inactivo';
+            else if (valor === null || valor === undefined) valor = '';
+            const txt = pdf.splitTextToSize(String(valor), colW - 6)[0] || '';
+            pdf.text(txt, margin + i * colW + 4, y + 13);
+        });
+        y += rowH;
+    });
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(148, 163, 184); // slate-400
+        pdf.text(
+            'NEXUS · Core Nexus Manager   |   Pág. ' + p + ' / ' + totalPages,
+            pageW / 2, pageH - 12, { align: 'center' }
+        );
+    }
+
+    const blob = pdf.output('blob');
+    await compartirODescargar(blob, obtenerNombreArchivo() + '.pdf', 'application/pdf');
 };
 
 // Exportar a JSON

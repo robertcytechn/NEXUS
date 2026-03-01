@@ -4,7 +4,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AppSearch from '@/components/AppSearch.vue';
 import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
-import { getUser, logout } from '@/service/api';
+import { getUser, logout, hasRoleAccess } from '@/service/api';
 import { fetchNotificaciones, marcarNotificacionLeida } from '@/service/notificationService';
 
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
@@ -29,6 +29,9 @@ const rangoUsuario = computed(() => {
     if (!u || !u.rango_gamificacion) return { nivel: 1, titulo: 'Novato de Mantenimiento' };
     return u.rango_gamificacion;
 });
+
+// Solo técnicos y sup sistemas participan en gamificación
+const canVerInsignia = computed(() => hasRoleAccess(['SUP SISTEMAS', 'TECNICO']));
 
 // Escuchar el evento global emitido por actualizarRangoLocal()
 const _onRangoActualizado = () => { user.value = getUser(); };
@@ -245,8 +248,8 @@ const onNotificationClick = async (item) => {
                         <span>Perfil</span>
                     </button>
 
-                    <!-- Insignia de Rango -->
-                    <div class="flex items-center">
+                    <!-- Insignia de Rango: solo SUP SISTEMAS y TECNICO -->
+                    <div v-if="canVerInsignia" class="flex items-center">
                         <InsigniaRangoAnimada
                             :nivel="rangoUsuario.nivel"
                             :nombreRango="rangoUsuario.titulo"

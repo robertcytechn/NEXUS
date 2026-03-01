@@ -11,6 +11,8 @@ export default defineConfig({
     optimizeDeps: {
         noDiscovery: true
     },
+    // Incluir extensiones binarias como assets descargables
+    assetsInclude: ['**/*.apk', '**/*.zip'],
     plugins: [
         vue(),
         tailwindcss(),

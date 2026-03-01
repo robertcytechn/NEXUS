@@ -376,8 +376,14 @@ async function exportarPDF() {
         await _dibujarYExportar();
         toast.add({ severity: 'success', summary: '✓ PDF exportado', detail: 'El mapa se descargó correctamente', life: 3000 });
     } catch (err) {
-
-        toast.add({ severity: 'error', summary: 'Error al exportar', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || 'No se pudo generar el PDF', life: 5000 });
+        console.error('[MapaSala] Error al exportar PDF:', err);
+        const detalle = err?.response?.data?.mensaje
+            || err?.response?.data?.message
+            || err?.response?.data?.error
+            || err?.response?.data?.detail
+            || err?.message
+            || 'No se pudo generar el PDF';
+        toast.add({ severity: 'error', summary: 'Error al exportar', detail: detalle, life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -394,21 +400,60 @@ const NEXUS_SVG = `<svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org
   </g>
 </svg>`;
 
+/**
+ * Convierte el SVG del logo a una imagen PNG en base64.
+ * En MAUI WebView, URL.createObjectURL puede no estar disponible o fallar;
+ * en ese caso se devuelve null para que el logo se omita sin interrumpir
+ * la generación del PDF.
+ */
 async function _logoToPng(wPx, hPx) {
-    const blob = new Blob([NEXUS_SVG], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    return new Promise((resolve, reject) => {
-        const img = new Image(wPx, hPx);
-        img.onload = () => {
-            const c = document.createElement('canvas');
-            c.width = wPx; c.height = hPx;
-            c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
-            URL.revokeObjectURL(url);
-            resolve(c.toDataURL('image/png'));
-        };
-        img.onerror = reject;
-        img.src = url;
-    });
+    try {
+        // Intentar primero con createObjectURL (más rápido)
+        if (typeof URL.createObjectURL === 'function') {
+            const blob = new Blob([NEXUS_SVG], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const dataUrl = await new Promise((resolve, reject) => {
+                const img = new Image(wPx, hPx);
+                img.onload = () => {
+                    try {
+                        const c = document.createElement('canvas');
+                        c.width = wPx; c.height = hPx;
+                        c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
+                        URL.revokeObjectURL(url);
+                        resolve(c.toDataURL('image/png'));
+                    } catch (e) {
+                        URL.revokeObjectURL(url);
+                        reject(e);
+                    }
+                };
+                img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+                img.src = url;
+            });
+            return dataUrl;
+        }
+
+        // Fallback: data URL directa con SVG codificado (funciona en MAUI WebView
+        // cuando createObjectURL no está disponible o produce blobs bloqueados)
+        const svgEncoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(NEXUS_SVG);
+        return await new Promise((resolve, reject) => {
+            const img = new Image(wPx, hPx);
+            img.onload = () => {
+                try {
+                    const c = document.createElement('canvas');
+                    c.width = wPx; c.height = hPx;
+                    c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
+                    resolve(c.toDataURL('image/png'));
+                } catch (e) { reject(e); }
+            };
+            img.onerror = reject;
+            img.src = svgEncoded;
+        });
+    } catch (e) {
+        // En caso de cualquier error (canvas bloqueado, SVG no cargado, etc.)
+        // devolver null para que el logo se omita sin romper la exportación.
+        console.warn('[MapaSala] _logoToPng falló, se omite el logo:', e);
+        return null;
+    }
 }
 
 async function _dibujarYExportar() {
@@ -439,8 +484,10 @@ async function _dibujarYExportar() {
     // ── Logo ─────────────────────────────────────────────────────────────────
     const LOGO_W = 14.85;  // 54:40 ratio → 14.85 × 11 mm
     const LOGO_H = 11;
-    const logoPng = await _logoToPng(216, 160);  // 3× para nitidez
-    pdf.addImage(logoPng, 'PNG', MARGIN, MARGIN + 1, LOGO_W, LOGO_H);
+    const logoPng = await _logoToPng(216, 160);  // 3× para nitidez; null si falla en WebView
+    if (logoPng) {
+        pdf.addImage(logoPng, 'PNG', MARGIN, MARGIN + 1, LOGO_W, LOGO_H);
+    }
 
     // ── Encabezado texto ──────────────────────────────────────────────────────
     pdf.setFont('helvetica', 'bold');
