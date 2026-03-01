@@ -26,6 +26,11 @@ class Rol(ModeloBase):
         verbose_name="Descripción de Funciones",
         help_text="Detalle de las responsabilidades y alcance del rol"
     )
+    nivel_jerarquia = models.IntegerField(
+        default=1,
+        verbose_name="Nivel de Jerarquía",
+        help_text="Nivel de acceso del rol (ej: Administrador=10, Operador=1)"
+    )
 
     def __str__(self):
         return f"{self.nombre}"

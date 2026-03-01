@@ -25,6 +25,34 @@ class UsuariosViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='esquema', authentication_classes=[], permission_classes=[])
+    def esquema(self, request):
+        """
+        Endpoint Metadatos/Esquema para Renderizado Dinámico en Vue.
+        Devuelve la estructura de los campos necesarios para crear/editar Usuarios.
+        """
+        # Se resuelven las relaciones para enviar las choices al frontend
+        from Roles.models import Rol
+        from Casinos.models import Casino
+        
+        roles_choices = [{'label': rol.nombre, 'value': rol.id, 'nivel_jerarquia': rol.nivel_jerarquia} for rol in Rol.objects.filter(esta_activo=True)]
+        casinos_choices = [{'label': casino.nombre, 'value': casino.id} for casino in Casino.objects.filter(esta_activo=True)]
+
+        esquema = [
+            {'name': 'username', 'label': 'Usuario', 'type': 'text', 'required': True, 'maxLength': 150},
+            {'name': 'password', 'label': 'Contraseña', 'type': 'password', 'required': True, 'help_text': 'Requerido para nuevos.'},
+            {'name': 'email', 'label': 'Email', 'type': 'email', 'required': True, 'maxLength': 254},
+            {'name': 'nombres', 'label': 'Nombes', 'type': 'text', 'required': True, 'maxLength': 100},
+            {'name': 'apellido_paterno', 'label': 'Apellido Paterno', 'type': 'text', 'required': True, 'maxLength': 100},
+            {'name': 'apellido_materno', 'label': 'Apellido Materno', 'type': 'text', 'required': False, 'maxLength': 100},
+            {'name': 'rol', 'label': 'Rol del Sistema', 'type': 'choice', 'required': True, 'choices': roles_choices},
+            {'name': 'casino', 'label': 'Casino Asignado', 'type': 'choice', 'required': True, 'choices': casinos_choices},
+            {'name': 'esta_activo', 'label': '¿Usuario Activo?', 'type': 'boolean', 'required': False, 'default': True},
+            {'name': 'requiere_cambio_password', 'label': '¿Forzar Cambio de Contraseña?', 'type': 'boolean', 'required': False, 'default': False},
+        ]
+        
+        return Response(esquema)
+
     @action(detail=False, methods=['get'], url_path='lista-por-casino/(?P<casino_id>[^/.]+)')
     def lista_por_casino(self, request, casino_id=None):
         """

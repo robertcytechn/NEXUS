@@ -14,6 +14,29 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
     queryset = Proveedor.objects.all()
 
+    @action(detail=False, methods=['get'], url_path='esquema', authentication_classes=[], permission_classes=[])
+    def esquema(self, request):
+        """
+        Retorna la estructura del modelo para autogenerar formularios en Vue JS.
+        Extrae dinámicamente campos e inyecta opciones (casinos).
+        """
+        from Casinos.models import Casino
+        
+        casinos_choices = [{'label': casino.nombre, 'value': casino.id} for casino in Casino.objects.filter(esta_activo=True)]
+
+        esquema = [
+            {'name': 'casino', 'label': 'Casino de Operación', 'type': 'choice', 'default': '', 'choices': casinos_choices, 'required': True},
+            {'name': 'nombre', 'label': 'Nombre del Proveedor (Razón Social)', 'type': 'string', 'default': '', 'required': True, 'help_text': 'Nombre oficial o comercial'},
+            {'name': 'rfc', 'label': 'RFC', 'type': 'string', 'default': '', 'required': True, 'placeholder': 'Ej. XAXX010101000'},
+            {'name': 'email_corporativo', 'label': 'Email Corporativo', 'type': 'email', 'default': '', 'required': True},
+            {'name': 'telefono_soporte', 'label': 'Teléfono de Soporte', 'type': 'string', 'default': '', 'required': False},
+            {'name': 'email_soporte', 'label': 'Email de Soporte', 'type': 'email', 'default': '', 'required': False},
+            {'name': 'nombre_contacto_tecnico', 'label': 'Nombre Contacto Técnico', 'type': 'string', 'default': '', 'required': False},
+            {'name': 'username', 'label': 'Usuario', 'type': 'string', 'default': '', 'required': True, 'help_text': 'Nombre de acceso al portal proveedor'},
+            {'name': 'password', 'label': 'Contraseña', 'type': 'password', 'default': '', 'required': True, 'help_text': 'Requerida en primer alta'}
+        ]
+        return Response(esquema, status=status.HTTP_200_OK)
+
     def get_queryset(self):
         """
         Filtros soportados:

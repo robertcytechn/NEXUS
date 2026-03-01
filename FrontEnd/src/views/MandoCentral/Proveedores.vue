@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import api from '@/service/api';import { guardarProveedor } from '@/service/proveedorService';import DataTableToolbar from '@/components/DataTableToolbar.vue';
+import api from '@/service/api'; import { guardarProveedor } from '@/service/proveedorService'; import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import Chart from 'primevue/chart';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import ProveedorFormDialog from '@/components/proveedores/ProveedorFormDialog.vue';
+import ProveedorDetalleDialog from '@/components/proveedores/ProveedorDetalleDialog.vue';
 
 const casinos = ref([]);
 const proveedores = ref([]);
@@ -20,9 +22,12 @@ const filtros = ref({
 });
 const toast = useToast();
 const confirm = useConfirm();
-const proveedorDialog = ref(false);
-const proveedor = ref({});
-const submitted = ref(false);
+
+// Estado de los Componentes Inteligentes
+const dialogFormVisible = ref(false);
+const dialogDetalleVisible = ref(false);
+const idProveedorForm = ref(null);
+const objProveedorDetalle = ref(null);
 
 // Variables para Gráficas
 const chartDataProveedores = ref();
@@ -118,28 +123,6 @@ const esColumnaVisible = (field) => {
     const columna = columnas.value.find(c => c.field === field);
     return columna ? columna.visible : true;
 };
-
-// Generador de contraseña aleatoria
-const generarPassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@!';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-};
-
-// Generar username automáticamente basado en Nombre + Fecha
-watch(() => proveedor.value.nombre, (newVal) => {
-    if (!proveedor.value.id && newVal) {
-        const cleanName = newVal.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 10);
-        const date = new Date();
-        const dateStr = date.getFullYear().toString() +
-            (date.getMonth() + 1).toString().padStart(2, '0') +
-            date.getDate().toString().padStart(2, '0');
-        proveedor.value.username = `${cleanName}_${dateStr}`;
-    }
-});
 
 // Lógica para Gráficas
 const actualizarGraficas = () => {
@@ -262,65 +245,30 @@ const actualizarGraficas = () => {
     };
 };
 
-// Acciones
-const editarProveedor = (data) => {
-    proveedor.value = { ...data };
-    proveedor.value.password = ''; // Limpiar password en edición
-    proveedorDialog.value = true;
-};
-
+// Acciones Componentes Inteligentes
 const openNew = () => {
-    proveedor.value = {
-        esta_activo: true,
-        password: generarPassword(),
-        username: '' // Se generará al escribir el nombre
-    };
-    submitted.value = false;
-    proveedorDialog.value = true;
+    idProveedorForm.value = null;
+    dialogFormVisible.value = true;
 };
 
-const hideDialog = () => {
-    proveedorDialog.value = false;
-    submitted.value = false;
+const editarProveedor = (data) => {
+    idProveedorForm.value = data.id;
+    dialogFormVisible.value = true;
 };
 
-const saveProveedor = async () => {
-    submitted.value = true;
+const verDetalles = (data) => {
+    objProveedorDetalle.value = { ...data };
+    dialogDetalleVisible.value = true;
+};
 
-    if (proveedor.value.nombre?.trim() && proveedor.value.casino) {
-        loading.value = true;
-        
-        const esEdicion = !!proveedor.value.id;
-        const resultado = await guardarProveedor(proveedor.value, esEdicion);
-        
-        if (!resultado.exito) {
-            toast.add({ 
-                severity: 'error', 
-                summary: resultado.error, 
-                detail: resultado.detalle, 
-                life: 5000 
-            });
-            loading.value = false;
-            return;
-        }
-
-        toast.add({ 
-            severity: 'success', 
-            summary: 'Éxito', 
-            detail: resultado.mensaje, 
-            life: 3000 
-        });
-        
-        proveedorDialog.value = false;
-        proveedor.value = {};
-        cargarProveedores();
-        loading.value = false;
-    }
+const onProveedorSaved = async () => {
+    // Al guardar exitosamente desde el componente, refrescamos la tabla
+    await cargarProveedores();
 };
 
 const toggleActivarProveedor = (data) => {
     const accion = data.esta_activo ? 'desactivar' : 'activar';
-    
+
     confirm.require({
         message: `¿Estás seguro de que deseas ${accion} al proveedor "${data.nombre}"?`,
         header: 'Confirmar Acción',
@@ -368,7 +316,8 @@ onMounted(() => {
                 <div class="flex flex-col items-center justify-center">
                     <div class="font-semibold mb-2 text-center">Proveedores por Casino</div>
                     <div class="relative w-full h-[200px]">
-                        <Chart v-if="chartDataProveedores" type="bar" :data="chartDataProveedores" :options="chartOptionsProveedores" class="h-full w-full" />
+                        <Chart v-if="chartDataProveedores" type="bar" :data="chartDataProveedores"
+                            :options="chartOptionsProveedores" class="h-full w-full" />
                     </div>
                 </div>
 
@@ -376,8 +325,10 @@ onMounted(() => {
                 <div class="flex flex-col items-center justify-center">
                     <div class="font-semibold mb-2 text-center">Máquinas por Casino (Carga Física)</div>
                     <div class="relative w-full h-[200px]">
-                        <Chart v-if="chartDataMaquinas" type="bar" :data="chartDataMaquinas" :options="chartOptionsMaquinas" class="h-full w-full" />
-                        <div v-else class="flex items-center justify-center h-full text-surface-500">Cargando datos...</div>
+                        <Chart v-if="chartDataMaquinas" type="bar" :data="chartDataMaquinas"
+                            :options="chartOptionsMaquinas" class="h-full w-full" />
+                        <div v-else class="flex items-center justify-center h-full text-surface-500">Cargando datos...
+                        </div>
                     </div>
                 </div>
 
@@ -385,8 +336,10 @@ onMounted(() => {
                 <div class="flex flex-col items-center justify-center">
                     <div class="font-semibold mb-2 text-center">Top Modelos</div>
                     <div class="relative w-full h-[200px]">
-                        <Chart v-if="chartDataModelos" type="bar" :data="chartDataModelos" :options="chartOptionsModelos" class="h-full w-full" />
-                        <div v-else class="flex items-center justify-center h-full text-surface-500">Cargando datos...</div>
+                        <Chart v-if="chartDataModelos" type="bar" :data="chartDataModelos"
+                            :options="chartOptionsModelos" class="h-full w-full" />
+                        <div v-else class="flex items-center justify-center h-full text-surface-500">Cargando datos...
+                        </div>
                     </div>
                 </div>
 
@@ -394,7 +347,8 @@ onMounted(() => {
                 <div class="flex flex-col items-center justify-center">
                     <div class="font-semibold mb-2 text-center">Estado de Proveedores</div>
                     <div class="relative w-full h-[200px] flex justify-center">
-                        <Chart v-if="chartDataEstado" type="doughnut" :data="chartDataEstado" :options="chartOptionsEstado" class="h-full w-full" />
+                        <Chart v-if="chartDataEstado" type="doughnut" :data="chartDataEstado"
+                            :options="chartOptionsEstado" class="h-full w-full" />
                     </div>
                 </div>
             </div>
@@ -403,72 +357,47 @@ onMounted(() => {
         <div class="card">
             <Toast />
             <ConfirmDialog />
-            
+
             <!-- Toolbar personalizable -->
-            <DataTableToolbar
-                ref="toolbarRef"
-                :dt="dt"
-                :datos="proveedores"
-                titulo-reporte="Gestión de Proveedores"
-                nombre-archivo="proveedores"
-                :columnas="columnas"
-                :mostrar-exportacion="true"
-                :mostrar-imprimir="true"
-                :mostrar-refrescar="true"
-                :mostrar-selector-columnas="true"
-                :mostrar-buscador="true"
-                @refrescar="cargarProveedores"
-                v-model:columnas-seleccionadas="columnas"
-            >
+            <DataTableToolbar ref="toolbarRef" :dt="dt" :datos="proveedores" titulo-reporte="Gestión de Proveedores"
+                nombre-archivo="proveedores" :columnas="columnas" :mostrar-exportacion="true" :mostrar-imprimir="true"
+                :mostrar-refrescar="true" :mostrar-selector-columnas="true" :mostrar-buscador="true"
+                @refrescar="cargarProveedores" v-model:columnas-seleccionadas="columnas">
                 <template #acciones-extra>
-                    <Button 
-                        icon="pi pi-plus" 
-                        label="Nuevo Proveedor"
-                        rounded
-                        severity="primary"
-                        @click="openNew"
-                    />
+                    <Button icon="pi pi-plus" label="Nuevo Proveedor" rounded severity="primary" @click="openNew" />
                 </template>
             </DataTableToolbar>
-            
-            <DataTable 
-                ref="dt"
-                :value="proveedores" 
-                :loading="loading"
-                v-model:filters="filtros"
+
+            <DataTable ref="dt" :value="proveedores" :loading="loading" v-model:filters="filtros"
                 :globalFilterFields="['nombre', 'rfc', 'nombre_contacto_tecnico', 'email_corporativo', 'email_soporte']"
-                paginator 
-                :rows="10" 
-                :rowsPerPageOptions="[5, 10, 20, 50]"
-                dataKey="id"
-                filterDisplay="menu"
-                showGridlines
-                stripedRows
-                class="datatable-mobile"
-            >
+                paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" dataKey="id" filterDisplay="menu"
+                showGridlines stripedRows class="datatable-mobile">
                 <template #empty>
                     <div class="text-center p-4">
                         No se encontraron proveedores registrados.
                     </div>
                 </template>
-                
+
                 <template #loading>
                     Cargando información de proveedores...
                 </template>
-                
-                <Column v-if="esColumnaVisible('nombre')" field="nombre" header="Razón Social" sortable style="min-width: 14rem">
+
+                <Column v-if="esColumnaVisible('nombre')" field="nombre" header="Razón Social" sortable
+                    style="min-width: 14rem">
                     <template #body="{ data }">
                         <span class="font-bold">{{ data.nombre }}</span>
                     </template>
                 </Column>
-                
-                <Column v-if="esColumnaVisible('casino_nombre')" field="casino_nombre" header="Casino" sortable style="min-width: 12rem">
+
+                <Column v-if="esColumnaVisible('casino_nombre')" field="casino_nombre" header="Casino" sortable
+                    style="min-width: 12rem">
                     <template #body="{ data }">
                         <span class="text-sm">{{ data.casino_nombre || 'N/A' }}</span>
                     </template>
                 </Column>
 
-                <Column v-if="esColumnaVisible('username')" field="username" header="Usuario" sortable style="min-width: 10rem">
+                <Column v-if="esColumnaVisible('username')" field="username" header="Usuario" sortable
+                    style="min-width: 10rem">
                     <template #body="{ data }">
                         <div class="flex items-center gap-2">
                             <i class="pi pi-user text-surface-500"></i>
@@ -479,113 +408,54 @@ onMounted(() => {
 
                 <Column v-if="esColumnaVisible('rfc')" field="rfc" header="RFC" sortable style="min-width: 10rem" />
 
-                <Column v-if="esColumnaVisible('nombre_contacto_tecnico')" field="nombre_contacto_tecnico" header="Contacto Técnico" sortable style="min-width: 12rem" />
-                
-                <Column v-if="esColumnaVisible('telefono_soporte')" field="telefono_soporte" header="Teléfono Soporte" sortable style="min-width: 10rem" />
+                <Column v-if="esColumnaVisible('nombre_contacto_tecnico')" field="nombre_contacto_tecnico"
+                    header="Contacto Técnico" sortable style="min-width: 12rem" />
 
-                <Column v-if="esColumnaVisible('email_corporativo')" field="email_corporativo" header="Email Corporativo" sortable style="min-width: 14rem" />
+                <Column v-if="esColumnaVisible('telefono_soporte')" field="telefono_soporte" header="Teléfono Soporte"
+                    sortable style="min-width: 10rem" />
 
-                <Column v-if="esColumnaVisible('email_soporte')" field="email_soporte" header="Email Soporte" sortable style="min-width: 14rem" />
-                
-                <Column v-if="esColumnaVisible('esta_activo')" field="esta_activo" header="Estado" sortable style="min-width: 8rem">
+                <Column v-if="esColumnaVisible('email_corporativo')" field="email_corporativo"
+                    header="Email Corporativo" sortable style="min-width: 14rem" />
+
+                <Column v-if="esColumnaVisible('email_soporte')" field="email_soporte" header="Email Soporte" sortable
+                    style="min-width: 14rem" />
+
+                <Column v-if="esColumnaVisible('esta_activo')" field="esta_activo" header="Estado" sortable
+                    style="min-width: 8rem">
                     <template #body="{ data }">
-                        <Tag :value="data.esta_activo ? 'Activo' : 'Inactivo'" :severity="data.esta_activo ? 'success' : 'danger'" />
+                        <Tag :value="data.esta_activo ? 'Activo' : 'Inactivo'"
+                            :severity="data.esta_activo ? 'success' : 'danger'" />
                     </template>
                 </Column>
-                
-                <Column v-if="esColumnaVisible('creado_en')" field="creado_en" header="Fecha Registro" sortable style="min-width: 12rem">
+
+                <Column v-if="esColumnaVisible('creado_en')" field="creado_en" header="Fecha Registro" sortable
+                    style="min-width: 12rem">
                     <template #body="{ data }">
                         <div class="text-sm">{{ formatearFecha(data.creado_en) }}</div>
                     </template>
                 </Column>
-                
-                <Column header="Acciones" :exportable="false" style="min-width: 10rem">
+
+                <Column header="Acciones" :exportable="false" style="min-width: 14rem">
                     <template #body="{ data }">
                         <div class="flex gap-2">
-                            <Button icon="pi pi-pencil" size="small" severity="info" rounded outlined @click="editarProveedor(data)" v-tooltip.top="'Editar'" />
-                            <Button :icon="data.esta_activo ? 'pi pi-ban' : 'pi pi-check-circle'" size="small" :severity="data.esta_activo ? 'warning' : 'success'" rounded outlined @click="toggleActivarProveedor(data)" v-tooltip.top="data.esta_activo ? 'Desactivar' : 'Activar'" />
+                            <Button icon="pi pi-eye" size="small" severity="secondary" rounded outlined
+                                @click="verDetalles(data)" v-tooltip.top="'Ver Detalles'" />
+                            <Button icon="pi pi-pencil" size="small" severity="info" rounded outlined
+                                @click="editarProveedor(data)" v-tooltip.top="'Editar'" />
+                            <Button :icon="data.esta_activo ? 'pi pi-ban' : 'pi pi-check-circle'" size="small"
+                                :severity="data.esta_activo ? 'warning' : 'success'" rounded outlined
+                                @click="toggleActivarProveedor(data)"
+                                v-tooltip.top="data.esta_activo ? 'Desactivar' : 'Activar'" />
                         </div>
                     </template>
                 </Column>
             </DataTable>
 
-            <Dialog v-model:visible="proveedorDialog" :style="{ width: '500px' }" header="Detalles del Proveedor" :modal="true">
-                <div class="flex flex-col gap-6">
-                    <div>
-                        <label for="nombre" class="block font-bold mb-3">Razón Social / Nombre</label>
-                        <InputText id="nombre" v-model.trim="proveedor.nombre" required="true" autofocus :invalid="submitted && !proveedor.nombre" fluid />
-                        <small class="text-red-500" v-if="submitted && !proveedor.nombre">El nombre es obligatorio.</small>
-                    </div>
+            <!-- COMPONENTES INTELIGENTES -->
+            <ProveedorFormDialog v-model:visible="dialogFormVisible" :proveedorId="idProveedorForm"
+                :permitirElegirCasino="true" @saved="onProveedorSaved" />
 
-                    <div>
-                        <label for="casino" class="block font-bold mb-3">Casino Asignado</label>
-                        <Select id="casino" v-model="proveedor.casino" :options="casinos" optionLabel="nombre" optionValue="id" placeholder="Seleccione un Casino" fluid :invalid="submitted && !proveedor.casino" />
-                        <small class="text-red-500" v-if="submitted && !proveedor.casino">El casino es obligatorio.</small>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="username" class="block font-bold mb-3">Usuario (Auto)</label>
-                            <InputText id="username" v-model="proveedor.username" disabled fluid class="opacity-100 bg-surface-100 dark:bg-surface-800" />
-                        </div>
-                        <div>
-                            <label for="password" class="block font-bold mb-3">Contraseña</label>
-                            <Password id="password" v-model="proveedor.password" :feedback="false" toggleMask fluid :placeholder="proveedor.id ? 'Dejar vacío para mantener' : ''" />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="rfc" class="block font-bold mb-3">RFC</label>
-                            <InputText id="rfc" v-model.trim="proveedor.rfc" fluid />
-                        </div>
-                        <div>
-                            <label for="telefono_soporte" class="block font-bold mb-3">Teléfono Soporte</label>
-                            <InputText id="telefono_soporte" v-model="proveedor.telefono_soporte" fluid />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="nombre_contacto_tecnico" class="block font-bold mb-3">Contacto Técnico</label>
-                            <InputText id="nombre_contacto_tecnico" v-model="proveedor.nombre_contacto_tecnico" fluid />
-                        </div>
-                        <div>
-                            <label for="email_corporativo" class="block font-bold mb-3">Email Corporativo</label>
-                            <InputText id="email_corporativo" v-model="proveedor.email_corporativo" fluid />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label for="email_soporte" class="block font-bold mb-3">Email Soporte</label>
-                        <InputText id="email_soporte" v-model="proveedor.email_soporte" fluid />
-                    </div>
-
-                    <div class="flex items-center mt-2">
-                        <Checkbox v-model="proveedor.esta_activo" :binary="true" inputId="esta_activo" />
-                        <label for="esta_activo" class="ml-2">¿Proveedor Activo?</label>
-                    </div>
-
-                    <div v-if="proveedor.id" class="border-t border-surface-200 dark:border-surface-700 pt-4">
-                        <div class="font-bold mb-3 text-surface-500 dark:text-surface-400">Auditoría</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Creado por</label>
-                                <InputText id="creado_por" name="creado_por" :value="proveedor.creado_por || 'Sistema'" disabled fluid class="opacity-100" />
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Fecha Registro</label>
-                                <InputText id="creado_en" name="creado_en" :value="formatearFecha(proveedor.creado_en)" disabled fluid class="opacity-100" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <template #footer>
-                    <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                    <Button label="Guardar" icon="pi pi-check" @click="saveProveedor" />
-                </template>
-            </Dialog>
+            <ProveedorDetalleDialog v-model:visible="dialogDetalleVisible" :proveedor="objProveedorDetalle" />
         </div>
     </div>
 </template>

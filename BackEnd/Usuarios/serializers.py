@@ -7,6 +7,7 @@ class UsuariosSerializer(serializers.ModelSerializer):
     """
     nombre_completo = serializers.SerializerMethodField()
     rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+    nivel_jerarquia = serializers.IntegerField(source='rol.nivel_jerarquia', read_only=True)
     casino_nombre = serializers.CharField(source='casino.nombre', read_only=True)
     avatar = serializers.SerializerMethodField()
     # ── Gamificación ──────────────────────────────────────────────────────────
@@ -17,7 +18,7 @@ class UsuariosSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'nombres',
             'apellido_paterno', 'apellido_materno', 'nombre_completo',
-            'casino', 'casino_nombre', 'rol', 'rol_nombre', 'esta_activo',
+            'casino', 'casino_nombre', 'rol', 'rol_nombre', 'nivel_jerarquia', 'esta_activo',
             'creado_en', 'modificado_en', 'creado_por', 'modificado_por',
             'ultima_ip', 'user_agent', 'requiere_cambio_password',
             'password', 'session_token', 'refresh_token', 'intentos_fallidos', 'EULAAceptada',
