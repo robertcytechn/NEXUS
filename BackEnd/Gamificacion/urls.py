@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import RecompensaGerenciaViewSet, RecompensaTecnicoViewSet
+from .views import RecompensaGerenciaViewSet, RecompensaTecnicoViewSet, SalonFamaListAPIView
 
 router = DefaultRouter()
 
@@ -11,5 +11,6 @@ router.register(r'gamificacion/tienda', RecompensaGerenciaViewSet, basename='gam
 router.register(r'gamificacion/tienda-tecnico', RecompensaTecnicoViewSet, basename='gamificacion-tecnico')
 
 urlpatterns = [
+    path('gamificacion/salon-fama/', SalonFamaListAPIView.as_view(), name='salon-fama'),
     path('', include(router.urls)),
 ]

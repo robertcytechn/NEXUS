@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import RecompensaGamificacion, CanjeRecompensa
+from Usuarios.models import Usuarios
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -59,3 +60,27 @@ class CanjeRecompensaSerializer(serializers.ModelSerializer):
             'creado_por',
             'modificado_por',
         ]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SALÓN DE LA FAMA
+# ──────────────────────────────────────────────────────────────────────────────
+class TecnicoSalonFamaSerializer(serializers.ModelSerializer):
+    """
+    Serializer de solo lectura para la vista pública del Salón de la Fama.
+    Expone solo los datos necesarios para renderizar las 'Cartas de Héroe'.
+    """
+    casino_nombre = serializers.CharField(source='casino.nombre', read_only=True)
+    rango = serializers.DictField(source='rango_gamificacion', read_only=True)
+    
+    class Meta:
+        model = Usuarios
+        fields = [
+            'id',
+            'nombres',
+            'apellido_paterno',
+            'casino_nombre',
+            'avatar',
+            'puntos_gamificacion_historico',
+            'rango',
+        ]
+        read_only_fields = fields

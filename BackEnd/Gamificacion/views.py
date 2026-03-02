@@ -1,15 +1,18 @@
 from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
 
 from .models import CanjeRecompensa, RecompensaGamificacion
 from .serializers import (
     CanjeRecompensaSerializer,
     RecompensaGamificacionSerializer,
     RecompensaPublicaSerializer,
+    TecnicoSalonFamaSerializer,
 )
+from Usuarios.models import Usuarios
 
 
 _ROLES_TIENDA = {'GERENCIA', 'ADMINISTRADOR', 'DB ADMIN'}
@@ -245,3 +248,23 @@ class RecompensaTecnicoViewSet(viewsets.ReadOnlyModelViewSet):
             'puntos_historico': u.puntos_gamificacion_historico,
             'rango': u.rango_gamificacion,
         })
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SALÓN DE LA FAMA
+# Ruta: /api/gamificacion/salon-fama/
+# ──────────────────────────────────────────────────────────────────────────────
+class SalonFamaListAPIView(ListAPIView):
+    """
+    Vista pública que retorna la lista de técnicos ordenados por 
+    puntos de gamificación históricos de mayor a menor.
+    """
+    serializer_class = TecnicoSalonFamaSerializer
+    permission_classes = [AllowAny] # [IsAuthenticated] si se requiere login para verlo
+    
+    def get_queryset(self):
+        # Filtramos solo a los técnicos activos y supervisores de sistemas.
+        return Usuarios.objects.filter(
+            esta_activo=True,
+            rol__nombre__in=['Tecnico', 'Sup Sistemas']
+        ).select_related('casino', 'rol').order_by('-puntos_gamificacion_historico')
