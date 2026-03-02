@@ -28,6 +28,7 @@ OWN_APPS = [
     'Menus',
     'AuditoriaGlobal',
     'Gamificacion',
+    'VaciosTickets',
 ]
 
 AUTH_USER_MODEL = 'Usuarios.Usuarios'

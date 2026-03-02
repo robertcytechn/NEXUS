@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/', include('Menus.urls')),
     path('api/', include('AuditoriaGlobal.urls')),
     path('api/', include('Gamificacion.urls')),
+    path('api/', include('VaciosTickets.urls')),
 ]
 
 from django.conf import settings
