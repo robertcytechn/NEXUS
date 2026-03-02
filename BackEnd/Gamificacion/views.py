@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Count, Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -13,6 +14,10 @@ from .serializers import (
     TecnicoSalonFamaSerializer,
 )
 from Usuarios.models import Usuarios
+from Tickets.models import Ticket          # noqa: F401 — usado en annotate
+from Wiki.models import WikiTecnica         # noqa: F401 — usado en annotate
+from MantenimientosPreventivos.models import MantenimientoPreventivo  # noqa
+from BitacoraTecnica.models import BitacoraTecnica                     # noqa
 
 
 _ROLES_TIENDA = {'GERENCIA', 'ADMINISTRADOR', 'DB ADMIN'}
@@ -263,8 +268,84 @@ class SalonFamaListAPIView(ListAPIView):
     permission_classes = [AllowAny] # [IsAuthenticated] si se requiere login para verlo
     
     def get_queryset(self):
-        # Filtramos solo a los técnicos activos y supervisores de sistemas.
-        return Usuarios.objects.filter(
-            esta_activo=True,
-            rol__nombre__in=['Tecnico', 'Sup Sistemas']
-        ).select_related('casino', 'rol').order_by('-puntos_gamificacion_historico')
+        """
+        Técnicos activos ordenados por XP histórico.
+        Todas las métricas de actividad se anotan en una sola consulta SQL.
+        """
+        return (
+            Usuarios.objects
+            .filter(esta_activo=True, rol__nombre__in=['Tecnico', 'Sup Sistemas'])
+            .select_related('casino', 'rol')
+            .annotate(
+                # ── Tickets ────────────────────────────────────────────────
+                # Total de tickets asignados al técnico (cualquier estado)
+                tickets_totales=Count(
+                    'tickets_asignados',
+                    distinct=True,
+                ),
+                # Tickets cerrados (estado_ciclo es el campo correcto en el modelo)
+                tickets_cerrados=Count(
+                    'tickets_asignados',
+                    filter=Q(tickets_asignados__estado_ciclo='cerrado'),
+                    distinct=True,
+                ),
+                # Tickets actualmente en proceso
+                tickets_en_proceso=Count(
+                    'tickets_asignados',
+                    filter=Q(tickets_asignados__estado_ciclo='proceso'),
+                    distinct=True,
+                ),
+                # Tickets que fueron reabiertos al menos una vez
+                tickets_reabiertos=Count(
+                    'tickets_asignados',
+                    filter=Q(tickets_asignados__contador_reaperturas__gt=0),
+                    distinct=True,
+                ),
+
+                # ── Wiki técnica ───────────────────────────────────────────
+                # Total de guías creadas (cualquier estado)
+                wikis_totales=Count(
+                    'guias_creadas',
+                    distinct=True,
+                ),
+                # Guías ya publicadas (visibles para todos)
+                wikis_publicadas=Count(
+                    'guias_creadas',
+                    filter=Q(guias_creadas__estado='publicada'),
+                    distinct=True,
+                ),
+                # Guías pendientes de revisión
+                wikis_pendientes=Count(
+                    'guias_creadas',
+                    filter=Q(guias_creadas__estado='pendiente_revision'),
+                    distinct=True,
+                ),
+
+                # ── Mantenimientos preventivos ─────────────────────────────
+                mantenimientos_realizados=Count(
+                    'mantenimientopreventivo',
+                    distinct=True,
+                ),
+
+                # ── Bitácora técnica ────────────────────────────────────────
+                # Total de entradas registradas
+                entradas_bitacora=Count(
+                    'bitacoratecnica',
+                    distinct=True,
+                ),
+                # Intervenciones con resultado exitoso
+                reparaciones_exitosas=Count(
+                    'bitacoratecnica',
+                    filter=Q(bitacoratecnica__resultado_intervencion='exitosa'),
+                    distinct=True,
+                ),
+
+                # ── Gamificación — canjes ───────────────────────────────────
+                # Total de recompensas canjeadas (cualquier estado)
+                canjes_total=Count(
+                    'canjes_realizados',
+                    distinct=True,
+                ),
+            )
+            .order_by('-puntos_gamificacion_historico')
+        )

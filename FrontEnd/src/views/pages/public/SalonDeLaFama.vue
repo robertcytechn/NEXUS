@@ -28,7 +28,8 @@ const datosFantasma = [
         casino_nombre: 'Mar Sara',
         avatar: 'https://ui-avatars.com/api/?name=Jim+Raynor&background=333&color=ddd&size=200',
         puntos_gamificacion_historico: 50,
-        rango: { nivel: 1, titulo: 'Novato de Mantenimiento', progreso_pct: 50.0 }
+        rango: { nivel: 1, titulo: 'Novato de Mantenimiento', progreso_pct: 50.0 },
+        tickets_cerrados: 3, wikis_publicadas: 0, mantenimientos_realizados: 2, entradas_bitacora: 4
     },
     {
         id: 'ghost-2',
@@ -37,7 +38,8 @@ const datosFantasma = [
         casino_nombre: 'Tarsonis',
         avatar: 'https://ui-avatars.com/api/?name=Gabriel+Tosh&background=444&color=ddd&size=200',
         puntos_gamificacion_historico: 200,
-        rango: { nivel: 2, titulo: 'Aprendiz de Sala', progreso_pct: 50.0 }
+        rango: { nivel: 2, titulo: 'Aprendiz de Sala', progreso_pct: 50.0 },
+        tickets_cerrados: 11, wikis_publicadas: 1, mantenimientos_realizados: 8, entradas_bitacora: 15
     },
     {
         id: 'ghost-3',
@@ -46,7 +48,8 @@ const datosFantasma = [
         casino_nombre: 'Antiga Prime',
         avatar: 'https://ui-avatars.com/api/?name=Sarah+Kerrigan&background=1e90ff&color=fff&size=200',
         puntos_gamificacion_historico: 450,
-        rango: { nivel: 3, titulo: 'Técnico de Soporte', progreso_pct: 50.0 }
+        rango: { nivel: 3, titulo: 'Técnico de Soporte', progreso_pct: 50.0 },
+        tickets_cerrados: 28, wikis_publicadas: 2, mantenimientos_realizados: 19, entradas_bitacora: 33
     },
     {
         id: 'ghost-4',
@@ -55,7 +58,8 @@ const datosFantasma = [
         casino_nombre: 'Korhal',
         avatar: 'https://ui-avatars.com/api/?name=Nova+Terra&background=00ff66&color=111&size=200',
         puntos_gamificacion_historico: 800,
-        rango: { nivel: 4, titulo: 'Operador de Máquinas', progreso_pct: 50.0 }
+        rango: { nivel: 4, titulo: 'Operador de Máquinas', progreso_pct: 50.0 },
+        tickets_cerrados: 54, wikis_publicadas: 4, mantenimientos_realizados: 37, entradas_bitacora: 62
     },
     {
         id: 'ghost-5',
@@ -64,7 +68,8 @@ const datosFantasma = [
         casino_nombre: 'Hyperion',
         avatar: 'https://ui-avatars.com/api/?name=Rory+Swann&background=f5c400&color=111&size=200',
         puntos_gamificacion_historico: 1250,
-        rango: { nivel: 5, titulo: 'Especialista en Hardware', progreso_pct: 50.0 }
+        rango: { nivel: 5, titulo: 'Especialista en Hardware', progreso_pct: 50.0 },
+        tickets_cerrados: 89, wikis_publicadas: 7, mantenimientos_realizados: 61, entradas_bitacora: 104
     },
     {
         id: 'ghost-6',
@@ -73,7 +78,8 @@ const datosFantasma = [
         casino_nombre: 'Shakuras',
         avatar: 'https://ui-avatars.com/api/?name=Zeratul&background=00ffff&color=111&size=200',
         puntos_gamificacion_historico: 1800,
-        rango: { nivel: 6, titulo: 'Técnico Élite', progreso_pct: 50.0 }
+        rango: { nivel: 6, titulo: 'Técnico Élite', progreso_pct: 50.0 },
+        tickets_cerrados: 133, wikis_publicadas: 11, mantenimientos_realizados: 88, entradas_bitacora: 156
     },
     {
         id: 'ghost-7',
@@ -82,7 +88,8 @@ const datosFantasma = [
         casino_nombre: 'Aiur',
         avatar: 'https://ui-avatars.com/api/?name=Artanis&background=cc00ff&color=fff&size=200',
         puntos_gamificacion_historico: 2450,
-        rango: { nivel: 7, titulo: 'Maestro Electrónico', progreso_pct: 50.0 }
+        rango: { nivel: 7, titulo: 'Maestro Electrónico', progreso_pct: 50.0 },
+        tickets_cerrados: 187, wikis_publicadas: 18, mantenimientos_realizados: 124, entradas_bitacora: 219
     },
     {
         id: 'ghost-8',
@@ -91,7 +98,8 @@ const datosFantasma = [
         casino_nombre: 'Slayn',
         avatar: 'https://ui-avatars.com/api/?name=Alarak&background=cc0000&color=fff&size=200',
         puntos_gamificacion_historico: 3200,
-        rango: { nivel: 8, titulo: 'Arquitecto de Sala', progreso_pct: 50.0 }
+        rango: { nivel: 8, titulo: 'Arquitecto de Sala', progreso_pct: 50.0 },
+        tickets_cerrados: 254, wikis_publicadas: 27, mantenimientos_realizados: 168, entradas_bitacora: 305
     },
     {
         id: 'ghost-9',
@@ -100,7 +108,8 @@ const datosFantasma = [
         casino_nombre: 'Gantrithor',
         avatar: 'https://ui-avatars.com/api/?name=Tassadar&background=ffd700&color=111&size=200',
         puntos_gamificacion_historico: 4050,
-        rango: { nivel: 9, titulo: 'Guardián del Casino', progreso_pct: 50.0 }
+        rango: { nivel: 9, titulo: 'Guardián del Casino', progreso_pct: 50.0 },
+        tickets_cerrados: 341, wikis_publicadas: 39, mantenimientos_realizados: 221, entradas_bitacora: 412
     },
     {
         id: 'ghost-10',
@@ -109,7 +118,8 @@ const datosFantasma = [
         casino_nombre: 'Void',
         avatar: 'https://ui-avatars.com/api/?name=Amon&background=ff8800&color=111&size=200',
         puntos_gamificacion_historico: 9999,
-        rango: { nivel: 10, titulo: 'Leyenda de NEXUS', progreso_pct: 100.0 }
+        rango: { nivel: 10, titulo: 'Leyenda de NEXUS', progreso_pct: 100.0 },
+        tickets_cerrados: 748, wikis_publicadas: 83, mantenimientos_realizados: 512, entradas_bitacora: 996
     }
 ];
 
@@ -155,24 +165,24 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="salon-fama-container bg-surface-950 min-h-screen text-surface-0 pb-20 pt-10">
+    <div class="salon-fama-container min-h-screen pb-20 pt-10">
 
         <!-- Header -->
-        <div class="text-center mb-16 relative z-10">
+        <div class="text-center mb-8 md:mb-16 relative z-10 px-4">
             <h1
-                class="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-500 to-yellow-700 tracking-tighter uppercase drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] mb-2 mt-4">
+                class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-500 via-amber-600 to-yellow-800 tracking-tighter uppercase drop-shadow-[0_2px_6px_rgba(180,100,0,0.25)] mb-2 mt-4">
                 SALÓN DE LA FAMA
             </h1>
-            <p class="text-surface-400 uppercase tracking-[0.3em] font-semibold text-sm md:text-base">
+            <p class="text-surface-500 uppercase tracking-[0.15em] sm:tracking-[0.3em] font-semibold text-xs sm:text-sm md:text-base">
                 Los mejores técnicos de NEXUS
             </p>
 
             <!-- Controls fantasma (solo en dev) -->
-            <div class="mt-4 flex justify-center items-center gap-2 text-surface-400 text-xs">
+            <div class="mt-4 flex justify-center items-center gap-2 text-surface-500 text-xs">
                 <span>Modo Pruebas (Ghosts):</span>
                 <button @click="mostrarFantasmas = !mostrarFantasmas; loadTecnicos();"
                     class="p-1 px-3 rounded text-white font-bold transition-colors"
-                    :class="mostrarFantasmas ? 'bg-green-600 hover:bg-green-500' : 'bg-surface-700 hover:bg-surface-600'">
+                    :class="mostrarFantasmas ? 'bg-green-600 hover:bg-green-500' : 'bg-surface-400 hover:bg-surface-500'">
                     {{ mostrarFantasmas ? 'ON ✓' : 'OFF ✗' }}
                 </button>
             </div>
@@ -182,24 +192,23 @@ onMounted(() => {
         <div v-if="loading"
             class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-20 justify-items-center">
             <div v-for="i in 8" :key="i" class="w-full max-w-[280px]">
-                <div class="bg-surface-800 animate-pulse rounded-xl h-[380px] w-full border border-surface-700"></div>
-                <!-- skeleton badge -->
-                <div class="h-16 w-32 bg-surface-700 animate-pulse rounded-lg mx-auto -mt-8 relative z-20"></div>
+                <div class="bg-surface-200 animate-pulse rounded-xl h-[420px] w-full border border-surface-300"></div>
+                <div class="h-16 w-32 bg-surface-300 animate-pulse rounded-lg mx-auto -mt-8 relative z-20"></div>
             </div>
         </div>
 
         <!-- Results Grid -->
         <div v-else-if="tecnicosGenerales.length > 0"
-            class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-24 justify-items-center">
+            class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 justify-items-center">
 
             <CardFama v-for="tecnico in tecnicosGenerales" :key="tecnico.id" :tecnico="tecnico" />
 
         </div>
 
         <!-- Empty State -->
-        <div v-else class="text-center text-surface-500 py-20">
+        <div v-else class="text-center text-surface-400 py-20">
             <i class="pi pi-users text-6xl mb-4 opacity-50"></i>
-            <h3 class="text-2xl font-bold">Aún no hay técnicos clasificados.</h3>
+            <h3 class="text-2xl font-bold text-surface-600">Aún no hay técnicos clasificados.</h3>
             <p>Comienza a entregar recompensas y puntos para poblar el Salón de la Fama.</p>
         </div>
 
@@ -207,25 +216,25 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Fondo general inspirado en void / espacio */
 .salon-fama-container {
-    background-image: radial-gradient(circle at 50% 0%, #17171e 0%, #0a0a0f 100%);
+    background-color: var(--surface-ground, #f8f9fa);
     position: relative;
     overflow: hidden;
 }
 
+/* Patrón de puntos muy suave para no abrumar el fondo blanco */
 .salon-fama-container::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSJyZ2JhKDAsMCwwLDApIj48L3JlY3Q+CjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiPjwvcmVjdD4KPC9zdmc+') repeat;
-    opacity: 0.2;
+    background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
     pointer-events: none;
-    z-index: 1;
+    z-index: 0;
 }
 
-.salon-fama-container>* {
+.salon-fama-container > * {
     position: relative;
-    z-index: 2;
+    z-index: 1;
 }
 </style>
