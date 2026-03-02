@@ -79,8 +79,7 @@ notificationApi.interceptors.response.use(
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       
-      // Opcional: redirigir al login
-      // window.location.href = '/login';
+      window.location.href = '/auth/login';
     }
     return Promise.reject(error);
   }

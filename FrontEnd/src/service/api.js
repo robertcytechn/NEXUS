@@ -6,25 +6,25 @@ const BASE_URL = `http://${window.location.hostname}:8000/api/`;
 
 // Crear instancia de axios
 const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+    baseURL: BASE_URL,
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
 // Interceptor para agregar el token a cada petición
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
 );
 
 // Interceptor para manejar respuestas y errores
@@ -54,8 +54,8 @@ api.interceptors.response.use(
             // y redirigir al login de forma limpia con Vue Router
             import('@/router').then(({ default: router }) => {
                 // Evitar redirigir si ya estamos en /login
-                if (router.currentRoute.value.path !== '/login') {
-                    router.push('/login');
+                if (router.currentRoute.value.path !== '/auth/login') {
+                    router.push('/auth/login');
                 }
             });
         }
@@ -139,7 +139,7 @@ export const actualizarRangoLocal = (rango) => {
 // Función para guardar todos los datos del login
 export const saveLoginData = (loginResponse) => {
     const { token, refresh_token, usuario } = loginResponse;
-    
+
     if (token) setAuthToken(token);
     if (refresh_token) setRefreshToken(refresh_token);
     if (usuario) setUser(usuario);
@@ -172,10 +172,10 @@ export const fetchRoles = async () => {
     try {
         const response = await api.get('roles/lista/');
         const roles = response.data;
-        
+
         // Guardar en localStorage para uso offline
         setRoles(roles);
-        
+
         return {
             success: true,
             data: roles
@@ -194,12 +194,12 @@ export const hasRoleAccess = (requiredRoles) => {
     if (!requiredRoles || requiredRoles.includes('all')) {
         return true;
     }
-    
+
     const user = getUser();
     if (!user || !user.rol_nombre) {
         return false;
     }
-    
+
     // Verificar si el rol del usuario está en la lista de roles requeridos
     return requiredRoles.includes(user.rol_nombre);
 };
@@ -209,10 +209,10 @@ export const login = async (credentials) => {
     try {
         const response = await api.post('usuarios/login/', credentials);
         const { data } = response;
-        
+
         // Guardar todos los datos en localStorage
         saveLoginData(data);
-        
+
         return {
             success: true,
             data: data,
@@ -234,16 +234,16 @@ export const acceptEULA = async () => {
         if (!currentUser || !currentUser.id) {
             throw new Error('Usuario no encontrado en la sesión');
         }
-        
+
         const response = await api.patch(`usuarios/${currentUser.id}/aceplisencia/`);
         const { data } = response;
-        
+
         // Actualizar el usuario en localStorage con el nuevo valor
         if (currentUser) {
             currentUser.EULAAceptada = true;
             setUser(currentUser);
         }
-        
+
         return {
             success: true,
             data: data
