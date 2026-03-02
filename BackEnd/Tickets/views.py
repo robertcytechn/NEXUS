@@ -432,3 +432,72 @@ class TicketViewSet(viewsets.ModelViewSet):
             'estado_sala': maquinas_estado,
             'incidencias_infra': incidencias
         })
+
+    @action(detail=False, methods=['options'], url_path='esquema')
+    def esquema(self, request):
+        """
+        Retorna la estructura, catálogos y validaciones de los campos del Ticket.
+        Permite a Vue construir Componentes Dinámicos rellenando Selects automáticamente.
+        """
+        return Response({
+            "campos": [
+                {
+                    "nombre": "maquina",
+                    "etiqueta": "Máquina Afectada",
+                    "tipo": "fk",
+                    "requerido": True,
+                    "endpoint": "maquinas/lista/"
+                },
+                {
+                    "nombre": "categoria",
+                    "etiqueta": "Categoría",
+                    "tipo": "select",
+                    "requerido": True,
+                    "opciones": [{"value": k, "label": v} for k, v in Ticket.CATEGORIAS_CHOICES]
+                },
+                {
+                    "nombre": "subcategoria",
+                    "etiqueta": "Subcategoría",
+                    "tipo": "texto",
+                    "requerido": False,
+                    "max_length": 50,
+                    "ayuda": "Ej. Billetero, Pantalla..."
+                },
+                {
+                    "nombre": "prioridad",
+                    "etiqueta": "Prioridad",
+                    "tipo": "select",
+                    "requerido": True,
+                    "default": "media",
+                    "opciones": [{"value": k, "label": v} for k, v in Ticket.PRIORIDAD_CHOICES]
+                },
+                {
+                    "nombre": "estado_ciclo",
+                    "etiqueta": "Estado del Ticket",
+                    "tipo": "select",
+                    "requerido": True,
+                    "default": "abierto",
+                    "opciones": [{"value": k, "label": v} for k, v in Ticket.ESTADO_TICKET_CHOICES]
+                },
+                {
+                    "nombre": "descripcion_problema",
+                    "etiqueta": "Descripción del Problema",
+                    "tipo": "textarea",
+                    "requerido": True
+                },
+                {
+                    "nombre": "notas_seguimiento",
+                    "etiqueta": "Notas de Seguimiento",
+                    "tipo": "textarea",
+                    "requerido": False,
+                    "ayuda": "Bitácora en caso de reapertura o pausas."
+                },
+                {
+                    "nombre": "explicacion_cierre",
+                    "etiqueta": "Explicación de Cierre",
+                    "tipo": "textarea",
+                    "requerido": False,
+                    "ayuda": "Obligatorio al cerrar."
+                }
+            ]
+        })

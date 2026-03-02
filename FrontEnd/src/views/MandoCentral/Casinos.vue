@@ -5,6 +5,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import CasinoFormDialog from '@/components/casinos/CasinoFormDialog.vue';
 
 const casinos = ref([]);
 const loading = ref(false);
@@ -105,39 +106,10 @@ const hideDialog = () => {
     submitted.value = false;
 };
 
-const saveCasino = async () => {
-    submitted.value = true;
-
-    if (casino.value.nombre?.trim()) {
-        loading.value = true;
-
-        // Preparar payload y formatear horas
-        const payload = { ...casino.value };
-        const formatTime = (date) => {
-            if (!date) return null;
-            return date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
-        };
-
-        if (payload.horario_apertura instanceof Date) payload.horario_apertura = formatTime(payload.horario_apertura);
-        if (payload.horario_cierre instanceof Date) payload.horario_cierre = formatTime(payload.horario_cierre);
-
-        try {
-            if (casino.value.id) {
-                await api.put(`casinos/${casino.value.id}/`, payload);
-                toast.add({ severity: 'success', summary: 'Éxito', detail: 'Casino actualizado correctamente', life: 3000 });
-            } else {
-                await api.post('casinos/', payload);
-                toast.add({ severity: 'success', summary: 'Éxito', detail: 'Casino creado correctamente', life: 3000 });
-            }
-            casinoDialog.value = false;
-            casino.value = {};
-            cargarCasinos();
-        } catch (error) {
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo guardar el casino', life: 3000 });
-        } finally {
-            loading.value = false;
-        }
-    }
+const saveCasino = () => {
+    // La logica de guardado la maneja internamente el CasinoFormDialog.
+    // Solo necesitamos refrescar la tabla luego del evento 'saved'.
+    cargarCasinos();
 };
 
 const toggleActivarCasino = (data) => {
@@ -267,86 +239,7 @@ onMounted(() => {
                 </Column>
             </DataTable>
 
-            <Dialog v-model:visible="casinoDialog" :style="{ width: '500px' }" header="Detalles del Casino"
-                :modal="true">
-                <div class="flex flex-col gap-6">
-                    <div>
-                        <label for="nombre" class="block font-bold mb-3">Nombre del Casino</label>
-                        <InputText id="nombre" v-model.trim="casino.nombre" required="true" autofocus
-                            :invalid="submitted && !casino.nombre" fluid />
-                        <small class="text-red-500" v-if="submitted && !casino.nombre">El nombre es obligatorio.</small>
-                    </div>
-
-                    <div>
-                        <label for="identificador" class="block font-bold mb-3">Identificador</label>
-                        <InputText id="identificador" v-model.trim="casino.identificador" fluid />
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="ciudad" class="block font-bold mb-3">Ciudad</label>
-                            <InputText id="ciudad" v-model="casino.ciudad" fluid />
-                        </div>
-                        <div>
-                            <label for="telefono" class="block font-bold mb-3">Teléfono</label>
-                            <InputText id="telefono" v-model="casino.telefono" fluid />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="horario_apertura" class="block font-bold mb-3">Horario Apertura</label>
-                            <DatePicker id="horario_apertura" v-model="casino.horario_apertura" timeOnly fluid
-                                hourFormat="24" />
-                        </div>
-                        <div>
-                            <label for="horario_cierre" class="block font-bold mb-3">Horario Cierre</label>
-                            <DatePicker id="horario_cierre" v-model="casino.horario_cierre" timeOnly fluid
-                                hourFormat="24" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="encargado" class="block font-bold mb-3">Nombre del Encargado</label>
-                        <InputText id="encargado" v-model="casino.encargado" fluid />
-                    </div>
-
-                    <div>
-                        <label for="direccion" class="block font-bold mb-3">Dirección Física</label>
-                        <Textarea id="direccion" v-model="casino.direccion" rows="3" cols="20" fluid
-                            placeholder="Calle, Número, Colonia, Ciudad..." />
-                    </div>
-
-                    <div class="flex items-center mt-2">
-                        <Checkbox v-model="casino.esta_activo" :binary="true" inputId="esta_activo" />
-                        <label for="esta_activo" class="ml-2">¿Está Operativo?</label>
-                    </div>
-
-                    <div v-if="casino.id" class="border-t border-surface-200 dark:border-surface-700 pt-4">
-                        <div class="font-bold mb-3 text-surface-500 dark:text-surface-400">Auditoría</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Creado
-                                    por</label>
-                                <InputText id="creado_por" name="creado_por" :value="casino.creado_por || 'Sistema'"
-                                    disabled fluid class="opacity-100" />
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1 text-sm text-surface-600 dark:text-surface-300">Fecha
-                                    Registro</label>
-                                <InputText id="creado_en" name="creado_en" :value="formatearFecha(casino.creado_en)"
-                                    disabled fluid class="opacity-100" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <template #footer>
-                    <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                    <Button label="Guardar" icon="pi pi-check" @click="saveCasino" />
-                </template>
-            </Dialog>
+            <CasinoFormDialog v-model:visible="casinoDialog" :casinoProp="casino" @saved="cargarCasinos" />
         </div>
     </div>
 </template>

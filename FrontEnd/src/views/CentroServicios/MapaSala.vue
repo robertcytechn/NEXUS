@@ -8,6 +8,9 @@ import { crearTicket, TIPOS_TICKET } from '@/service/ticketService';
 import { jsPDF } from 'jspdf';
 import MauiShareHelper from '@/utils/maui-share-helper.js';
 
+// --- COMPONENTES INTELIGENTES ---
+import MaquinaDetalleDialog from '@/components/maquinas/MaquinaDetalleDialog.vue';
+
 // ─── ESTADO PRINCIPAL ─────────────────────────────────────────────────────────
 const toast = useToast();
 const confirm = useConfirm();
@@ -88,11 +91,9 @@ const draggingMaquina = ref(null);
 const dropTargetX = ref(null);
 const dropTargetY = ref(null);
 
-// Diálogo de detalle de máquina
-const detalleDialog = ref(false);
+// Diálogo de detalle de máquina inteligente
+const detalleDialogVisible = ref(false);
 const maquinaDetalle = ref(null);
-const historialTickets = ref([]);
-const loadingDetalle = ref(false);
 
 // Búsqueda en mapa
 const busqueda = ref('');
@@ -311,59 +312,121 @@ async function moverMaquina(maquina, x, y) {
 
 // ─── DETALLE DE MÁQUINA ──────────────────────────────────────────────────────
 async function verDetalle(m) {
-    maquinaDetalle.value = { ...m };
-    detalleDialog.value = true;
-    loadingDetalle.value = true;
-    historialTickets.value = [];
-    try {
-        const res = await api.get(`tickets/historial-maquina/${m.id}/`);
-        historialTickets.value = res.data.historial || [];
-    } catch {
-        // Si no hay historial, dejamos array vacío
-    } finally {
-        loadingDetalle.value = false;
-    }
-}
-
-const diasDesdeMantenimiento = computed(() => {
-    if (!maquinaDetalle.value?.ultimo_mantenimiento) return 'N/A';
-    const fecha = new Date(maquinaDetalle.value.ultimo_mantenimiento);
-    const diff = Math.floor((new Date() - fecha) / (1000 * 60 * 60 * 24));
-    return `${diff} días`;
-});
-
-// ─── LEVANTAR INCIDENCIA ──────────────────────────────────────────────────────
-async function levantarIncidencia() {
-    if (!maquinaDetalle.value) return;
     loading.value = true;
     try {
-        const m = maquinaDetalle.value;
-        const resultado = await crearTicket({
-            maquinaId: m.id,
-            maquinaUid: m.uid_sala,
-            ...TIPOS_TICKET.INCIDENCIA_RAPIDA,
-            reportanteId: usuario.value?.id,
-            estadoMaquina: 'DAÑADA',
-            incrementarContador: true,
-            actualizarEstado: true
-        });
-        if (!resultado.exito) {
-            toast.add({ severity: 'error', summary: resultado.error, detail: resultado.detalle, life: 6000 });
-            return;
-        }
-        toast.add({
-            severity: 'success', summary: '✓ Incidencia Creada',
-            detail: `Ticket #${resultado.ticket.folio || resultado.ticket.id} creado para "${m.uid_sala}".`,
-            life: 6000
-        });
-        detalleDialog.value = false;
-        cargarMapa();
-    } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo crear el ticket', life: 4000 });
+        const res = await api.get(`maquinas/${m.id}/`);
+        maquinaDetalle.value = res.data;
+        detalleDialogVisible.value = true;
+    } catch (error) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el detalle de la máquina.', life: 3000 });
     } finally {
         loading.value = false;
     }
 }
+
+// ─── LEVANTAR INCIDENCIA (MANEJADO POR COMPONENTE, REDIRECCIONA EVENTO) ───
+const levantarIncidencia = async () => {
+    if (!maquinaDetalle.value) return;
+
+    // Validación 1: Verificar que existe información del casino
+    if (!casinoUsuario.value) {
+        toast.add({
+            severity: 'error',
+            summary: 'Casino no identificado',
+            detail: 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
+            life: 5000
+        });
+        return;
+    }
+
+    // Validación 2: Verificar información del usuario
+    if (!usuario.value || !usuario.value.id) {
+        toast.add({
+            severity: 'error',
+            summary: 'Usuario no autenticado',
+            detail: 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
+            life: 5000
+        });
+        return;
+    }
+
+    loading.value = true;
+
+    try {
+        const maquina = maquinaDetalle.value;
+
+        // Usar el servicio global para crear el ticket
+        const resultado = await crearTicket({
+            maquinaId: maquina.id,
+            maquinaUid: maquina.uid_sala,
+            ...TIPOS_TICKET.INCIDENCIA_RAPIDA,
+            reportanteId: usuario.value.id,
+            estadoMaquina: 'DAÑADA',
+            incrementarContador: true,
+            actualizarEstado: true
+        });
+
+        // Manejar el resultado
+        if (!resultado.exito) {
+            toast.add({
+                severity: 'error',
+                summary: resultado.error,
+                detail: resultado.detalle,
+                life: 6000
+            });
+            loading.value = false;
+            return;
+        }
+
+        // Mostrar éxito
+        const mensajeContador = resultado.contadorFallas
+            ? ` | Contador de fallas: ${resultado.contadorFallas}`
+            : '';
+
+        toast.add({
+            severity: 'success',
+            summary: '✓ Incidencia Creada',
+            detail: `Ticket #${resultado.ticket.folio || resultado.ticket.id} creado para la máquina "${maquina.uid_sala}"${mensajeContador}.`,
+            life: 6000
+        });
+
+        if (resultado.advertencia) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Advertencia',
+                detail: resultado.advertencia,
+                life: 5000
+            });
+        }
+
+        detalleDialogVisible.value = false;
+        cargarMapa();
+
+    } catch (error) {
+        const mensajesError = {
+            'ECONNABORTED': 'No se pudo conectar con el servidor.',
+            'ERR_NETWORK': 'Error de conexión. Verifique su conexión a internet.',
+            400: error.response?.data?.detail || 'Los datos enviados no son válidos',
+            401: 'Su sesión ha expirado. Por favor inicie sesión nuevamente.',
+            403: 'No tiene permisos para crear tickets.',
+            500: 'Error del servidor. Intente nuevamente más tarde.'
+        };
+
+        const status = error.response?.status;
+        const detalle = mensajesError[error.code] || mensajesError[status]
+            || error.response?.data?.error
+            || 'Ocurrió un error inesperado al crear el ticket.';
+
+        toast.add({
+            severity: 'error',
+            summary: 'Error al crear ticket',
+            detail: detalle,
+            life: 6000
+        });
+    } finally {
+        loading.value = false;
+    }
+};
 
 // ─── EXPORTAR PDF (vectorial nativo jsPDF — sin captura de DOM) ──────────────
 async function exportarPDF() {
@@ -754,7 +817,7 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
                                 }">
                                 <span class="maquina-uid">{{ getMaquinaEnCelda(x, y).uid_sala }}</span>
                                 <span class="maquina-sub">{{ getMaquinaEnCelda(x, y).modelo_nombre?.slice(0, 8)
-                                    }}</span>
+                                }}</span>
                             </div>
                         </template>
                     </div>
@@ -762,292 +825,9 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
             </div>
         </div>
 
-        <!-- ─── DIÁLOGO DE DETALLE ────────────────────────────────────────── -->
-        <Dialog v-model:visible="detalleDialog" :style="{ width: '1000px' }" :breakpoints="{ '960px': '95vw' }"
-            header="Ficha Técnica Completa" :modal="true" :maximizable="true">
-            <div v-if="maquinaDetalle" class="flex flex-col gap-5">
-                <!-- Cabecera -->
-                <div
-                    class="surface-card border-2 border-primary-200 dark:border-primary-900 rounded-xl p-5 bg-gradient-to-br from-primary-50 to-white dark:from-primary-950 dark:to-surface-900">
-                    <div class="flex flex-col md:flex-row items-start md:items-center gap-3 mb-5">
-                        <div class="flex items-center gap-3 flex-1">
-                            <div class="flex items-center justify-center bg-primary-500 rounded-xl shadow-lg shrink-0"
-                                style="width:3rem;height:3rem">
-                                <i class="pi pi-desktop text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{
-                                    maquinaDetalle.uid_sala
-                                }}</h3>
-                                <p class="text-surface-500 text-sm">{{ maquinaDetalle.modelo_nombre }} · {{
-                                    maquinaDetalle.modelo_producto }}</p>
-                            </div>
-                        </div>
-                        <Tag :value="maquinaDetalle.estado_actual" :severity="getSeverity(maquinaDetalle.estado_actual)"
-                            class="text-base px-4 py-2 font-bold" rounded />
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        <!-- Casino -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-building text-blue-500"></i> Casino</div>
-                            <span class="info-tile-value">{{ maquinaDetalle.casino_nombre }}</span>
-                        </div>
-                        <!-- Piso / Sala -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-map-marker text-red-500"></i> Ubicación</div>
-                            <span class="info-tile-value">{{ labelPiso(maquinaDetalle.ubicacion_piso) }} / {{
-                                labelSala(maquinaDetalle.ubicacion_sala) }}</span>
-                        </div>
-                        <!-- Coordenadas -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-compass text-purple-500"></i> Coordenadas</div>
-                            <Tag :value="`X: ${maquinaDetalle.coordenada_x}, Y: ${maquinaDetalle.coordenada_y}`"
-                                severity="secondary" class="text-xs" />
-                        </div>
-                        <!-- IP -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-wifi text-green-500"></i> IP</div>
-                            <Tag v-if="maquinaDetalle.ip_maquina" :value="maquinaDetalle.ip_maquina" severity="info"
-                                class="text-xs font-mono" />
-                            <span v-else class="text-surface-400 text-xs">Sin asignar</span>
-                        </div>
-                        <!-- Serie -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-hashtag text-indigo-500"></i> No. Serie</div>
-                            <span class="info-tile-value">{{ maquinaDetalle.numero_serie }}</span>
-                        </div>
-                        <!-- Juego -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-play text-pink-500"></i> Juego</div>
-                            <span class="info-tile-value">{{ maquinaDetalle.juego || 'N/A' }}</span>
-                        </div>
-                        <!-- Mantenimiento -->
-                        <div class="info-tile bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                            <div class="info-tile-label"><i class="pi pi-wrench text-blue-600"></i> Último Mtto.</div>
-                            <span class="info-tile-value text-blue-800 dark:text-blue-300">{{
-                                maquinaDetalle.ultimo_mantenimiento || 'Sin registro' }}</span>
-                            <span v-if="maquinaDetalle.ultimo_mantenimiento" class="text-xs text-blue-600">({{
-                                diasDesdeMantenimiento }})</span>
-                        </div>
-                        <!-- Proveedor -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-briefcase text-teal-500"></i> Proveedor</div>
-                            <span class="info-tile-value">{{ maquinaDetalle.proveedor_nombre || 'N/A' }}</span>
-                        </div>
-                        <!-- Fallas -->
-                        <div class="info-tile"
-                            :class="maquinaDetalle.contador_fallas > 5 ? 'bg-red-50 dark:bg-red-950 border-red-300' : 'bg-orange-50 dark:bg-orange-950 border-orange-200'">
-                            <div class="info-tile-label"><i class="pi pi-exclamation-triangle text-orange-500"></i>
-                                Fallas</div>
-                            <span class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{
-                                maquinaDetalle.contador_fallas || 0 }}</span>
-                        </div>
-                        <!-- RFC proveedor -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-id-card text-gray-500"></i> RFC</div>
-                            <Tag v-if="maquinaDetalle.proveedor_rfc" :value="maquinaDetalle.proveedor_rfc"
-                                severity="secondary" class="text-xs" />
-                            <span v-else class="text-surface-400 text-xs">N/A</span>
-                        </div>
-                        <!-- Email proveedor -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-envelope text-blue-500"></i> Email</div>
-                            <a v-if="maquinaDetalle.proveedor_email" :href="'mailto:' + maquinaDetalle.proveedor_email"
-                                class="text-primary-600 hover:underline text-xs font-medium">{{
-                                    maquinaDetalle.proveedor_email
-                                }}</a>
-                            <span v-else class="text-surface-400 text-xs">N/A</span>
-                        </div>
-                        <!-- Teléfono proveedor -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-phone text-green-500"></i> Teléfono</div>
-                            <a v-if="maquinaDetalle.proveedor_telefono"
-                                :href="'tel:' + maquinaDetalle.proveedor_telefono"
-                                class="text-primary-600 hover:underline text-xs font-medium">{{
-                                    maquinaDetalle.proveedor_telefono }}</a>
-                            <span v-else class="text-surface-400 text-xs">N/A</span>
-                        </div>
-                        <!-- Instalación -->
-                        <div class="info-tile">
-                            <div class="info-tile-label"><i class="pi pi-calendar text-cyan-500"></i> Instalación</div>
-                            <Tag v-if="maquinaDetalle.fecha_instalacion" :value="maquinaDetalle.fecha_instalacion"
-                                severity="contrast" class="text-xs" />
-                            <span v-else class="text-surface-400 text-xs">N/A</span>
-                        </div>
-                        <!-- Licencia -->
-                        <div class="info-tile border-2" :class="maquinaDetalle.dias_licencia < 30 && maquinaDetalle.dias_licencia !== 'Indefinida'
-                            ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800'
-                            : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'">
-                            <div class="info-tile-label">
-                                <i class="pi pi-shield"
-                                    :class="maquinaDetalle.dias_licencia < 30 && maquinaDetalle.dias_licencia !== 'Indefinida' ? 'text-red-600' : 'text-green-600'"></i>
-                                <span
-                                    :class="maquinaDetalle.dias_licencia < 30 && maquinaDetalle.dias_licencia !== 'Indefinida' ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'">Licencia</span>
-                            </div>
-                            <span class="info-tile-value block"
-                                :class="maquinaDetalle.dias_licencia < 30 && maquinaDetalle.dias_licencia !== 'Indefinida' ? 'text-red-800 dark:text-red-300' : 'text-green-800 dark:text-green-300'">
-                                {{ maquinaDetalle.fecha_vencimiento_licencia || 'Indefinida' }}
-                            </span>
-                            <Tag v-if="maquinaDetalle.dias_licencia && maquinaDetalle.dias_licencia !== 'Indefinida'"
-                                :value="`${maquinaDetalle.dias_licencia} días`"
-                                :severity="maquinaDetalle.dias_licencia < 30 ? 'danger' : 'success'"
-                                class="text-xs mt-1" />
-                        </div>
-                        <!-- Denominaciones (fila completa) -->
-                        <div class="col-span-2 sm:col-span-3 md:col-span-4 info-tile">
-                            <div class="info-tile-label"><i class="pi pi-dollar text-emerald-500"></i> Denominaciones
-                            </div>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                <Tag v-for="denom in maquinaDetalle.denominaciones_info" :key="denom.id"
-                                    :value="denom.etiqueta" severity="success" class="text-xs" rounded />
-                                <Tag v-if="!maquinaDetalle.denominaciones_info || maquinaDetalle.denominaciones_info.length === 0"
-                                    value="Sin configurar" severity="warn" class="text-xs" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Historial de Tickets -->
-                <div class="surface-card border border-surface-200 dark:border-surface-700 rounded-lg p-5">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="pi pi-history text-xl text-surface-500"></i>
-                        <h4 class="font-bold text-xl text-surface-900 dark:text-surface-0">Historial de Intervenciones
-                        </h4>
-                    </div>
-                    <div v-if="loadingDetalle" class="text-center py-8">
-                        <ProgressSpinner style="width:50px;height:50px" />
-                    </div>
-                    <div v-else-if="historialTickets.length === 0" class="text-center py-8 text-surface-400">
-                        <i class="pi pi-info-circle text-4xl mb-3 block"></i>
-                        No hay tickets registrados para esta máquina
-                    </div>
-                    <Timeline v-else :value="historialTickets" class="w-full">
-                        <template #marker="slotProps">
-                            <span
-                                class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                                :class="{
-                                    'bg-green-500': slotProps.item.estado_ciclo === 'cerrado',
-                                    'bg-blue-500': slotProps.item.estado_ciclo === 'proceso',
-                                    'bg-orange-500': slotProps.item.estado_ciclo === 'espera',
-                                    'bg-red-500': slotProps.item.estado_ciclo === 'abierto'
-                                }">
-                                <i class="pi pi-wrench"></i>
-                            </span>
-                        </template>
-                        <template #content="slotProps">
-                            <div
-                                class="surface-card border-2 border-blue-200 dark:border-blue-800 rounded-xl p-3 md:p-5 mb-4 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950 dark:to-surface-900">
-                                <!-- Cabecera del Ticket -->
-                                <div class="flex flex-col sm:flex-row justify-between items-start gap-2 mb-4">
-                                    <div class="flex items-center gap-2 md:gap-3 flex-wrap">
-                                        <div class="flex items-center justify-center bg-blue-500 rounded-lg shadow-md shrink-0"
-                                            style="width:2rem;height:2rem">
-                                            <i class="pi pi-ticket text-white text-sm"></i>
-                                        </div>
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span
-                                                class="font-bold text-lg md:text-2xl text-blue-600 dark:text-blue-400">{{
-                                                    slotProps.item.folio }}</span>
-                                            <Tag :value="slotProps.item.estado_ciclo"
-                                                :severity="slotProps.item.estado_ciclo === 'cerrado' ? 'success' : slotProps.item.estado_ciclo === 'proceso' ? 'info' : 'warn'" />
-                                        </div>
-                                    </div>
-                                    <span class="text-surface-500 text-xs md:text-sm">{{ new
-                                        Date(slotProps.item.fecha_creacion).toLocaleDateString('es-MX') }}</span>
-                                </div>
-
-                                <!-- Descripción del problema -->
-                                <p
-                                    class="text-sm md:text-base font-medium text-blue-800 dark:text-blue-300 mb-4 pl-0 md:pl-12">
-                                    {{ slotProps.item.descripcion_problema }}</p>
-
-                                <!-- Información del ticket -->
-                                <div class="flex flex-wrap gap-3 md:gap-4 mb-4 pl-0 md:pl-12">
-                                    <div class="flex items-center gap-1">
-                                        <i class="pi pi-tag text-surface-400 text-xs"></i>
-                                        <span class="text-surface-500 text-sm">Categoría:</span>
-                                        <span class="font-semibold text-surface-900 dark:text-surface-0 text-sm">{{
-                                            slotProps.item.categoria }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <i class="pi pi-exclamation-circle text-surface-400 text-xs"></i>
-                                        <span class="text-surface-500 text-sm">Prioridad:</span>
-                                        <Tag :value="slotProps.item.prioridad"
-                                            :severity="slotProps.item.prioridad === 'critica' || slotProps.item.prioridad === 'emergencia' ? 'danger' : slotProps.item.prioridad === 'alta' ? 'warn' : 'info'"
-                                            class="text-xs" />
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <i class="pi pi-user text-surface-400 text-xs"></i>
-                                        <span class="text-surface-500 text-sm">Técnico:</span>
-                                        <span class="font-semibold text-surface-900 dark:text-surface-0 text-sm">
-                                            {{ slotProps.item.tecnico_asignado?.nombre || 'Sin asignar' }} {{
-                                                slotProps.item.tecnico_asignado?.apellidos || '' }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Bitácoras del Ticket -->
-                                <div v-if="slotProps.item.bitacoras && slotProps.item.bitacoras.length > 0"
-                                    class="mt-4 pl-0 md:pl-12">
-                                    <div class="flex items-center gap-2 mb-3">
-                                        <i class="pi pi-list text-surface-400 text-sm"></i>
-                                        <span
-                                            class="text-surface-600 dark:text-surface-400 text-xs md:text-sm font-bold uppercase tracking-wide">Intervenciones
-                                            ({{ slotProps.item.bitacoras.length }})</span>
-                                    </div>
-
-                                    <!-- Contenedor con línea vertical conectora -->
-                                    <div
-                                        class="relative pl-4 md:pl-6 border-l-2 border-blue-300 dark:border-blue-700 ml-1 md:ml-2">
-                                        <div v-for="(bitacora, idx) in slotProps.item.bitacoras" :key="idx"
-                                            class="relative mb-4 last:mb-0">
-                                            <!-- Punto de conexión -->
-                                            <div
-                                                class="absolute -left-[1.6rem] top-3 w-4 h-4 bg-blue-400 dark:bg-blue-600 rounded-full border-2 border-white dark:border-surface-900">
-                                            </div>
-
-                                            <!-- Tarjeta de bitácora -->
-                                            <div
-                                                class="bg-white dark:bg-surface-800 rounded-lg p-3 md:p-4 shadow-sm border border-surface-200 dark:border-surface-700 hover:shadow-md transition-shadow">
-                                                <div
-                                                    class="flex flex-col sm:flex-row justify-between items-start gap-1 mb-2">
-                                                    <div class="flex items-center gap-2">
-                                                        <i class="pi pi-user-edit text-blue-500 text-sm"></i>
-                                                        <span
-                                                            class="text-xs md:text-sm font-bold text-surface-900 dark:text-surface-0">{{
-                                                                bitacora.tecnico_nombre }}</span>
-                                                    </div>
-                                                    <span class="text-xs text-surface-500">{{ new
-                                                        Date(bitacora.fecha_registro).toLocaleString('es-MX')
-                                                        }}</span>
-                                                </div>
-                                                <p
-                                                    class="text-xs md:text-sm text-surface-700 dark:text-surface-300 mb-3 pl-0 md:pl-6">
-                                                    {{ bitacora.descripcion_trabajo }}</p>
-                                                <div class="flex flex-wrap gap-2 pl-0 md:pl-6">
-                                                    <Tag :value="bitacora.tipo_intervencion" severity="secondary"
-                                                        class="text-xs" icon="pi pi-cog" />
-                                                    <Tag :value="bitacora.resultado_intervencion"
-                                                        :severity="bitacora.resultado_intervencion === 'exitosa' ? 'success' : bitacora.resultado_intervencion === 'parcial' ? 'warn' : 'danger'"
-                                                        class="text-xs"
-                                                        :icon="bitacora.resultado_intervencion === 'exitosa' ? 'pi pi-check-circle' : 'pi pi-info-circle'" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </Timeline>
-                </div>
-            </div>
-            <template #footer>
-                <Button label="Levantar Incidencia" icon="pi pi-exclamation-triangle" severity="danger"
-                    @click="levantarIncidencia" :loading="loading" />
-                <Button label="Cerrar" icon="pi pi-times" text @click="detalleDialog = false" />
-            </template>
-        </Dialog>
+        <!-- ─── COMPONENTES INTELIGENTES ────────────────────────────────────────── -->
+        <MaquinaDetalleDialog v-model:visible="detalleDialogVisible" :maquina="maquinaDetalle"
+            @levantar-incidencia="levantarIncidencia" />
     </div>
 </template>
 
@@ -1147,53 +927,5 @@ const columnas = computed(() => Array.from({ length: gridConfig.value.grid_width
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-/* Timeline: ocultar lado vacío, mantener línea con marcadores */
-:deep(.p-timeline-event-opposite) {
-    display: none !important;
-}
-
-:deep(.p-timeline-event-content) {
-    width: 100% !important;
-    padding-left: 1rem !important;
-}
-
-/* ── Tiles de info en el diálogo ── */
-.info-tile {
-    background: white;
-    border: 1px solid var(--p-surface-200, #e2e8f0);
-    border-radius: 8px;
-    padding: 10px 12px;
-}
-
-.dark .info-tile {
-    background: var(--p-surface-800, #1e293b);
-    border-color: var(--p-surface-700, #334155);
-}
-
-.info-tile-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--p-surface-500, #64748b);
-    margin-bottom: 4px;
-}
-
-.info-tile-label i {
-    font-size: 12px;
-}
-
-.info-tile-value {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--p-surface-900, #0f172a);
-    display: block;
-}
-
-.dark .info-tile-value {
-    color: var(--p-surface-0, #f8fafc);
 }
 </style>

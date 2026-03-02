@@ -60,6 +60,66 @@ class ModeloMaquinaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @action(detail=False, methods=['options'], url_path='esquema')
+    def esquema(self, request, *args, **kwargs):
+        """
+        Devuelve la estructura de campos para construir formularios UI dinámicos
+        respondiendo al verbo OPTIONS como metadata.
+        """
+        from Proveedores.models import Proveedor
+        
+        # Opciones dinámicas para Proveedores activos
+        proveedores_choices = [
+            {'value': p.id, 'label': p.nombre} 
+            for p in Proveedor.objects.filter(esta_activo=True).order_by('nombre')
+        ]
+
+        estructura = [
+            {
+                'name': 'proveedor',
+                'label': 'Proveedor',
+                'type': 'select',
+                'required': True,
+                'help_text': 'Seleccione el proveedor / fabricante de la máquina',
+                'choices': proveedores_choices,
+                'placeholder': 'Seleccione un proveedor'
+            },
+            {
+                'name': 'nombre_modelo',
+                'label': 'Nombre del Modelo / Referencia',
+                'type': 'text',
+                'required': True,
+                'help_text': 'Identificador técnico único',
+                'placeholder': 'Ej. EXR-9000'
+            },
+            {
+                'name': 'nombre_producto',
+                'label': 'Marca Comercial del Producto',
+                'type': 'text',
+                'required': True,
+                'help_text': 'Nombre comercial o marketing del modelo',
+                'placeholder': 'Ej. Golden Buffalo'
+            },
+            {
+                'name': 'descripcion',
+                'label': 'Descripción / Detalles Técnicos',
+                'type': 'textarea',
+                'required': False,
+                'help_text': 'Anotaciones físicas o técnicas del chasis',
+                'placeholder': 'Chasis inclinado con doble pantalla táctil...'
+            },
+            {
+                'name': 'esta_activo',
+                'label': '¿Modelo Activo y en Operación?',
+                'type': 'boolean',
+                'required': False,
+                'default': True,
+                'help_text': 'Si está inactivo no aparecerá al registrar nuevas máquinas'
+            }
+        ]
+
+        return Response(estructura)
+
     @action(detail=True, methods=['patch'], url_path='switch-estado')
     def switch_estado(self, request, pk=None):
         """Cambia el estado activo/inactivo de un modelo de máquina."""

@@ -222,7 +222,8 @@ watch(() => props.proveedorId, async (newVal) => {
                         <InputText :id="campo.name" v-model.trim="formData[campo.name]"
                             :type="campo.type === 'email' ? 'email' : 'text'"
                             :disabled="readOnly || campo.readOnly || (campo.name === 'casino' && !permitirElegirCasino)"
-                            :invalid="!!errores[campo.name]" :placeholder="campo.placeholder || ''" class="w-full" />
+                            :invalid="!!errores[campo.name]" :placeholder="campo.placeholder || ''" class="w-full"
+                            autocomplete="off" />
                         <small v-if="errores[campo.name]" class="text-red-500">{{ errores[campo.name] }}</small>
                         <small v-else-if="campo.help_text" class="text-surface-500">{{ campo.help_text }}</small>
                     </div>
@@ -232,10 +233,10 @@ watch(() => props.proveedorId, async (newVal) => {
                         <label :for="campo.name" class="font-bold text-sm text-surface-900 dark:text-surface-0">
                             {{ campo.label }} <span v-if="campo.required && !esEdicion" class="text-red-500">*</span>
                         </label>
-                        <Password :id="campo.name" v-model="formData[campo.name]" :feedback="true" toggleMask
+                        <Password :inputId="campo.name" v-model="formData[campo.name]" :feedback="true" toggleMask
                             :invalid="!!errores[campo.name]" :disabled="readOnly || campo.readOnly"
                             promptLabel="Introduce una contraseña" weakLabel="Débil" mediumLabel="Media"
-                            strongLabel="Fuerte" class="w-full" inputClass="w-full" />
+                            strongLabel="Fuerte" class="w-full" inputClass="w-full" autocomplete="new-password" />
                         <small v-if="errores[campo.name]" class="text-red-500">{{ errores[campo.name] }}</small>
                         <small v-else-if="esEdicion" class="text-surface-500">Dejar en blanco para mantener la
                             actual.</small>
@@ -247,7 +248,7 @@ watch(() => props.proveedorId, async (newVal) => {
                         <label :for="campo.name" class="font-bold text-sm text-surface-900 dark:text-surface-0">
                             {{ campo.label }} <span v-if="campo.required" class="text-red-500">*</span>
                         </label>
-                        <Select :id="campo.name" v-model="formData[campo.name]" :options="campo.choices"
+                        <Select :inputId="campo.name" v-model="formData[campo.name]" :options="campo.choices"
                             optionLabel="label" optionValue="value"
                             :disabled="readOnly || campo.readOnly || (campo.name === 'casino' && !permitirElegirCasino)"
                             :invalid="!!errores[campo.name]" :placeholder="campo.placeholder || 'Seleccione una opción'"

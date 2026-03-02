@@ -59,3 +59,44 @@ class RolViewSet(viewsets.ModelViewSet):
             {"message": "El rol ha sido desactivado correctamente (Borrado Lógico)."},
             status=status.HTTP_204_NO_CONTENT
         )
+
+    @action(detail=False, methods=['options'], url_path='esquema')
+    def esquema(self, request):
+        """
+        Retorna la estructura y validaciones de los campos del Rol.
+        Permite al frontend construir el formulario dinámicamente.
+        """
+        return Response({
+            "campos": [
+                {
+                    "nombre": "nombre",
+                    "etiqueta": "Nombre del Rol",
+                    "tipo": "texto",
+                    "requerido": True,
+                    "max_length": 100
+                },
+                {
+                    "nombre": "descripcion",
+                    "etiqueta": "Descripción",
+                    "tipo": "textarea",
+                    "requerido": False
+                },
+                {
+                    "nombre": "nivel",
+                    "etiqueta": "Nivel de Acceso",
+                    "tipo": "numero",
+                    "requerido": True,
+                    "min": 0,
+                    "max": 200,
+                    "default": 0,
+                    "ayuda": "Define la jerarquía del rol (200 = Dios)"
+                },
+                {
+                    "nombre": "esta_activo",
+                    "etiqueta": "¿Está Activo?",
+                    "tipo": "booleano",
+                    "requerido": False,
+                    "default": True
+                }
+            ]
+        })

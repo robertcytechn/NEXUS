@@ -111,6 +111,79 @@ class MaquinaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['get'], url_path='lista-(?P<algo>[^/.]+)') # Para evitar superposición con urls custom
+    # ... solo un comentario placeholder para no romper lo de abajo
+    
+    @action(detail=False, methods=['options'], url_path='esquema')
+    def esquema(self, request, *args, **kwargs):
+        """
+        Devuelve el esquema dinámico de máquinas a través de OPTIONS.
+        Incluye choices para selectores (Casinos, Modelos, Proveedores, Estados, Denominaciones, Pisos, Salas).
+        """
+        from Casinos.models import Casino
+        from ModelosMaquinas.models import ModeloMaquina
+        from Denominaciones.models import Denominacion
+        
+        # 1. Opciones Categóricas (Choices estáticos del modelo)
+        estados_choices = [{'label': label, 'value': value} for value, label in Maquina.ESTADOS_CHOICES]
+        piso_choices = [{'label': label, 'value': value} for value, label in Maquina.PISO_CHOICES]
+        sala_choices = [{'label': label, 'value': value} for value, label in Maquina.SALA_CHOICES]
+        
+        # 2. Opciones Dinámicas (Casinos y Modelos activos)
+        casinos_activos = Casino.objects.filter(esta_activo=True).order_by('nombre')
+        casinos_choices = [{'label': c.nombre, 'value': c.id} for c in casinos_activos]
+        
+        # Modelos (con su proveedor inyectado para facilitar filtrados en el frontend)
+        modelos_activos = ModeloMaquina.objects.filter(esta_activo=True).select_related('proveedor').order_by('nombre_modelo')
+        modelos_choices = [
+            {
+                'label': f"{m.nombre_modelo} - {m.nombre_producto}", 
+                'value': m.id, 
+                'proveedor': m.proveedor_id,
+                'proveedor_nombre': m.proveedor.nombre if m.proveedor else 'S/P'
+            } 
+            for m in modelos_activos
+        ]
+        
+        # Denominaciones
+        denominaciones_activas = Denominacion.objects.filter(esta_activo=True).order_by('valor')
+        denominaciones_choices = [
+            {
+                'label': str(d.etiqueta),
+                'value': d.id,
+                'moneda': d.moneda
+            }
+            for d in denominaciones_activas
+        ]
+
+        # 3. Estructura de Campos para el frontend
+        campos = [
+            {'name': 'modelo', 'label': 'Modelo de Máquina', 'type': 'select', 'required': True, 'options': 'modelos_choices'},
+            {'name': 'casino', 'label': 'Casino Destino', 'type': 'select', 'required': True, 'options': 'casinos_choices'},
+            {'name': 'denominaciones', 'label': 'Denominaciones Aceptadas', 'type': 'multiselect', 'required': True, 'options': 'denominaciones_choices'},
+            {'name': 'uid_sala', 'label': 'UID / Placa en Sala', 'type': 'text', 'required': True, 'maxLength': 20},
+            {'name': 'numero_serie', 'label': 'Número de Serie', 'type': 'text', 'required': True, 'maxLength': 100},
+            {'name': 'ip_maquina', 'label': 'IP Local (Opcional)', 'type': 'text', 'required': False},
+            {'name': 'juego', 'label': 'Título del Juego', 'type': 'text', 'required': True, 'maxLength': 150},
+            {'name': 'ubicacion_piso', 'label': 'Piso de Ubicación', 'type': 'select', 'required': True, 'options': 'piso_choices'},
+            {'name': 'ubicacion_sala', 'label': 'Sala/Zona de Ubicación', 'type': 'select', 'required': True, 'options': 'sala_choices'},
+            {'name': 'coordenada_x', 'label': 'Coordenada X', 'type': 'number', 'required': True, 'default': 0},
+            {'name': 'coordenada_y', 'label': 'Coordenada Y', 'type': 'number', 'required': True, 'default': 0},
+            {'name': 'esta_activo', 'label': '¿Máquina en Alta Operativa?', 'type': 'boolean', 'required': False, 'default': True}
+        ]
+
+        return Response({
+            'campos': campos,
+            'choices': {
+                'estados_choices': estados_choices,
+                'piso_choices': piso_choices,
+                'sala_choices': sala_choices,
+                'casinos_choices': casinos_choices,
+                'modelos_choices': modelos_choices,
+                'denominaciones_choices': denominaciones_choices
+            }
+        })
+        
     @action(detail=False, methods=['get'], url_path='lista-por-casino/(?P<casino_id>[^/.]+)')
     def lista_por_casino(self, request, casino_id=None):
         """

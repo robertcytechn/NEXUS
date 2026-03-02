@@ -59,3 +59,74 @@ class CasinoViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
         
+    @action(detail=False, methods=['options'], url_path='esquema')
+    def esquema(self, request):
+        """
+        Retorna la estructura y validaciones de los campos del Casino.
+        Permite al frontend construir el formulario dinámicamente.
+        """
+        return Response({
+            "campos": [
+                {
+                    "nombre": "nombre",
+                    "etiqueta": "Nombre del Casino",
+                    "tipo": "texto",
+                    "requerido": True,
+                    "max_length": 100
+                },
+                {
+                    "nombre": "identificador",
+                    "etiqueta": "Identificador",
+                    "tipo": "texto",
+                    "requerido": False,
+                    "max_length": 50,
+                    "ayuda": "ID interno o código de sucursal"
+                },
+                {
+                    "nombre": "ciudad",
+                    "etiqueta": "Ciudad",
+                    "tipo": "texto",
+                    "requerido": False,
+                    "max_length": 100
+                },
+                {
+                    "nombre": "telefono",
+                    "etiqueta": "Teléfono",
+                    "tipo": "texto",
+                    "requerido": False,
+                    "max_length": 20
+                },
+                {
+                    "nombre": "horario_apertura",
+                    "etiqueta": "Horario de Apertura",
+                    "tipo": "hora",
+                    "requerido": False
+                },
+                {
+                    "nombre": "horario_cierre",
+                    "etiqueta": "Horario de Cierre",
+                    "tipo": "hora",
+                    "requerido": False
+                },
+                {
+                    "nombre": "encargado",
+                    "etiqueta": "Encargado de Sala",
+                    "tipo": "texto",
+                    "requerido": False,
+                    "max_length": 100
+                },
+                {
+                    "nombre": "direccion",
+                    "etiqueta": "Dirección Física",
+                    "tipo": "textarea",
+                    "requerido": False
+                },
+                {
+                    "nombre": "esta_activo",
+                    "etiqueta": "Casino Operativo",
+                    "tipo": "booleano",
+                    "requerido": False,
+                    "default": True
+                }
+            ]
+        })
