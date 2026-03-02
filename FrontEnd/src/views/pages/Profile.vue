@@ -150,6 +150,12 @@ const kpis = computed(() => {
     ];
 });
 
+const participacionGamificacion = computed(() => {
+    if (!user.value || !user.value.rol_nombre) return false;
+    const rolesPermitidos = ['TECNICO', 'SUP SISTEMAS'];
+    return rolesPermitidos.includes(user.value.rol_nombre.toUpperCase());
+});
+
 const estadoTicketSeverity = (estado) => {
     const map = {
         'Abierto': 'danger',
@@ -196,11 +202,8 @@ const estadoTicketSeverity = (estado) => {
 
                     <!-- Insignia de Rango -->
                     <div class="mb-5 flex justify-center">
-                        <InsigniaRangoAnimada
-                            v-if="user.rango_gamificacion"
-                            :nivel="user.rango_gamificacion.nivel"
-                            :nombreRango="user.rango_gamificacion.titulo"
-                        />
+                        <InsigniaRangoAnimada v-if="user.rango_gamificacion && participacionGamificacion"
+                            :nivel="user.rango_gamificacion.nivel" :nombreRango="user.rango_gamificacion.titulo" />
                     </div>
 
                     <!-- Datos rápidos -->

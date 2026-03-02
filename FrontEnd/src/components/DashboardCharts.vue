@@ -57,10 +57,25 @@ const mttrKPI = ref(0);
 const tecnicosActivos = ref([]);
 const incidenciasInfra = ref(0);
 
-const initCharts = () => {
+// Helper para extraer variables CSS reales o usar defaults sólidos en Tailwind v4 / PrimeVue 4
+const getChartColor = (varName, fallbackHex) => {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--p-text-color');
-    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
+    // 1. Intentar variable PrimeVue Aura (--p-blue-500)
+    let color = documentStyle.getPropertyValue(varName).trim();
+    if (color) return color;
+
+    // 2. Intentar formato nativo Tailwind (--color-blue-500)
+    const tailwindVar = varName.replace('--p-', '--color-');
+    color = documentStyle.getPropertyValue(tailwindVar).trim();
+    if (color) return color;
+
+    // 3. Fallback a HEX si el :root no provee la variable
+    return fallbackHex;
+};
+
+const initCharts = () => {
+    const textColor = getChartColor('--p-text-color', '#495057');
+    const surfaceBorder = getChartColor('--p-content-border-color', '#e2e8f0');
 
     fallasOptions.value = {
         maintainAspectRatio: false,
@@ -148,14 +163,12 @@ const loadData = async () => {
 
         // 1. Fallas por Categoría (Pie Chart)
         const categoriasColores = {
-            hardware: '--p-orange-500',
-            software: '--p-blue-500',
-            perifericos: '--p-teal-500',
-            red: '--p-indigo-500',
-            otros: '--p-gray-500'
+            hardware: { var: '--p-orange-500', hex: '#f97316' },
+            software: { var: '--p-blue-500', hex: '#3b82f6' },
+            perifericos: { var: '--p-teal-500', hex: '#14b8a6' },
+            red: { var: '--p-indigo-500', hex: '#6366f1' },
+            otros: { var: '--p-gray-500', hex: '#6b7280' }
         };
-
-        const documentStyle = getComputedStyle(document.documentElement);
 
         if (data.fallas_categoria && data.fallas_categoria.length > 0) {
             fallasData.value = {
@@ -163,9 +176,10 @@ const loadData = async () => {
                 datasets: [
                     {
                         data: data.fallas_categoria.map(item => item.total),
-                        backgroundColor: data.fallas_categoria.map(item =>
-                            documentStyle.getPropertyValue(categoriasColores[item.categoria] || '--p-primary-500')
-                        )
+                        backgroundColor: data.fallas_categoria.map(item => {
+                            const colorRef = categoriasColores[item.categoria] || { var: '--p-primary-500', hex: '#3b82f6' };
+                            return getChartColor(colorRef.var, colorRef.hex);
+                        })
                     }
                 ]
             };
@@ -180,7 +194,7 @@ const loadData = async () => {
                 datasets: [
                     {
                         label: 'Fallos',
-                        backgroundColor: documentStyle.getPropertyValue('--p-red-500'),
+                        backgroundColor: getChartColor('--p-red-500', '#ef4444'),
                         data: data.top_maquinas.map(item => item.total)
                     }
                 ]
@@ -195,12 +209,12 @@ const loadData = async () => {
             datasets: [
                 {
                     label: 'Creados (Acumulado Fecha)',
-                    backgroundColor: documentStyle.getPropertyValue('--p-orange-500'),
+                    backgroundColor: getChartColor('--p-orange-500', '#f97316'),
                     data: [data.resolucion?.creados || 0]
                 },
                 {
                     label: 'Resueltos (Acumulado Fecha)',
-                    backgroundColor: documentStyle.getPropertyValue('--p-green-500'),
+                    backgroundColor: getChartColor('--p-green-500', '#22c55e'),
                     data: [data.resolucion?.cerrados || 0]
                 }
             ]
@@ -211,10 +225,10 @@ const loadData = async () => {
 
         // 4. Estado de la Sala (Doughnut Chart - Snapshot Global)
         const estadoColores = {
-            OPERATIVA: '--p-green-500',
-            DAÑADA: '--p-red-500',
-            DAÑADA_OPERATIVA: '--p-orange-500',
-            MANTENIMIENTO: '--p-blue-500'
+            OPERATIVA: { var: '--p-green-500', hex: '#22c55e' },
+            DAÑADA: { var: '--p-red-500', hex: '#ef4444' },
+            DAÑADA_OPERATIVA: { var: '--p-orange-500', hex: '#f97316' },
+            MANTENIMIENTO: { var: '--p-blue-500', hex: '#3b82f6' }
         };
         const estadoLabels = {
             OPERATIVA: 'Operativa',
@@ -229,9 +243,10 @@ const loadData = async () => {
                 datasets: [
                     {
                         data: data.estado_sala.map(item => item.total),
-                        backgroundColor: data.estado_sala.map(item =>
-                            documentStyle.getPropertyValue(estadoColores[item.estado_actual] || '--p-gray-500')
-                        )
+                        backgroundColor: data.estado_sala.map(item => {
+                            const colorRef = estadoColores[item.estado_actual] || { var: '--p-gray-500', hex: '#6b7280' };
+                            return getChartColor(colorRef.var, colorRef.hex);
+                        })
                     }
                 ]
             };
@@ -256,8 +271,8 @@ const loadData = async () => {
                     {
                         data: [preventivos, correctivos],
                         backgroundColor: [
-                            documentStyle.getPropertyValue('--p-teal-500'),
-                            documentStyle.getPropertyValue('--p-red-400')
+                            getChartColor('--p-teal-500', '#14b8a6'),
+                            getChartColor('--p-red-400', '#f87171')
                         ]
                     }
                 ]
@@ -423,7 +438,7 @@ onMounted(() => {
                                 <i class="pi pi-exclamation-triangle text-orange-500 text-4xl mb-3"></i>
                                 <div class="text-surface-500 font-medium mb-1">Acontecimientos de Infraestructura</div>
                                 <div class="text-4xl font-bold text-orange-600 dark:text-orange-400">{{ incidenciasInfra
-                                }}
+                                    }}
                                 </div>
                                 <div class="text-sm text-surface-500 mt-2">Afectaciones en sala durante el periodo
                                     reportado
