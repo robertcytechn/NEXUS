@@ -16,7 +16,7 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update:visible']);
+const emit = defineEmits(['update:visible', 'ticket-cerrado']);
 
 const toast = useToast();
 const historialBitacora = ref([]);
@@ -208,11 +208,17 @@ const guardarBitacora = async () => {
         toast.add({ severity: 'success', summary: 'Guardado', detail: resultado.mensaje, life: 3000 });
         mostrarToastPuntos(toast, resultado.puntos_nexus);
 
+        // Capturar antes del reset si el ticket fue cerrado
+        const seFinalizoTicket = nuevaBitacora.value.finaliza_ticket;
+
         await cargarHistorialBitacora(props.ticketProp.id);
         cancelarFormularioBitacora();
 
-        if (nuevaBitacora.value.finaliza_ticket) {
-            setTimeout(() => { emit('update:visible', false) }, 1500);
+        if (seFinalizoTicket) {
+            setTimeout(() => {
+                emit('update:visible', false);
+                emit('ticket-cerrado');
+            }, 1500);
         }
     } catch (error) {
         toast.add({

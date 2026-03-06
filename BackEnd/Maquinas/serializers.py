@@ -61,6 +61,37 @@ class MaquinaSerializer(serializers.ModelSerializer):
         ]
 
 
+class MaquinaTablaSerializer(serializers.ModelSerializer):
+    """
+    Serializer liviano para la tabla de CentroServicios/Maquinas.
+    Solo incluye los campos que muestra el DataTable, evitando la carga
+    de proveedor, imagen, denominciones y otros campos pesados.
+    """
+    casino_nombre = serializers.CharField(source='casino.nombre', read_only=True)
+    modelo_nombre = serializers.CharField(source='modelo.nombre_modelo', read_only=True)
+
+    class Meta:
+        model = Maquina
+        fields = [
+            'id', 'uid_sala', 'numero_serie', 'juego', 'ip_maquina',
+            'ubicacion_piso', 'ubicacion_sala', 'estado_actual',
+            'contador_fallas', 'esta_activo', 'casino_nombre', 'modelo_nombre'
+        ]
+
+
+class MaquinaFKSerializer(serializers.ModelSerializer):
+    """
+    Serializer ultra-ligero para dropdowns FK (ej. selector de máquina en Tickets).
+    Solo devuelve los campos que necesita el frontend para mostrar la opción.
+    """
+    casino_nombre = serializers.CharField(source='casino.nombre', read_only=True)
+    modelo_nombre = serializers.CharField(source='modelo.nombre_modelo', read_only=True)
+
+    class Meta:
+        model = Maquina
+        fields = ['id', 'uid_sala', 'casino_nombre', 'modelo_nombre']
+
+
 class MaquinaMapaSerializer(serializers.ModelSerializer):
     """
     Serializer ligero para el Mapa Interactivo de Sala.

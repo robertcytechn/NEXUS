@@ -154,8 +154,8 @@ const saveMaquina = async () => {
         </div>
 
         <div v-else class="flex flex-col gap-6 w-full p-2">
-            <!-- MOTOR DINÁMICO DE MÁQUINAS UI -->
-            <MaquinaForm v-model="maquinaLocal" :submitted="submitted" @validar="saveMaquina" />
+            <!-- MOTOR DINÁMICO DE MÁQUINAS UI - v-if para no montar innecesariamente -->
+            <MaquinaForm v-if="visible" v-model="maquinaLocal" :submitted="submitted" @validar="saveMaquina" />
         </div>
 
         <template #footer>

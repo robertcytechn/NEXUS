@@ -253,16 +253,23 @@ const savePanicTicket = async () => {
 
 // 5. Cierre / Ticket Express (Técnico)
 const expressDialog = ref(false);
-const expressData = ref({ uid_sala: '', descripcion: '', estado_final: 'operativa' });
+const expressData = ref({ uid_sala: '', descripcion: '', estado_final: 'operativa', tipo_intervencion: 'correctiva' });
 const submittedExpress = ref(false);
 const estadosFinales = ref([
     { label: 'Solucionado - Máquina Operativa', value: 'operativa' },
     { label: 'Pendiente - Sigue Dañada', value: 'dañada' },
     { label: 'Parcial - Dañada pero Operando', value: 'dañada_operativa' }
 ]);
+const tiposIntervencionExpress = ref([
+    { label: 'Diagnóstico', value: 'diagnostico' },
+    { label: 'Reparación Correctiva', value: 'correctiva' },
+    { label: 'Ajuste / Calibración', value: 'ajuste' },
+    { label: 'Instalación / Movimiento', value: 'instalacion' },
+    { label: 'Actualización Software', value: 'actualización' }
+]);
 
 const openExpressDialog = async () => {
-    expressData.value = { uid_sala: '', descripcion: '', estado_final: 'operativa' };
+    expressData.value = { uid_sala: '', descripcion: '', estado_final: 'operativa', tipo_intervencion: 'correctiva' };
     submittedExpress.value = false;
     expressDialog.value = true;
 
@@ -280,7 +287,7 @@ const openExpressDialog = async () => {
 const saveExpressTicket = async () => {
     submittedExpress.value = true;
 
-    if (expressData.value.uid_sala && expressData.value.descripcion) {
+    if (expressData.value.uid_sala && expressData.value.descripcion && expressData.value.tipo_intervencion) {
         const searchUid = expressData.value.uid_sala.trim().toUpperCase();
         const maquinaSeleccionada = maquinas.value.find(m => m.uid_sala.toUpperCase() === searchUid);
 
@@ -290,16 +297,17 @@ const saveExpressTicket = async () => {
         }
 
         const isClosed = expressData.value.estado_final === 'operativa';
+        const resultadoMap = { operativa: 'exitosa', dañada_operativa: 'parcial', dañada: 'fallida' };
 
         const result = await crearTicketConBitacora({
             maquinaId: maquinaSeleccionada.id,
             maquinaUid: maquinaSeleccionada.uid_sala,
-            categoria: 'otros', // Por defecto para algo exprés
-            descripcionProblema: `Ticket Express por Técnico: ${expressData.value.descripcion}`,
+            categoria: 'otros',
+            descripcionProblema: `Reporte Técnico Express: ${expressData.value.descripcion}`,
             usuarioTecnicoId: user.id,
-            tipoIntervencion: 'Mantenimiento Correctivo', // Estándar para este flujo
+            tipoIntervencion: expressData.value.tipo_intervencion,
             descripcionTrabajo: expressData.value.descripcion,
-            resultadoIntervencion: expressData.value.estado_final === 'operativa' ? 'exitosa' : 'pendiente',
+            resultadoIntervencion: resultadoMap[expressData.value.estado_final] || 'fallida',
             estadoMaquinaResultante: expressData.value.estado_final,
             finalizaTicket: isClosed,
             explicacionCierre: isClosed ? 'Cerrado mediante flujo express en Dashboard.' : ''
@@ -729,37 +737,50 @@ const exportarReportePDF = () => {
         </Dialog>
 
         <!-- Dialog: Cierre Express / Reporte Técnico -->
-        <Dialog v-model:visible="expressDialog" :style="{ width: '450px' }" :modal="true"
+        <Dialog v-model:visible="expressDialog" :style="{ width: '480px' }" :modal="true"
             header="Reporte Técnico Express">
             <div class="flex flex-col gap-4 p-2">
                 <p class="text-surface-600 dark:text-surface-300 mb-2">
-                    Abre un ticket y anexa tu resolución en un solo paso.
+                    Abre un ticket y registra tu intervención en un solo paso.
                 </p>
                 <div>
-                    <label class="block font-medium mb-1">UID de la Máquina</label>
+                    <label class="block font-medium mb-1">UID de la Máquina *</label>
                     <InputText v-model="expressData.uid_sala" fluid placeholder="Ej: MQ-001" autofocus
                         :invalid="submittedExpress && !expressData.uid_sala" />
                     <small class="text-red-500 block" v-if="submittedExpress && !expressData.uid_sala">El UID es
                         obligatorio.</small>
                 </div>
                 <div>
-                    <label class="block font-medium mb-1">Problema y Solución</label>
-                    <Textarea v-model="expressData.descripcion" rows="4" fluid
-                        placeholder="Describe qué estaba fallando y cómo lo solucionaste..."
-                        :invalid="submittedExpress && !expressData.descripcion" />
-                    <small class="text-red-500 block" v-if="submittedExpress && !expressData.descripcion">Debes
-                        justificar la
-                        bitácora.</small>
+                    <label class="block font-medium mb-2">Tipo de Intervención *</label>
+                    <div class="flex flex-wrap gap-2">
+                        <Chip v-for="tipo in tiposIntervencionExpress" :key="tipo.value" :label="tipo.label" :class="[
+                            'cursor-pointer transition-all duration-200 border-2',
+                            expressData.tipo_intervencion === tipo.value
+                                ? 'bg-blue-600 dark:bg-blue-500 text-white border-blue-700 dark:border-blue-400 shadow-xl scale-110 font-bold'
+                                : 'bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 border-surface-300 dark:border-surface-600 hover:border-blue-400 hover:bg-surface-200 dark:hover:bg-surface-700'
+                        ]" @click="expressData.tipo_intervencion = tipo.value" />
+                    </div>
+                    <small class="text-red-500 block" v-if="submittedExpress && !expressData.tipo_intervencion">
+                        Selecciona el tipo de intervención.
+                    </small>
                 </div>
                 <div>
-                    <label class="block font-medium mb-1">Estado de la Máquina</label>
+                    <label class="block font-medium mb-1">Descripción de la Intervención *</label>
+                    <Textarea v-model="expressData.descripcion" rows="4" fluid
+                        placeholder="Describe qué estaba fallando y cómo lo resolviste..."
+                        :invalid="submittedExpress && !expressData.descripcion" />
+                    <small class="text-red-500 block" v-if="submittedExpress && !expressData.descripcion">Debes
+                        describir la intervención.</small>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Estado Final de la Máquina</label>
                     <Select v-model="expressData.estado_final" :options="estadosFinales" optionLabel="label"
                         optionValue="value" fluid />
                 </div>
             </div>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="expressDialog = false" />
-                <Button label="Cerrar Incidencia" icon="pi pi-check-circle" severity="success"
+                <Button label="Guardar Reporte" icon="pi pi-check-circle" severity="success"
                     @click="saveExpressTicket" />
             </template>
         </Dialog>

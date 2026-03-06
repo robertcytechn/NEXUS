@@ -27,38 +27,113 @@ api.interceptors.request.use(
     }
 );
 
+// ─── Lógica de refresco de token ────────────────────────────────────────────
+// Controla si ya hay un refresh en curso para no lanzar múltiples peticiones.
+let isRefreshing = false;
+// Cola de peticiones que fallaron con 401 mientras se estaba refrescando.
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+const clearSessionAndRedirect = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('roles');
+    // Importar el router dinámicamente para evitar dependencias circulares
+    // y redirigir al login de forma limpia con Vue Router (sin recargar la página)
+    import('@/router').then(({ default: router }) => {
+        if (router.currentRoute.value.path !== '/auth/login') {
+            router.push('/auth/login');
+        }
+    });
+};
+// ────────────────────────────────────────────────────────────────────────────
+
 // Interceptor para manejar respuestas y errores
 api.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error) => {
-        const url = error.config?.url || '';
+    async (error) => {
+        const originalRequest = error.config;
+        const url = originalRequest?.url || '';
 
         // Excluir los endpoints de autenticación: un 401 en login es una
         // respuesta válida (credenciales incorrectas), no una sesión expirada.
-        // También excluimos refresh para evitar bucles.
+        // También excluimos refresh para evitar bucles infinitos.
         const esEndpointAuth = url.includes('usuarios/login/') || url.includes('usuarios/refresh/');
 
-        // Si el token es inválido (401) o acceso prohibido (403) en cualquier
-        // otro endpoint, significa que la sesión ya no es válida en el servidor
-        // (p.ej. sesión concurrente: otro dispositivo inició sesión con el mismo usuario).
-        if (!esEndpointAuth && error.response && (error.response.status === 401 || error.response.status === 403)) {
-            // Limpiar TODOS los datos de sesión del localStorage
-            localStorage.removeItem('token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('roles');
+        // ── 401: token de acceso expirado → intentar renovar con refresh_token ──
+        if (!esEndpointAuth && error.response?.status === 401 && !originalRequest._retry) {
+            const refreshToken = localStorage.getItem('refresh_token');
 
-            // Importar el router dinámicamente para evitar dependencias circulares
-            // y redirigir al login de forma limpia con Vue Router
-            import('@/router').then(({ default: router }) => {
-                // Evitar redirigir si ya estamos en /login
-                if (router.currentRoute.value.path !== '/auth/login') {
-                    router.push('/auth/login');
-                }
-            });
+            if (!refreshToken) {
+                // No hay refresh token disponible, cerrar sesión directamente
+                clearSessionAndRedirect();
+                return Promise.reject(error);
+            }
+
+            if (isRefreshing) {
+                // Ya hay un refresh en curso: encolar esta petición y resolverla
+                // cuando el refresh termine
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then((token) => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return api(originalRequest);
+                    })
+                    .catch((err) => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Llamada directa a axios (sin la instancia api) para evitar que
+                // este mismo interceptor capture el 401 del endpoint de refresh
+                const response = await axios.post(`${BASE_URL}usuarios/refresh/`, {
+                    refresh_token: refreshToken,
+                });
+
+                const { token: newToken, refresh_token: newRefresh } = response.data;
+
+                // Persistir los nuevos tokens
+                localStorage.setItem('token', newToken);
+                localStorage.setItem('refresh_token', newRefresh);
+                api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+                // Desencolar las peticiones que estaban esperando
+                processQueue(null, newToken);
+
+                // Reintentar la petición original con el nuevo token
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                // El refresh_token también expiró o es inválido → cerrar sesión
+                processQueue(refreshError, null);
+                clearSessionAndRedirect();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
+        // ── 403: sesión concurrente u otro acceso denegado → cerrar sesión ──
+        if (!esEndpointAuth && error.response?.status === 403) {
+            clearSessionAndRedirect();
+        }
+
         return Promise.reject(error);
     }
 );

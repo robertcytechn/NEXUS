@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from .models import Maquina
-from .serializers import MaquinaSerializer, MaquinaMapaSerializer
+from .serializers import MaquinaSerializer, MaquinaMapaSerializer, MaquinaFKSerializer, MaquinaTablaSerializer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -107,13 +107,30 @@ class MaquinaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='lista')
     def lista(self, request):
         """Devuelve todas las máquinas, incluyendo inactivos."""
-        queryset = Maquina.objects.all().order_by('uid_sala')
+        queryset = Maquina.objects.all().select_related(
+            'modelo', 'casino', 'modelo__proveedor'
+        ).prefetch_related('denominaciones').order_by('uid_sala')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'], url_path='lista-(?P<algo>[^/.]+)') # Para evitar superposición con urls custom
-    # ... solo un comentario placeholder para no romper lo de abajo
-    
+
+    @action(detail=False, methods=['get'], url_path='lista-fk')
+    def lista_fk(self, request):
+        """
+        Endpoint liviano para dropdowns FK (ej. selector de máquina en Tickets).
+        Solo devuelve id, uid_sala, casino_nombre y modelo_nombre.
+        Filtra por ?casino=<id> si se proporciona.
+        """
+        queryset = Maquina.objects.filter(esta_activo=True).select_related(
+            'modelo', 'casino'
+        ).order_by('uid_sala')
+
+        casino_id = request.query_params.get('casino')
+        if casino_id:
+            queryset = queryset.filter(casino_id=casino_id)
+
+        serializer = MaquinaFKSerializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['options'], url_path='esquema')
     def esquema(self, request, *args, **kwargs):
         """
@@ -145,13 +162,12 @@ class MaquinaViewSet(viewsets.ModelViewSet):
             for m in modelos_activos
         ]
         
-        # Denominaciones
-        denominaciones_activas = Denominacion.objects.filter(esta_activo=True).order_by('valor')
+        # Denominaciones (Denominacion no hereda ModeloBase, no tiene esta_activo)
+        denominaciones_activas = Denominacion.objects.all().order_by('valor')
         denominaciones_choices = [
             {
                 'label': str(d.etiqueta),
-                'value': d.id,
-                'moneda': d.moneda
+                'value': d.id
             }
             for d in denominaciones_activas
         ]
@@ -201,10 +217,10 @@ class MaquinaViewSet(viewsets.ModelViewSet):
                 casino_id=casino_id,
                 esta_activo=True
             ).select_related(
-                'modelo', 'casino', 'modelo__proveedor'
-            ).prefetch_related('denominaciones').order_by('uid_sala')
+                'modelo', 'casino'
+            ).order_by('uid_sala')
             
-            serializer = self.get_serializer(queryset, many=True)
+            serializer = MaquinaTablaSerializer(queryset, many=True)
             
             # Calcular estadísticas para la gráfica
             total = queryset.count()

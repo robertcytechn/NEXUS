@@ -2,6 +2,9 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '@/service/api';
 
+// Cache a nivel de módulo para evitar re-fetchar el esquema en cada apertura del dialog.
+const _schemaCache = {};
+
 const props = defineProps({
     modelValue: {
         type: Object,
@@ -23,12 +26,21 @@ const errorSchema = ref(null);
 const allChoices = ref({});
 
 const cargarEsquema = async () => {
+    // Usar caché si ya fue cargado previamente
+    if (_schemaCache['maquinas']) {
+        formSchema.value = _schemaCache['maquinas'].campos;
+        allChoices.value = _schemaCache['maquinas'].choices;
+        return;
+    }
+
     loadingSchema.value = true;
     errorSchema.value = null;
     try {
         const response = await api.options('maquinas/esquema/');
         formSchema.value = response.data.campos;
         allChoices.value = response.data.choices;
+        // Guardar en caché
+        _schemaCache['maquinas'] = { campos: response.data.campos, choices: response.data.choices };
     } catch (error) {
         errorSchema.value = "No se pudo cargar la definición del formulario. Verifica la conexión.";
         console.error("Error al cargar esquema de maquinas:", error);

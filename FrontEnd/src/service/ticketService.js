@@ -364,14 +364,13 @@ export async function crearTicketConBitacora({
         });
 
         if (!bitacoraRes.exito) {
-            // Si la bitácora falló, el ticket quedó huérfano y abierto. 
-            // Retornamos exito parcial para que UI sepa
+            // Si la bitácora falló, revertir el ticket (soft-delete) para que no quede huérfano
+            try { await api.patch(`tickets/${nuevoTicket.id}/switch-estado/`); } catch (_e) {}
             return {
                 exito: false,
                 alerta: true,
-                error: 'Ticket creado pero bitácora falló',
-                detalle: bitacoraRes.detalle || 'El ticket se generó con Folio ' + nuevoTicket.folio + ' pero no se pudo adjuntar el reporte técnico. Hágalo manualmente.',
-                ticketFallido: nuevoTicket
+                error: 'No se pudo registrar la bitácora',
+                detalle: bitacoraRes.detalle || bitacoraRes.error || 'Error al adjuntar el reporte técnico. Inténtalo nuevamente.',
             };
         }
 

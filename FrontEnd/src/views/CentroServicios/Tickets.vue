@@ -335,6 +335,9 @@ onMounted(() => {
             </div>
         </div>
 
+        <TicketFormDialog v-model:visible="ticketFormDialogVisible" :ticketProp="ticketToEdit" @saved="saveTicket" />
+        <TicketDetalleDialog v-model:visible="historialDialog" :ticketProp="ticketSeleccionado" @ticket-cerrado="cargarTickets" />
+
         <div class="card">
             <Toast />
             <ConfirmDialog />

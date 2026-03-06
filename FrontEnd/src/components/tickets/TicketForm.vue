@@ -3,6 +3,11 @@ import { ref, watch, onMounted } from 'vue';
 import api from '@/service/api';
 import { useToast } from 'primevue/usetoast';
 
+// Cache a nivel de módulo: persiste entre aperturas del dialog sin recargar la página.
+// Se resetea solo si el endpoint cambia.
+const _schemaCache = {};      // { [endpoint]: campos[] }
+const _fkCache = {};          // { [endpoint+fkEndpoint]: data[] }
+
 const props = defineProps({
     modelValue: {
         type: Object,
@@ -28,6 +33,15 @@ const errores = ref({});
 const dataRelacional = ref({}); // Para guardar opciones de ForeignKeys dinamicas
 
 const cargarEsquema = async () => {
+    // Si ya tenemos el esquema cacheado, usarlo directamente sin petición de red
+    if (_schemaCache[props.esquemaEndpoint]) {
+        esquema.value = _schemaCache[props.esquemaEndpoint];
+        dataRelacional.value = _fkCache[props.esquemaEndpoint] || {};
+        loading.value = false;
+        inicializarFormulario();
+        return;
+    }
+
     loading.value = true;
     try {
         const response = await api.options(props.esquemaEndpoint);
@@ -42,6 +56,10 @@ const cargarEsquema = async () => {
             });
 
         await Promise.all(promesasFK);
+
+        // Guardar en caché para las próximas aperturas
+        _schemaCache[props.esquemaEndpoint] = esquema.value;
+        _fkCache[props.esquemaEndpoint] = { ...dataRelacional.value };
 
         inicializarFormulario();
     } catch (error) {

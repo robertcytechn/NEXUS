@@ -446,7 +446,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                     "etiqueta": "Máquina Afectada",
                     "tipo": "fk",
                     "requerido": True,
-                    "endpoint": "maquinas/lista/"
+                    "endpoint": "maquinas/lista-fk/"
                 },
                 {
                     "nombre": "categoria",

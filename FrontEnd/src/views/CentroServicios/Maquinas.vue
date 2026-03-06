@@ -230,7 +230,7 @@ const levantarIncidencia = async () => {
             });
         }
 
-        detalleDialog.value = false;
+        detalleDialogVisible.value = false;
         cargarDatos();
 
     } catch (error) {

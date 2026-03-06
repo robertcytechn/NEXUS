@@ -37,53 +37,12 @@
  * ============================================================================
  */
 
-import axios from 'axios';
+// Reutiliza la instancia principal de axios que ya incluye el interceptor de
+// refresh token y la redirección sin recarga de página via Vue Router.
+import api from '@/service/api';
 
-// URL base del backend Django construida dinámicamente
-// Detecta el hostname actual y construye la URL con el puerto 8000 de Django
-const BASE_URL = `http://${window.location.hostname}:8000/api/`;
-
-// Crear instancia de axios específica para notificaciones
-const notificationApi = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para agregar el token a cada petición
-notificationApi.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Interceptor para manejar respuestas y errores
-notificationApi.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Si el token expiró o no es válido (401)
-    if (error.response && error.response.status === 401) {
-      // Limpiar localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      
-      window.location.href = '/auth/login';
-    }
-    return Promise.reject(error);
-  }
-);
+// Alias para mantener la compatibilidad con el resto del archivo
+const notificationApi = api;
 
 // ============================================================================
 // FUNCIONES PRINCIPALES - NOTIFICACIONES
