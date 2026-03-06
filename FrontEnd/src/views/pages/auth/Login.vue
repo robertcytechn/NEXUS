@@ -2,18 +2,19 @@
 import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { login } from '@/service/api';
+import { useAuthStore } from '@/stores/auth';
 import { useLayout } from '@/layout/composables/layout';
 import { $t } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 
 const router = useRouter();
-const route = useRoute();
+const route  = useRoute();
+const authStore = useAuthStore();
 const { layoutConfig } = useLayout();
 
-const email = ref('');
-const password = ref('');
-const loading = ref(false);
+const email        = ref('');
+const password     = ref('');
+const loading      = ref(false);
 const errorMessage = ref('');
 
 const handleLogin = async () => {
@@ -22,20 +23,16 @@ const handleLogin = async () => {
         return;
     }
 
-    loading.value = true;
+    loading.value      = true;
     errorMessage.value = '';
 
     try {
-        const result = await login({
+        const result = await authStore.login({
             username: email.value,
             password: password.value
         });
 
         if (result.success) {
-            // Token, refresh_token y usuario ya están guardados en localStorage
-
-            
-            // Redirigir a la ruta original o al dashboard
             const redirectPath = route.query.redirect || '/';
             router.push(redirectPath);
         } else {
@@ -43,7 +40,6 @@ const handleLogin = async () => {
         }
     } catch (error) {
         errorMessage.value = 'Error de conexión con el servidor';
-
     } finally {
         loading.value = false;
     }

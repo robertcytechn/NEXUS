@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import api, { getUser } from '@/service/api';
 import MaquinaForm from './MaquinaForm.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const props = defineProps({
     visible: {
@@ -49,9 +50,9 @@ const cargarMaquina = async (id) => {
     } catch (error) {
         toast.add({
             severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo cargar la información de la máquina',
-            life: 3000
+            summary: 'Error al cargar máquina',
+            detail: parseServerError(error, 'No se pudo cargar la información de la máquina'),
+            life: 5000
         });
         hideDialog();
     } finally {
@@ -136,9 +137,9 @@ const saveMaquina = async () => {
     } catch (error) {
         toast.add({
             severity: 'error',
-            summary: 'Error',
-            detail: error.response?.data?.mensaje || error.response?.data?.detail || 'Ocurrió un error al guardar la máquina.',
-            life: 4000
+            summary: 'Error al guardar máquina',
+            detail: parseServerError(error, 'Ocurrió un error al guardar la máquina.'),
+            life: 6000
         });
     } finally {
         loading.value = false;

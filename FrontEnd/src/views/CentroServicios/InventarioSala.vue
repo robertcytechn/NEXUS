@@ -6,6 +6,7 @@ import api, { getUser, hasRoleAccess } from '@/service/api';
 import inventarioService from '@/service/inventarioSalaService';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { parseServerError } from '@/utils/parseServerError';
 
 const toast = useToast();
 const confirm = useConfirm();
@@ -56,7 +57,7 @@ const cargarDatos = async () => {
         articulos.value = todos.filter(item => item.esta_activo);
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el inventario', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar el inventario'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -103,7 +104,7 @@ const saveArticulo = async () => {
             cargarDatos();
         } catch (error) {
 
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'Ocurrió un error al guardar', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'Ocurrió un error al guardar'), life: 5000 });
         } finally {
             loading.value = false;
         }

@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 import CasinoFormDialog from '@/components/casinos/CasinoFormDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const casinos = ref([]);
 const loading = ref(false);
@@ -50,7 +51,7 @@ const cargarCasinos = async () => {
         const response = await api.get('casinos/lista/');
         casinos.value = response.data;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la lista de casinos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar la lista de casinos'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -135,7 +136,7 @@ const toggleActivarCasino = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Casino ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarCasinos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el casino`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} el casino`), life: 5000 });
             } finally {
                 loading.value = false;
             }

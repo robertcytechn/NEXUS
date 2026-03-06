@@ -10,6 +10,7 @@ import MauiShareHelper from '@/utils/maui-share-helper.js';
 
 // --- COMPONENTES INTELIGENTES ---
 import MaquinaDetalleDialog from '@/components/maquinas/MaquinaDetalleDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 // ─── ESTADO PRINCIPAL ─────────────────────────────────────────────────────────
 const toast = useToast();
@@ -318,7 +319,7 @@ async function verDetalle(m) {
         maquinaDetalle.value = res.data;
         detalleDialogVisible.value = true;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el detalle de la máquina.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar el detalle de la máquina.'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -440,12 +441,7 @@ async function exportarPDF() {
         toast.add({ severity: 'success', summary: '✓ PDF exportado', detail: 'El mapa se descargó correctamente', life: 3000 });
     } catch (err) {
         console.error('[MapaSala] Error al exportar PDF:', err);
-        const detalle = err?.response?.data?.mensaje
-            || err?.response?.data?.message
-            || err?.response?.data?.error
-            || err?.response?.data?.detail
-            || err?.message
-            || 'No se pudo generar el PDF';
+        const detalle = parseServerError(err, err?.message || 'No se pudo generar el PDF');
         toast.add({ severity: 'error', summary: 'Error al exportar', detail: detalle, life: 5000 });
     } finally {
         loading.value = false;

@@ -10,6 +10,7 @@ import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 
 import UsuarioFormDialog from '@/components/usuarios/UsuarioFormDialog.vue';
 import UsuarioDetalleDialog from '@/components/usuarios/UsuarioDetalleDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const usuarios = ref([]);
 const casinos = ref([]);
@@ -75,7 +76,7 @@ const cargarUsuarios = async () => {
         actualizarGraficas();
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la lista de usuarios', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar la lista de usuarios'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -168,7 +169,7 @@ const toggleActivarUsuario = (data) => {
                 cargarUsuarios();
             } catch (error) {
 
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el usuario`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} el usuario`), life: 5000 });
             } finally {
                 loading.value = false;
             }

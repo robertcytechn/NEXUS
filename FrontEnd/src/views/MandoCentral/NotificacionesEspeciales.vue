@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import api, { getUser } from '@/service/api';
 import { useToast } from 'primevue/usetoast';
+import { parseServerError } from '@/utils/parseServerError';
 
 const toast  = useToast();
 const usuario = computed(() => getUser());
@@ -116,7 +117,7 @@ const cargarCatalogos = async () => {
         casinos.value = resCasinos.data.filter(c => c.esta_activo);
         roles.value   = resRoles.data.filter(r => r.esta_activo);
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los catálogos.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudieron cargar los catálogos.'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -211,8 +212,7 @@ const enviarNotificacion = async () => {
 
         resetForm();
     } catch (e) {
-        const detalle = e?.response?.data?.detail || e?.response?.data?.error || 'No se pudo enviar la notificación.';
-        toast.add({ severity: 'error', summary: 'Error al Enviar', detail: detalle, life: 5000 });
+        toast.add({ severity: 'error', summary: 'Error al Enviar', detail: parseServerError(e, 'No se pudo enviar la notificación.'), life: 5000 });
     } finally {
         enviando.value  = false;
         submitted.value = false;

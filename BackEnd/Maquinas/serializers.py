@@ -1,8 +1,16 @@
 from rest_framework import serializers
 from .models import Maquina
+from Denominaciones.models import Denominacion
 from datetime import date
 
 class MaquinaSerializer(serializers.ModelSerializer):
+    # Denominaciones: se requiere al menos una, rechaza lista vacía
+    denominaciones = serializers.PrimaryKeyRelatedField(
+        many=True,
+        allow_empty=False,
+        queryset=Denominacion.objects.all(),
+    )
+
     # Campos de lectura para el frontend de PrimeVue
     modelo_nombre = serializers.CharField(source='modelo.nombre_modelo', read_only=True)
     modelo_producto = serializers.CharField(source='modelo.nombre_producto', read_only=True)

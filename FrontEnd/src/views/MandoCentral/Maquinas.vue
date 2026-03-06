@@ -5,6 +5,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { parseServerError } from '@/utils/parseServerError';
 
 // --- NUEVOS COMPONENTES INTELIGENTES ---
 import MaquinaFormDialog from '@/components/maquinas/MaquinaFormDialog.vue';
@@ -56,7 +57,7 @@ const cargarDatos = async () => {
         const resMaquinas = await api.get('maquinas/lista/');
         maquinas.value = resMaquinas.data;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || 'No se pudieron cargar los datos de las máquinas', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los datos de las máquinas'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -99,7 +100,7 @@ const verDetalleMaquina = async (data) => {
         maquinaDetalle.value = res.data;
         detalleDialogVisible.value = true;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el detalle completo de la máquina.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar el detalle completo de la máquina.'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -125,7 +126,7 @@ const toggleActivarMaquina = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Máquina ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} la máquina`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} la máquina`), life: 5000 });
             } finally {
                 loading.value = false;
             }

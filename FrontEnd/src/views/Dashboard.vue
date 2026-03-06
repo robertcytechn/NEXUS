@@ -8,6 +8,7 @@ import { getMaquinasPorCasino } from '@/service/maquinaService';
 import EvolucionService from '@/service/EvolucionService';
 import { useToast } from 'primevue/usetoast';
 import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 // Components
 // Auto-imported in this project structure (matching Usuarios.vue)
@@ -105,7 +106,7 @@ const openUsuarioDialog = async () => {
         if (resRoles.success && Array.isArray(resRoles.data)) {
             roles.value = resRoles.data.filter(r => r.esta_activo);
         } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los roles', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los roles', life: 3000 });
         }
     }
 };
@@ -156,7 +157,7 @@ const openTicketDialog = async () => {
         if (res.exito) {
             maquinas.value = res.data.maquinas || res.data;
         } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar las máquinas', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las máquinas', life: 3000 });
         }
     }
 };
@@ -210,7 +211,7 @@ const openPanicDialog = async () => {
         if (res.exito) {
             maquinas.value = res.data.maquinas || res.data;
         } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar las máquinas', life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las máquinas', life: 3000 });
         }
     }
 };
@@ -223,7 +224,7 @@ const savePanicTicket = async () => {
         const maquinaSeleccionada = maquinas.value.find(m => m.uid_sala.toUpperCase() === searchUid);
 
         if (!maquinaSeleccionada) {
-            toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se encontró una máquina con el UID: ${searchUid}`, life: 3000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: `No se encontró una máquina con el UID: ${searchUid}`, life: 3000 });
             return;
         }
 
@@ -405,7 +406,7 @@ const loadDashboardData = async () => {
         }));
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar el estado del dashboard', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar el estado del dashboard'), life: 5000 });
     } finally {
         loading.value = false;
     }

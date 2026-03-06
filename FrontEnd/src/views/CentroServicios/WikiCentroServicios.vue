@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import api, { getUser } from '@/service/api';
 import { wikiPublica, wikiCatalogos } from '@/service/wikiService';
 import { useToast } from 'primevue/usetoast';
+import { parseServerError } from '@/utils/parseServerError';
 
 // ─── Usuario y permisos ───────────────────────────────────────────────────────
 const usuario     = computed(() => getUser());
@@ -72,7 +73,7 @@ const cargarDatos = async () => {
         reglas.value  = resReglas.data?.reglas || [];
         modelos.value = resModelos.data;
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo cargar la wiki', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo cargar la wiki'), life: 4000 });
     } finally {
         loading.value = false;
     }
@@ -84,7 +85,7 @@ const cargarMisPropuestas = async () => {
         const { data } = await wikiPublica.misPropuestas();
         misPropuestas.value = data.propuestas || [];
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar tus propuestas.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudieron cargar tus propuestas.'), life: 3000 });
     } finally {
         loadingPropuestas.value = false;
     }
@@ -181,7 +182,7 @@ const enviarPropuesta = async () => {
         dialogPropuesta.value = false;
         if (tabActivo.value === 1) cargarMisPropuestas();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo enviar la propuesta.', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo enviar la propuesta.'), life: 4000 });
     } finally {
         loadingEnvio.value = false;
     }

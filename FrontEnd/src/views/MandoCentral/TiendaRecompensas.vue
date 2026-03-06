@@ -6,6 +6,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { parseServerError } from '@/utils/parseServerError';
 
 // ─── Usuario y permisos ───────────────────────────────────────────────────────
 const usuario  = computed(() => getUser());
@@ -86,7 +87,7 @@ const cargarRecompensas = async () => {
         const { data } = await tiendaGerencia.listarRecompensas();
         recompensas.value = data;
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudieron cargar las recompensas', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudieron cargar las recompensas'), life: 4000 });
     } finally {
         loading.value = false;
     }
@@ -98,7 +99,7 @@ const cargarCanjes = async () => {
         const { data } = await tiendaGerencia.historialCanjes();
         canjes.value = data.canjes || [];
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudieron cargar los canjes', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudieron cargar los canjes'), life: 4000 });
     } finally {
         loadingCanjes.value = false;
     }
@@ -137,7 +138,7 @@ const guardarRecompensa = async () => {
         dialogRecompensa.value = false;
         cargarRecompensas();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo guardar la recompensa', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo guardar la recompensa'), life: 4000 });
     } finally {
         loadingGuardar.value = false;
     }
@@ -157,7 +158,7 @@ const confirmarEliminar = (item) => {
                 toast.add({ severity: 'success', summary: 'Eliminada', detail: `"${item.titulo}" fue eliminada.`, life: 3000 });
                 cargarRecompensas();
             } catch (e) {
-                toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo eliminar', life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo eliminar'), life: 3000 });
             } finally {
                 loading.value = false;
             }
@@ -172,7 +173,7 @@ const toggleActivo = async (item) => {
         toast.add({ severity: 'success', summary: 'Actualizado', detail: data.mensaje, life: 3000 });
         cargarRecompensas();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo cambiar estado', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo cambiar estado'), life: 3000 });
         loading.value = false;
     }
 };
@@ -196,7 +197,7 @@ const confirmarEntrega = async () => {
         dialogEntrega.value = false;
         cargarCanjes();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo registrar la entrega', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo registrar la entrega'), life: 4000 });
     } finally {
         loadingEntrega.value = false;
     }

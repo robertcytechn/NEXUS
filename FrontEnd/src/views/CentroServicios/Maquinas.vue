@@ -6,6 +6,7 @@ import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { parseServerError } from '@/utils/parseServerError';
 
 // --- COMPONENTES INTELIGENTES ---
 import MaquinaFormDialog from '@/components/maquinas/MaquinaFormDialog.vue';
@@ -78,7 +79,7 @@ const cargarDatos = async () => {
         maquinas.value = resMaquinas.data.maquinas;
         estadisticas.value = resMaquinas.data.estadisticas;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || 'No se pudieron cargar los datos necesarios', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los datos necesarios'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -133,7 +134,7 @@ const toggleActivarMaquina = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Máquina ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`, life: 3000 });
                 cargarDatos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} la máquina`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} la máquina`), life: 5000 });
             } finally {
                 loading.value = false;
             }
@@ -149,7 +150,7 @@ const verDetalleMaquina = async (maquinaRow) => {
         maquinaDetalle.value = res.data;
         detalleDialogVisible.value = true;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el detalle completo de la máquina.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar el detalle completo de la máquina.'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -164,7 +165,7 @@ const levantarIncidencia = async () => {
         toast.add({
             severity: 'error',
             summary: 'Casino no identificado',
-            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
+            detail: 'No se encontró información del casino. Por favor cierre sesión y vuelva a iniciar sesión.',
             life: 5000
         });
         return;
@@ -175,7 +176,7 @@ const levantarIncidencia = async () => {
         toast.add({
             severity: 'error',
             summary: 'Usuario no autenticado',
-            detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
+            detail: 'No se pudo obtener su información de usuario. Por favor inicie sesión nuevamente.',
             life: 5000
         });
         return;
@@ -236,24 +237,10 @@ const levantarIncidencia = async () => {
     } catch (error) {
 
 
-        const mensajesError = {
-            'ECONNABORTED': 'No se pudo conectar con el servidor.',
-            'ERR_NETWORK': 'Error de conexión. Verifique su conexión a internet.',
-            400: error.response?.data?.detail || 'Los datos enviados no son válidos',
-            401: 'Su sesión ha expirado. Por favor inicie sesión nuevamente.',
-            403: 'No tiene permisos para crear tickets.',
-            500: 'Error del servidor. Intente nuevamente más tarde.'
-        };
-
-        const status = error.response?.status;
-        const detalle = mensajesError[error.code] || mensajesError[status]
-            || error.response?.data?.error
-            || 'Ocurrió un error inesperado al crear el ticket.';
-
         toast.add({
             severity: 'error',
             summary: 'Error al crear ticket',
-            detail: detalle,
+            detail: parseServerError(error, 'Ocurrió un error inesperado al crear el ticket.'),
             life: 6000
         });
     } finally {

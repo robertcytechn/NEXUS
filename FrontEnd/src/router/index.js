@@ -1,6 +1,7 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import api, { getAuthToken, getUser, hasRoleAccess } from '@/service/api';
+import api from '@/service/api';
+import { useAuthStore } from '@/stores/auth';
 
 let menuData = [];
 try {
@@ -139,9 +140,10 @@ router.beforeEach((to, from, next) => {
         document.title = 'NEXUS |CNM|';
     }
 
-    const token = getAuthToken();
-    const user = getUser();
-    const isAuthenticated = !!token && !!user;
+    // Usar el store de Pinia como fuente de verdad reactiva
+    const authStore = useAuthStore();
+    const isAuthenticated = authStore.isAuthenticated;
+    const user = authStore.user;
 
     // Si la ruta es pública, permitir acceso
     if (to.meta.isPublic) {
@@ -179,9 +181,7 @@ router.beforeEach((to, from, next) => {
         // ========== VERIFICACIÓN DE ROLES ==========
         // Verificar si el usuario tiene el rol requerido para acceder a esta ruta
         if (to.meta.roles) {
-            const hasAccess = hasRoleAccess(to.meta.roles);
-            if (!hasAccess) {
-                // No tiene el rol requerido
+            if (!authStore.hasRoleAccess(to.meta.roles)) {
                 next({ name: 'accessDenied' });
                 return;
             }

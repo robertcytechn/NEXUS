@@ -7,6 +7,7 @@ import { useToast } from 'primevue/usetoast';
 import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
+import { parseServerError } from '@/utils/parseServerError';
 
 // ─── Estado general ──────────────────────────────────────────────────────────
 const guias          = ref([]);
@@ -77,7 +78,7 @@ const cargarDatos = async () => {
         const { data } = await wikiAdmin.listar();
         guias.value = data;
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudieron cargar las guías', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudieron cargar las guías'), life: 4000 });
     } finally {
         loading.value = false;
     }
@@ -140,7 +141,7 @@ const confirmarAprobar = async () => {
         dialogAprobar.value = false;
         cargarDatos();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo aprobar la guía', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo aprobar la guía'), life: 4000 });
     } finally {
         loadingAccion.value = false;
     }
@@ -164,7 +165,7 @@ const confirmarPublicar = async () => {
         dialogPublicar.value = false;
         cargarDatos();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo publicar la guía', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo publicar la guía'), life: 4000 });
     } finally {
         loadingAccion.value = false;
     }
@@ -182,7 +183,7 @@ const confirmarRechazar = async () => {
         dialogRechazar.value = false;
         cargarDatos();
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo rechazar la guía', life: 4000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo rechazar la guía'), life: 4000 });
     } finally {
         loadingAccion.value = false;
     }
@@ -202,7 +203,7 @@ const confirmarEliminar = (guia) => {
                 toast.add({ severity: 'success', summary: 'Eliminada', detail: 'La guía fue eliminada.', life: 3000 });
                 cargarDatos();
             } catch (e) {
-                toast.add({ severity: 'error', summary: 'Error', detail: e?.response?.data?.error || 'No se pudo eliminar', life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(e, 'No se pudo eliminar'), life: 3000 });
             } finally {
                 loading.value = false;
             }

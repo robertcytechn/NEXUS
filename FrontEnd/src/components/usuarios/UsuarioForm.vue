@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '@/service/api';
 import { useToast } from 'primevue/usetoast';
+import { parseServerError } from '@/utils/parseServerError';
 
 // Configuración de Props
 const props = defineProps({
@@ -88,7 +89,7 @@ const fetchEsquema = async () => {
         }
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la estructura del formulario.' });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar la estructura del formulario.'), life: 5000 });
     } finally {
         loadingSchema.value = false;
     }
@@ -108,7 +109,7 @@ const fetchUsuarioData = async () => {
         formData.value.password = '';
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos del usuario.' });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los datos del usuario.'), life: 5000 });
         emit('cancel');
     } finally {
         loadingData.value = false;
@@ -163,8 +164,8 @@ const submitForm = async () => {
         toast.add({ severity: 'success', summary: 'Éxito', detail: `Usuario ${esEdicion.value ? 'actualizado' : 'creado'} correctamente.` });
         emit('saved', payload);
     } catch (error) {
-        const errMsg = error.response?.data?.message || error.response?.data?.detail || 'Error al guardar el usuario.';
-        toast.add({ severity: 'error', summary: 'Error', detail: errMsg });
+        const errMsg = parseServerError(error, 'Error al guardar el usuario.');
+        toast.add({ severity: 'error', summary: 'Error al guardar usuario', detail: errMsg, life: 6000 });
         // Mapear errores del backend a los campos si existen
         if (error.response?.data && typeof error.response.data === 'object' && !error.response.data.message) {
             Object.keys(error.response.data).forEach(key => {

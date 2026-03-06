@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import api from '@/service/api';
 import ModeloForm from './ModeloForm.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const props = defineProps({
     visible: {
@@ -30,9 +31,9 @@ const cargarModelo = async (id) => {
     } catch (error) {
         toast.add({
             severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo cargar la información del modelo',
-            life: 3000
+            summary: 'Error al cargar modelo',
+            detail: parseServerError(error, 'No se pudo cargar la información del modelo'),
+            life: 5000
         });
         hideDialog();
     } finally {
@@ -103,9 +104,9 @@ const saveModelo = async () => {
     } catch (error) {
         toast.add({
             severity: 'error',
-            summary: 'Error',
-            detail: error.response?.data?.mensaje || error.response?.data?.detail || 'Ocurrió un error al guardar el modelo.',
-            life: 4000
+            summary: 'Error al guardar modelo',
+            detail: parseServerError(error, 'Ocurrió un error al guardar el modelo.'),
+            life: 6000
         });
     } finally {
         loading.value = false;

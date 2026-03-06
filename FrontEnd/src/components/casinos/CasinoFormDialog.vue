@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import api from '@/service/api';
 import { useToast } from 'primevue/usetoast';
 import CasinoForm from './CasinoForm.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const props = defineProps({
     visible: {
@@ -77,8 +78,7 @@ const saveCasino = async () => {
         emit('saved');
         hideDialog();
     } catch (error) {
-        const detalle = error?.response?.data?.mensaje || error?.response?.data?.detail || 'Error al guardar casino';
-        toast.add({ severity: 'error', summary: 'Error', detail: detalle, life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error al guardar casino', detail: parseServerError(error, 'Error al guardar casino'), life: 6000 });
     } finally {
         loading.value = false;
     }

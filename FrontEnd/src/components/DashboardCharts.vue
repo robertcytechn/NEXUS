@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { getDashboardChartsData } from '@/service/ticketService';
 import { useToast } from 'primevue/usetoast';
+import { parseServerError } from '@/utils/parseServerError';
 
 const props = defineProps({
     casinoId: {
@@ -282,7 +283,7 @@ const loadData = async () => {
         }
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los datos de las gráficas', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los datos de las gráficas'), life: 5000 });
     } finally {
         loading.value = false;
     }

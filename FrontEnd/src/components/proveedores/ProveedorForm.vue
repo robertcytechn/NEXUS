@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '@/service/api';
 import { useToast } from 'primevue/usetoast';
+import { parseServerError } from '@/utils/parseServerError';
 
 // Configuración de Props
 const props = defineProps({
@@ -69,7 +70,7 @@ const fetchEsquema = async () => {
         }
 
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la estructura del formulario.' });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar la estructura del formulario.'), life: 5000 });
     } finally {
         loadingSchema.value = false;
     }
@@ -85,7 +86,7 @@ const fetchProveedorData = async () => {
         // Eliminar contraseña del rellenado para evitar mutaciones accidentales
         delete formData.value.password;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos del proveedor.' });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los datos del proveedor.'), life: 5000 });
         emit('cancel');
     } finally {
         loadingData.value = false;
@@ -145,7 +146,7 @@ const submitForm = async () => {
 
         emit('saved', res.data);
     } catch (error) {
-        // Extraer mensajes de error de Django DRF
+        // Mapear errores de campo del backend a los campos del formulario
         const errData = error.response?.data;
         if (typeof errData === 'object' && errData !== null) {
             Object.keys(errData).forEach(key => {
@@ -155,10 +156,8 @@ const submitForm = async () => {
                     errores.value[key] = errData[key];
                 }
             });
-            toast.add({ severity: 'error', summary: 'Revise los campos', detail: 'Hay errores de validación.' });
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'Ocurrió un problema inesperado.' });
         }
+        toast.add({ severity: 'error', summary: 'Error al guardar proveedor', detail: parseServerError(error, 'Ocurrió un problema inesperado.'), life: 6000 });
     } finally {
         saving.value = false;
     }

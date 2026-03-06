@@ -6,6 +6,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 import DataTableToolbar from '@/components/DataTableToolbar.vue';
 import { getUser, hasRoleAccess } from '@/service/api';
+import { parseServerError } from '@/utils/parseServerError';
 
 import {
     getTareasEspeciales,
@@ -103,7 +104,7 @@ const cargarDatos = async () => {
             }
         }
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Fallo al cargar la información', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'Fallo al cargar la información'), life: 5000 });
     } finally {
         loading.value = false;
     }

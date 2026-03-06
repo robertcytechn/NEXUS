@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import api, { getUser } from '@/service/api';
 import { useToast } from 'primevue/usetoast';
 import TicketForm from './TicketForm.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const props = defineProps({
     visible: {
@@ -95,8 +96,7 @@ const saveTicket = async () => {
         emit('saved');
         hideDialog();
     } catch (error) {
-        const detalle = error?.response?.data?.mensaje || error?.response?.data?.detail || error?.response?.data?.error || 'Falló el guardado del ticket';
-        toast.add({ severity: 'error', summary: 'Error', detail: detalle, life: 5000 });
+        toast.add({ severity: 'error', summary: 'Error al guardar ticket', detail: parseServerError(error, 'Falló el guardado del ticket'), life: 6000 });
     } finally {
         loading.value = false;
     }

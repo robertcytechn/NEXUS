@@ -83,17 +83,46 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'BackEnd.wsgi.application'
 
+# ============================================================================
+# DETECCIÓN AUTOMÁTICA DE HOST Y USUARIO DE BASE DE DATOS
+# Se prueba cada host en orden; se usa el primero que responda en el puerto MySQL.
+# Orden: red local → dominio externo → localhost
+# Usuario: 'root' para localhost, 'robert' para cualquier otro host
+# ============================================================================
+import socket as _socket
+
+_HOSTS_LOCALES = {'localhost', '127.0.0.1'}
+
+def _detectar_host_db(hosts: list, puerto: int = 3306, timeout: float = 1.5) -> str:
+    for host in hosts:
+        try:
+            with _socket.create_connection((host, puerto), timeout=timeout):
+                print(f"[DB] Conectando a: {host}:{puerto}")
+                return host
+        except OSError:
+            print(f"[DB] Host no disponible: {host}:{puerto}")
+    # Si ninguno responde, retorna el último como fallback
+    print(f"[DB] Ningún host respondió, usando fallback: {hosts[-1]}")
+    return hosts[-1]
+
+_DB_HOSTS = [
+    '192.168.1.69',      # Red local (oficina)
+    'cytechn.ddns.net',  # Dominio externo (fuera de oficina)
+    'localhost',         # Local directo
+]
+
+_DB_HOST_ACTIVO = _detectar_host_db(_DB_HOSTS)
+_DB_USER = 'root' if _DB_HOST_ACTIVO in _HOSTS_LOCALES else 'robert'
+print(f"[DB] Usuario seleccionado: {_DB_USER}")
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ot',
-        'USER': 'robert',
+        'USER': _DB_USER,
         'PASSWORD': 'Chido1993$',
-        # usar ip en local en lugar de localhost para usar bd del servidor
-        #'HOST': '192.168.1.69',
-        #usar liga http cuando se trabaja furea de oficina y se tiene acceso a la base de datos a través de un dominio con puerto específico
-        'HOST': 'cytechn.ddns.net',
-        'PORT': '3306'
+        'HOST': _DB_HOST_ACTIVO,
+        'PORT': '3306',
     }
 }
 
@@ -131,9 +160,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://192.168.1.69:5173',
     'http://192.168.1.69:8000',
     # Dominio No-IP con puertos específicos
-    'http://cytechn.ddns.net:',
     'http://cytechn.ddns.net:8000',
-    'https://cytechn.ddns.ne',  # Si usas HTTPS
+    'https://cytechn.ddns.net',
     'https://cytechn.ddns.net:8000',
 ]
 

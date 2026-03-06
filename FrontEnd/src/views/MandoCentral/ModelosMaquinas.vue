@@ -10,6 +10,7 @@ import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 // --- NUEVOS COMPONENTES INTELIGENTES ---
 import ModeloFormDialog from '@/components/modelos/ModeloFormDialog.vue';
 import ModeloDetalleDialog from '@/components/modelos/ModeloDetalleDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const modelos = ref([]);
 const proveedores = ref([]); // Necesario para la tabla, ya no para el form manual
@@ -77,7 +78,7 @@ const cargarModelos = async () => {
         actualizarGraficas();
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo cargar la lista de modelos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo cargar la lista de modelos'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -169,7 +170,7 @@ const toggleActivarModelo = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: `Modelo ${accion === 'activar' ? 'activado' : 'desactivado'} correctamente`, life: 3000 });
                 cargarModelos();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el modelo`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} el modelo`), life: 5000 });
             } finally {
                 loading.value = false;
             }

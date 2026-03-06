@@ -385,6 +385,7 @@ import api, { getUser } from '@/service/api';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import VaciosStepperForm from '@/components/vacios/VaciosStepperForm.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 // ── Composables ───────────────────────────────────────────────────────────────
 const toast = useToast();
@@ -475,7 +476,7 @@ async function cargarTickets() {
     };
   } catch (err) {
     console.error('Error al cargar tickets de vacíos', err);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los tickets de vacíos.', life: 4000 });
+    toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(err, 'No se pudieron cargar los tickets de vacíos.'), life: 5000 });
   } finally {
     cargando.value = false;
   }

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { mostrarToastPuntos } from '@/service/gamificacionUtils';
 import api, { getUser, hasRoleAccess } from '@/service/api';
+import { parseServerError } from '@/utils/parseServerError';
 
 const toast = useToast();
 
@@ -37,7 +38,7 @@ onMounted(async () => {
     if (casinoId.value) {
         await cargarRelevos();
     } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No tiene un casino asignado.', life: 3000 });
+        toast.add({ severity: 'warn', summary: 'Sin casino', detail: 'No tiene un casino asignado.', life: 5000 });
     }
 });
 
@@ -56,7 +57,7 @@ const cargarRelevos = async () => {
         relevos.value = (response.data.results || response.data).slice(0, 10);
     } catch (error) {
 
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los relevos', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los relevos'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -132,20 +133,7 @@ const saveRelevo = async () => {
     } catch (error) {
 
         
-        // Manejar errores de validación específicos del backend
-        let errorDetail = 'Error al guardar el relevo';
-        if (error.response?.data) {
-            if (error.response.data.tecnico_entrante) {
-                errorDetail = error.response.data.tecnico_entrante[0] || error.response.data.tecnico_entrante;
-            } else if (error.response.data.tecnico_saliente) {
-                errorDetail = error.response.data.tecnico_saliente[0] || error.response.data.tecnico_saliente;
-            } else if (typeof error.response.data === 'object' && Object.keys(error.response.data).length > 0) {
-                const firstKey = Object.keys(error.response.data)[0];
-                errorDetail = error.response.data[firstKey][0] || error.response.data[firstKey];
-            }
-        }
-        
-        toast.add({ severity: 'error', summary: 'Error', detail: errorDetail, life: 5000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'Error al guardar el relevo'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -182,7 +170,7 @@ const deleteRelevo = async () => {
         relevo.value = {};
         await cargarRelevos();
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo eliminar el registro', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo eliminar el registro'), life: 5000 });
     } finally {
         loading.value = false;
     }

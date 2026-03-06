@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 import RolFormDialog from '@/components/roles/RolFormDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const roles = ref([]);
 const loading = ref(false);
@@ -152,7 +153,7 @@ const toggleActivarRol = (data) => {
                 cargarRoles();
             } catch (error) {
 
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.error || error?.response?.data?.detail || `No se pudo ${accion} el rol`, life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, `No se pudo ${accion} el rol`), life: 5000 });
             } finally {
                 loading.value = false;
             }

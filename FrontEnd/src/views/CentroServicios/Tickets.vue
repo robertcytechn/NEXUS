@@ -9,6 +9,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useResponsiveDataTable } from '@/composables/useResponsiveDataTable';
 import TicketFormDialog from '@/components/tickets/TicketFormDialog.vue';
 import TicketDetalleDialog from '@/components/tickets/TicketDetalleDialog.vue';
+import { parseServerError } from '@/utils/parseServerError';
 
 const tickets = ref([]);
 const maquinas = ref([]);
@@ -166,7 +167,7 @@ const cargarTickets = async () => {
             );
         }
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudieron cargar los tickets', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudieron cargar los tickets'), life: 5000 });
     } finally {
         loading.value = false;
     }
@@ -256,7 +257,7 @@ const desactivarTicket = (data) => {
                 toast.add({ severity: 'success', summary: 'Éxito', detail: 'Ticket desactivado correctamente', life: 3000 });
                 cargarTickets();
             } catch (error) {
-                toast.add({ severity: 'error', summary: 'Error', detail: error?.response?.data?.mensaje || error?.response?.data?.message || error?.response?.data?.detail || error?.response?.data?.error || 'No se pudo desactivar el ticket', life: 3000 });
+                toast.add({ severity: 'error', summary: 'Error', detail: parseServerError(error, 'No se pudo desactivar el ticket'), life: 5000 });
             } finally {
                 loading.value = false;
             }
