@@ -360,27 +360,38 @@ class MaquinaViewSet(viewsets.ModelViewSet):
     def mapa_completo(self, request):
         """
         Devuelve la configuración del grid del casino y las máquinas con filtros opcionales.
-        Endpoint: GET /maquinas/mapa-completo/?casino_id=1&piso=PISO_1&area=SALA_A
+        El casino siempre se resuelve desde el usuario en sesión para evitar acceso
+        a datos de otras sedes. Roles con nivel >= 19 pueden pasar casino_id opcional.
+        Endpoint: GET /maquinas/mapa-completo/?piso=PISO_1&area=SALA_A
         """
         from Casinos.models import Casino
 
-        casino_id = request.query_params.get('casino_id')
         piso = request.query_params.get('piso')
         area = request.query_params.get('area')
 
-        if not casino_id:
-            return Response(
-                {'error': 'Se requiere el parámetro casino_id'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        usuario = request.user
 
-        try:
-            casino = Casino.objects.get(pk=casino_id, esta_activo=True)
-        except Casino.DoesNotExist:
-            return Response(
-                {'error': 'Casino no encontrado o inactivo'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        # Roles privilegiados (ADMINISTRADOR / DB ADNMIN) pueden consultar otro casino
+        # pasando casino_id explícito. Cualquier otro rol usa SIEMPRE su propio casino.
+        rol_nivel = getattr(getattr(usuario, 'rol', None), 'nivel_jerarquia', 0)
+        casino_id_param = request.query_params.get('casino_id')
+
+        if rol_nivel >= 19 and casino_id_param:
+            try:
+                casino = Casino.objects.get(pk=casino_id_param, esta_activo=True)
+            except Casino.DoesNotExist:
+                return Response(
+                    {'error': 'Casino no encontrado o inactivo'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Todos los demás roles: usa el casino asignado en el perfil
+            casino = getattr(usuario, 'casino', None)
+            if not casino:
+                return Response(
+                    {'error': 'Tu usuario no tiene un casino asignado'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         # Construir queryset base
         queryset = Maquina.objects.filter(

@@ -49,13 +49,14 @@ const clearSessionAndRedirect = () => {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     localStorage.removeItem('roles');
-    // Importar el router dinámicamente para evitar dependencias circulares
-    // y redirigir al login de forma limpia con Vue Router (sin recargar la página)
-    import('@/router').then(({ default: router }) => {
-        if (router.currentRoute.value.path !== '/auth/login') {
-            router.push('/auth/login');
-        }
-    });
+    // Usamos window.location.href en lugar de router.push por dos razones:
+    // 1. El guard del router bloquea la navegación a /auth/login si el store en memoria
+    //    aún tiene isAuthenticated=true (el store no se limpia al borrar localStorage).
+    // 2. Fuerza una recarga completa que elimina cualquier estado reactivo en memoria,
+    //    garantizando que el dispositivo desplazado no pueda seguir interactuando.
+    if (window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login';
+    }
 };
 // ────────────────────────────────────────────────────────────────────────────
 

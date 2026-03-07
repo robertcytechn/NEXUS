@@ -34,7 +34,12 @@ const handleLogin = async () => {
 
         if (result.success) {
             const redirectPath = route.query.redirect || '/';
-            router.push(redirectPath);
+            // Usamos window.location.href en lugar de router.push para forzar
+            // una recarga completa del módulo router/index.js. Ese módulo contiene
+            // un await top-level que carga las rutas dinámicas del menú; si se
+            // ejecutó cuando el usuario no estaba autenticado, las rutas quedaron
+            // vacías. La recarga las reinicializa con el token ya en localStorage.
+            window.location.href = redirectPath;
         } else {
             errorMessage.value = result.error || 'Error al iniciar sesión';
         }

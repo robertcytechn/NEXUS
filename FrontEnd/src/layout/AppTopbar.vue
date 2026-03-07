@@ -4,11 +4,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AppSearch from '@/components/AppSearch.vue';
 import InsigniaRangoAnimada from '@/components/InsigniaRangoAnimada.vue';
-import { getUser, logout, hasRoleAccess } from '@/service/api';
+import { getUser, hasRoleAccess } from '@/service/api';
+import { useAuthStore } from '@/stores/auth';
 import { fetchNotificaciones, marcarNotificacionLeida } from '@/service/notificationService';
 
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const menuProfile = ref(null);
 const opNotifications = ref(null);
@@ -58,8 +60,12 @@ const profileItems = computed(() => [
                 label: 'Cerrar Sesión',
                 icon: 'pi pi-fw pi-power-off',
                 command: () => {
-                    logout();
-                    router.push('/auth/login');
+                    // authStore.logout() limpia localStorage Y el estado reactivo
+                    // en memoria (user, token, roles). Luego usamos window.location.href
+                    // para forzar recarga completa y bypassear el guard del router
+                    // que bloquearía router.push si isAuthenticated aún fuera true.
+                    authStore.logout();
+                    window.location.href = '/auth/login';
                 }
             }
         ]
@@ -229,6 +235,15 @@ const onNotificationClick = async (item) => {
                 </button>
             </div>
 
+            <!-- Campana siempre visible en todos los tamaños -->
+            <button type="button" class="layout-topbar-action relative" @click="toggleNotifications">
+                <i class="pi pi-bell"></i>
+                <span class="hidden lg:inline">Mensajes</span>
+                <div v-if="unreadCount > 0"
+                    class="absolute top-1 right-1 flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs font-bold">
+                    {{ unreadCount }}</div>
+            </button>
+
             <button class="layout-topbar-menu-button layout-topbar-action"
                 v-styleclass="{ selector: '@next', enterFromClass: 'hidden', enterActiveClass: 'p-anchored-overlay-enter-active', leaveToClass: 'hidden', leaveActiveClass: 'p-anchored-overlay-leave-active', hideOnOutsideClick: true }">
                 <i class="pi pi-ellipsis-v"></i>
@@ -236,13 +251,6 @@ const onNotificationClick = async (item) => {
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action relative" @click="toggleNotifications">
-                        <i class="pi pi-bell"></i>
-                        <span>Mensajes</span>
-                        <div v-if="unreadCount > 0"
-                            class="absolute top-1 right-1 flex items-center justify-center w-5 h-5 bg-red-500 text-white rounded-full text-xs font-bold">
-                            {{ unreadCount }}</div>
-                    </button>
                     <button type="button" class="layout-topbar-action" @click="toggleProfile">
                         <i class="pi pi-user"></i>
                         <span>Perfil</span>
@@ -266,7 +274,7 @@ const onNotificationClick = async (item) => {
     <Popover ref="opNotifications" class="w-80">
         <div class="flex flex-col gap-4">
             <span class="font-semibold text-lg px-2">Notificaciones</span>
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 max-h-96 overflow-y-auto pr-1">
                 <div v-for="(item, index) in notifications" :key="index"
                     class="flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors"
                     :class="[getBackgroundClass(item.type), { 'opacity-60': item.read }]"

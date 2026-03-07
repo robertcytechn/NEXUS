@@ -4,10 +4,12 @@ import { useRouter, useRoute } from 'vue-router';
 import { $t } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 import { useLayout } from '@/layout/composables/layout';
-import { acceptEULA, logout, getUser } from '@/service/api';
+import { acceptEULA, getUser } from '@/service/api';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 const { layoutConfig } = useLayout();
 
 const agreed = ref(false);
@@ -113,9 +115,13 @@ const handleAccept = async () => {
             localStorage.setItem('license_accepted', 'true');
             localStorage.setItem('license_accepted_date', new Date().toISOString());
             
-            // Redirigir a la ruta original o al dashboard
+            // Usamos window.location.href en lugar de router.push porque:
+            // acceptEULA() actualiza localStorage pero NO el store de Pinia.
+            // El guard del router lee authStore.user.EULAAceptada (en memoria),
+            // que aún sería false, causando un bucle de redirección a /lisencia.
+            // La recarga completa reinicializa el store desde localStorage con EULAAceptada=true.
             const redirectPath = route.query.redirect || '/';
-            router.push(redirectPath);
+            window.location.href = redirectPath;
         } else {
             errorMessage.value = result.error || 'Error al aceptar los términos y condiciones';
         }
@@ -128,9 +134,11 @@ const handleAccept = async () => {
 };
 
 const handleReject = () => {
-    // Si rechaza los términos, cerrar sesión y redirigir al login
-    logout();
-    router.push('/auth/login');
+    // authStore.logout() limpia localStorage Y el estado reactivo del store.
+    // window.location.href bypasea el guard del router (que bloquearía router.push
+    // si isAuthenticated aún fuera true en memoria).
+    authStore.logout();
+    window.location.href = '/auth/login';
 };
 
 onMounted(async () => {
