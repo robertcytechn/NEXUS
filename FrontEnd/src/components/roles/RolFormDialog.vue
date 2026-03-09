@@ -98,6 +98,7 @@ const formatearFecha = (fecha) => {
 <template>
     <Dialog :visible="visible" @update:visible="(val) => emit('update:visible', val)" :style="{ width: '450px' }"
         :header="rolProp.id ? 'Editar Rol' : 'Nuevo Rol'" :modal="true" class="p-fluid">
+        <form id="rol-form" @submit.prevent="saveRol">
         <template v-if="rolProp.nivel === 200">
             <Message severity="warn" class="mb-4">
                 Estás visualizando el Rol Maestro (Dios). Este registro está protegido y no puede ser alterado o
@@ -133,10 +134,11 @@ const formatearFecha = (fecha) => {
                 </div>
             </div>
         </div>
+        </form>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" :disabled="loading" />
-            <Button label="Guardar" icon="pi pi-check" @click="saveRol" :loading="loading"
+            <Button label="Guardar" icon="pi pi-check" type="submit" form="rol-form" :loading="loading"
                 :disabled="rolProp.nivel === 200 && !!rolProp.id" />
         </template>
     </Dialog>

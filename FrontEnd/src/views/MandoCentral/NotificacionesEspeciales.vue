@@ -292,8 +292,7 @@ onMounted(cargarCatalogos);
             <h2 class="text-lg font-semibold mb-4 text-color">
                 <i class="pi pi-file-edit mr-2 text-primary"></i>Paso 2 — Redacta la Notificación
             </h2>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form @submit.prevent="enviarNotificacion">            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                 <!-- Título -->
                 <div class="flex flex-col gap-1 lg:col-span-2">
@@ -455,12 +454,13 @@ onMounted(cargarCatalogos);
                 <Button
                     label="Enviar Notificación"
                     icon="pi pi-send"
+                    type="submit"
                     :loading="enviando"
                     :disabled="!esValido || enviando"
-                    @click="enviarNotificacion"
                     class="min-w-48"
                 />
             </div>
+            </form>
         </div>
         </Transition>
 

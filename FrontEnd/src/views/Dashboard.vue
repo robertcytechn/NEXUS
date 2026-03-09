@@ -647,6 +647,7 @@ const exportarReportePDF = () => {
 
         <!-- Dialog: Nuevo Ticket -->
         <Dialog v-model:visible="ticketDialog" :style="{ width: '600px' }" :modal="true" header="Nuevo Ticket Rápido">
+            <form id="dashboard-ticket-form" @submit.prevent="saveTicket">
             <div class="flex flex-col gap-4">
                 <div>
                     <label class="block font-medium mb-1">Máquina</label>
@@ -685,15 +686,17 @@ const exportarReportePDF = () => {
                     <InputText v-model="ticket.subcategoria" fluid placeholder="Ej: Billetero Atascado" />
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="ticketDialog = false" />
-                <Button label="Crear Ticket" icon="pi pi-check" severity="primary" @click="saveTicket" />
+                <Button label="Crear Ticket" icon="pi pi-check" severity="primary" type="submit" form="dashboard-ticket-form" />
             </template>
         </Dialog>
 
         <!-- Dialog: Reportar Error (Evolución) -->
         <Dialog v-model:visible="evolucionDialog" :style="{ width: '500px' }" :modal="true"
             header="Reportar Incidencia Rápida (error en el sistema)">
+            <form id="dashboard-evolucion-form" @submit.prevent="saveEvolucion">
             <div class="flex flex-col gap-4">
                 <div>
                     <label class="block font-medium mb-1">Título</label>
@@ -708,14 +711,16 @@ const exportarReportePDF = () => {
                     <small class="text-red-500" v-if="submittedEvolucion && !evolucion.descripcion">Requerido.</small>
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="evolucionDialog = false" />
-                <Button label="Enviar Reporte" icon="pi pi-send" severity="primary" @click="saveEvolucion" />
+                <Button label="Enviar Reporte" icon="pi pi-send" severity="primary" type="submit" form="dashboard-evolucion-form" />
             </template>
         </Dialog>
 
         <!-- Dialog: Ticket Rápido -->
         <Dialog v-model:visible="panicDialog" :style="{ width: '400px' }" :modal="true" header="Ticket Rápido">
+            <form id="dashboard-panic-form" @submit.prevent="savePanicTicket">
             <div class="flex flex-col gap-4 items-center text-center p-4">
                 <i class="pi pi-bolt text-red-500 text-6xl mb-2"></i>
                 <p class="text-surface-600 dark:text-surface-300">
@@ -726,20 +731,22 @@ const exportarReportePDF = () => {
                 <div class="w-full">
                     <label class="block font-medium mb-1 text-left">UID de la Máquina</label>
                     <InputText v-model="panicTicket.uid_sala" fluid placeholder="Ej: MQ-001" autofocus
-                        :invalid="submittedPanic && !panicTicket.uid_sala" @keyup.enter="savePanicTicket" />
+                        :invalid="submittedPanic && !panicTicket.uid_sala" />
                     <small class="text-red-500 text-left block"
                         v-if="submittedPanic && !panicTicket.uid_sala">Requerido.</small>
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="panicDialog = false" />
-                <Button label="Generar Ticket" icon="pi pi-bolt" severity="danger" @click="savePanicTicket" />
+                <Button label="Generar Ticket" icon="pi pi-bolt" severity="danger" type="submit" form="dashboard-panic-form" />
             </template>
         </Dialog>
 
         <!-- Dialog: Cierre Express / Reporte Técnico -->
         <Dialog v-model:visible="expressDialog" :style="{ width: '480px' }" :modal="true"
             header="Reporte Técnico Express">
+            <form id="dashboard-express-form" @submit.prevent="saveExpressTicket">
             <div class="flex flex-col gap-4 p-2">
                 <p class="text-surface-600 dark:text-surface-300 mb-2">
                     Abre un ticket y registra tu intervención en un solo paso.
@@ -779,16 +786,17 @@ const exportarReportePDF = () => {
                         optionValue="value" fluid />
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="expressDialog = false" />
-                <Button label="Guardar Reporte" icon="pi pi-check-circle" severity="success"
-                    @click="saveExpressTicket" />
+                <Button label="Guardar Reporte" icon="pi pi-check-circle" severity="success" type="submit" form="dashboard-express-form" />
             </template>
         </Dialog>
 
         <!-- Dialog: Nuevo Usuario (Simplificado) -->
         <Dialog v-model:visible="usuarioDialog" :style="{ width: '700px' }" :modal="true"
             header="Registro Rápido de Usuario">
+            <form id="dashboard-usuario-form" @submit.prevent="saveUsuario">
             <div class="flex flex-col gap-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -846,9 +854,10 @@ const exportarReportePDF = () => {
                     </div>
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" text severity="secondary" @click="usuarioDialog = false" />
-                <Button label="Crear Usuario" icon="pi pi-check" severity="success" @click="saveUsuario" />
+                <Button label="Crear Usuario" icon="pi pi-check" severity="success" type="submit" form="dashboard-usuario-form" />
             </template>
         </Dialog>
 

@@ -91,7 +91,7 @@
         <!-- ══════════  PASO 2 · Evidencias Fotográficas  ══════════ -->
         <StepPanel value="2">
           <p class="text-sm text-surface-500 mt-2 mb-4">
-            Las <strong>4 imágenes son obligatorias</strong>. Adjunta capturas claras de pantalla o fotos que demuestren el vacío.
+            Las <strong>3 primeras imágenes son obligatorias</strong>. La cuarta (Últimas Operaciones de la Máquina) es opcional.
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -100,7 +100,11 @@
               :key="foto.campo"
               class="flex flex-col gap-2 border border-surface-200 rounded-lg p-3"
             >
-              <span class="font-semibold text-sm">{{ foto.label }} <span class="text-red-500">*</span></span>
+              <span class="font-semibold text-sm">
+                {{ foto.label }}
+                <span v-if="!foto.opcional" class="text-red-500">*</span>
+                <span v-else class="text-xs text-surface-400 font-normal">(opcional)</span>
+              </span>
               <span class="text-xs text-surface-500">{{ foto.descripcion }}</span>
 
               <FileUpload
@@ -136,6 +140,7 @@
 
         <!-- ══════════  PASO 3 · Resolución / Dictamen  ══════════ -->
         <StepPanel value="3">
+          <form @submit.prevent="submitForm">
           <div class="grid grid-cols-1 gap-4 mt-4">
 
             <!-- Motivo de Falla -->
@@ -179,20 +184,21 @@
               <span class="text-surface-500">Monto:</span>
               <span class="font-semibold text-primary-600">${{ form.monto_extraviado?.toFixed(2) || '0.00' }}</span>
               <span class="text-surface-500">Fotos:</span>
-              <span>{{ fotosAdjuntadas }}/4 adjuntadas</span>
+              <span>{{ fotosAdjuntadas }}/4 adjuntadas (mín. 3 obligatorias)</span>
             </div>
           </div>
 
           <div class="flex justify-between mt-6">
-            <Button label="Anterior" icon="pi pi-arrow-left" severity="secondary" outlined @click="pasoActivo = '2'" />
+            <Button type="button" label="Anterior" icon="pi pi-arrow-left" severity="secondary" outlined @click="pasoActivo = '2'" />
             <Button
+              type="submit"
               label="Crear Ticket de Vacío"
               icon="pi pi-check"
               iconPos="right"
               :loading="guardando"
-              @click="submitForm"
             />
           </div>
+          </form>
         </StepPanel>
 
       </StepPanels>
@@ -245,24 +251,28 @@ const motivosFalla = ref([
 
 const fotosConfig = ref([
   {
-    campo: 'foto_ultimas_operaciones',
-    label: 'Últimas Operaciones',
-    descripcion: 'Pantalla de las ultimas operaciones del cliente',
+    campo: 'foto_ultimas_operaciones_cliente',
+    label: 'Últimas Operaciones del Cliente',
+    descripcion: 'Pantalla de las últimas operaciones registradas por el cliente en el sistema',
+    opcional: false,
   },
   {
-    campo: 'foto_carga_sistema',
-    label: 'Carga en Sistema',
-    descripcion: 'Pantalla de la carga realizada',
-  },
-  {
-    campo: 'foto_seguimiento_slot',
-    label: 'Seguimiento Slot',
+    campo: 'foto_seguimiento_slot_maquina',
+    label: 'Seguimiento Slot / Máquina',
     descripcion: 'Vista de seguimiento o historial del slot en el sistema',
+    opcional: false,
   },
   {
-    campo: 'foto_recarga_error',
-    label: 'Error de Recarga',
-    descripcion: 'Captura del mensaje de error mostrado durante la recarga',
+    campo: 'foto_sistema_carga_error',
+    label: 'Sistema en Carga por Error',
+    descripcion: 'Captura del sistema en el momento en que se realiza la carga por error',
+    opcional: false,
+  },
+  {
+    campo: 'foto_ultimas_operaciones_maquina',
+    label: 'Últimas Operaciones de la Máquina',
+    descripcion: 'Captura de las últimas operaciones registradas directamente en la máquina (opcional)',
+    opcional: true,
   },
 ]);
 
@@ -371,7 +381,8 @@ function validarPaso1() {
 function validarPaso2() {
   const e = {};
   for (const foto of fotosConfig.value) {
-    if (!archivos.value[foto.campo]) e[foto.campo] = 'Esta imagen es obligatoria.';
+    if (!foto.opcional && !archivos.value[foto.campo])
+      e[foto.campo] = 'Esta imagen es obligatoria.';
   }
   errores.value = e;
   if (Object.keys(e).length === 0) pasoActivo.value = '3';

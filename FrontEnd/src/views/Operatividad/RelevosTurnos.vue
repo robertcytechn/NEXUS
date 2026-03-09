@@ -365,6 +365,7 @@ const formatFecha = (fecha) => {
 
         <!-- Dialog de Registro/Edición -->
         <Dialog v-model:visible="relevoDialog" :style="{ width: '650px' }" header="Registro de Relevo de Turno" :modal="true" class="p-fluid">
+            <form id="relevo-form" @submit.prevent="saveRelevo">
             <div class="flex flex-col gap-4">
                 <!-- Técnico que Recibe -->
                 <div class="flex flex-col gap-2">
@@ -445,10 +446,11 @@ const formatFecha = (fecha) => {
                     </div>
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                <Button label="Registrar Relevo" icon="pi pi-check" @click="saveRelevo" :loading="loading" />
+                <Button label="Registrar Relevo" icon="pi pi-check" type="submit" form="relevo-form" :loading="loading" />
             </template>
         </Dialog>
 

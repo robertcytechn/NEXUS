@@ -1,8 +1,8 @@
 import api from '@/service/api';
 
 export class InfraestructuraService {
-    async getIncidencias() {
-        const response = await api.get('infra-incidencias/');
+    async getIncidencias(params = {}) {
+        const response = await api.get('infra-incidencias/', { params });
         return response.data;
     }
 

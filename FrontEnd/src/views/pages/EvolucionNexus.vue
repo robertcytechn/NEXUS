@@ -224,6 +224,7 @@ const getCategoriaSeverity = (categoria) => {
                 </template>
 
                 <!-- LAYOUT 2 COLUMNAS (FormularioIzq | AdnDer) -->
+                <form id="evolucion-form" @submit.prevent="saveEvolucion">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-0">
 
                     <!-- Animación CSS-only (Arriba en Mobile, Derecha en Desktop) -->
@@ -389,11 +390,12 @@ const getCategoriaSeverity = (categoria) => {
                         </div>
                     </div>
                 </div> <!-- Fin de Grid 2 Columnas -->
+                </form>
 
                 <template #footer>
                     <div class="relative z-10 flex justify-end gap-2">
                         <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" severity="secondary" />
-                        <Button label="Guardar Propuesta" icon="pi pi-check" @click="saveEvolucion"
+                        <Button label="Guardar Propuesta" icon="pi pi-check" type="submit" form="evolucion-form"
                             severity="primary" />
                     </div>
                 </template>

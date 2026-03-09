@@ -300,6 +300,7 @@ watch(() => toolbarRef.value?.busquedaGlobal, (val) => {
 
         <!-- Dialog de Creación/Edición -->
         <Dialog v-model:visible="mantenimientoDialog" :style="{ width: '550px' }" header="Detalles de Mantenimiento" :modal="true" class="p-fluid">
+            <form id="mantenimiento-form" @submit.prevent="saveMantenimiento">
             <div class="flex flex-col gap-4">
                 <!-- Selección de Máquina -->
                 <div class="flex flex-col gap-2">
@@ -352,10 +353,11 @@ watch(() => toolbarRef.value?.busquedaGlobal, (val) => {
                     <Textarea id="observaciones" v-model="mantenimiento.observaciones" rows="4" cols="20" placeholder="Notas adicionales sobre el mantenimiento realizado..." />
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                <Button label="Guardar" icon="pi pi-check" @click="saveMantenimiento" :loading="loading" />
+                <Button label="Guardar" icon="pi pi-check" type="submit" form="mantenimiento-form" :loading="loading" />
             </template>
         </Dialog>
 

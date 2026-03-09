@@ -67,14 +67,15 @@ class TicketVacioSerializer(serializers.ModelSerializer):
         return ' '.join(filter(None, partes))
 
     def validate(self, data):
-        """Valida que las 4 fotos estén presentes en la creación."""
+        """Valida que las 3 fotos obligatorias estén presentes en la creación.
+        foto_ultimas_operaciones_maquina es opcional (null=True, blank=True).
+        """
         request = self.context.get('request')
         if request and request.method == 'POST':
             fotos_requeridas = [
-                'foto_ultimas_operaciones',
-                'foto_carga_sistema',
-                'foto_seguimiento_slot',
-                'foto_recarga_error',
+                'foto_ultimas_operaciones_cliente',
+                'foto_seguimiento_slot_maquina',
+                'foto_sistema_carga_error',
             ]
             faltantes = [f for f in fotos_requeridas if not data.get(f)]
             if faltantes:

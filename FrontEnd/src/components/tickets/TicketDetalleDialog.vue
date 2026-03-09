@@ -353,7 +353,7 @@ watch(
                     <h4 class="font-bold text-xl text-surface-900 dark:text-surface-0">Nueva Intervención</h4>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5">
+                <form class="grid grid-cols-1 gap-5" @submit.prevent="guardarBitacora">
                     <!-- Tipo de Intervención -->
                     <div>
                         <label class="block font-bold mb-3">Tipo de Intervención *</label>
@@ -475,13 +475,13 @@ watch(
 
                     <!-- Botones -->
                     <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-4">
-                        <Button label="Cancelar" icon="pi pi-times" @click="cancelarFormularioBitacora"
+                        <Button type="button" label="Cancelar" icon="pi pi-times" @click="cancelarFormularioBitacora"
                             severity="secondary" outlined />
-                        <Button label="Guardar Intervención" icon="pi pi-save" @click="guardarBitacora"
+                        <Button type="submit" label="Guardar Intervención" icon="pi pi-save"
                             :loading="guardandoBitacora"
                             :disabled="nuevaBitacora.finaliza_ticket && !puedeSerCerrado" />
                     </div>
-                </div>
+                </form>
             </div>
 
             <!-- Mensaje cuando el ticket está cerrado -->

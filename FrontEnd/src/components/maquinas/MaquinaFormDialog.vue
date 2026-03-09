@@ -154,15 +154,15 @@ const saveMaquina = async () => {
             <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
         </div>
 
-        <div v-else class="flex flex-col gap-6 w-full p-2">
+        <form v-else id="maquina-form" @submit.prevent="saveMaquina" class="flex flex-col gap-6 w-full p-2">
             <!-- MOTOR DINÁMICO DE MÁQUINAS UI - v-if para no montar innecesariamente -->
             <MaquinaForm v-if="visible" v-model="maquinaLocal" :submitted="submitted" @validar="saveMaquina" />
-        </div>
+        </form>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text severity="secondary" @click="hideDialog"
                 :disabled="loading" />
-            <Button label="Guardar Máquina" icon="pi pi-check" @click="saveMaquina" :loading="loading" />
+            <Button label="Guardar Máquina" icon="pi pi-check" type="submit" form="maquina-form" :loading="loading" />
         </template>
     </Dialog>
 </template>

@@ -241,6 +241,7 @@ onMounted(() => {
 
         <!-- Dialogo de Creación/Edición -->
         <Dialog v-model:visible="articuloDialog" :style="{ width: '500px' }" header="Detalles del Artículo" :modal="true" class="p-fluid">
+            <form id="articulo-form" @submit.prevent="saveArticulo">
             <div class="flex flex-col gap-4">
                 <div>
                     <label for="nombre" class="block font-bold mb-2">Nombre del Artículo</label>
@@ -287,10 +288,11 @@ onMounted(() => {
                     <label for="activo">¿Está Activo?</label>
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" icon="pi pi-times" text @click="articuloDialog = false" />
-                <Button label="Guardar" icon="pi pi-check" @click="saveArticulo" :loading="loading" />
+                <Button label="Guardar" icon="pi pi-check" type="submit" form="articulo-form" :loading="loading" />
             </template>
         </Dialog>
     </div>

@@ -88,6 +88,7 @@ const saveCasino = async () => {
 <template>
     <Dialog :visible="visible" @update:visible="(val) => emit('update:visible', val)" :style="{ width: '550px' }"
         :header="casinoProp.id ? 'Editar Casino' : 'Nuevo Casino'" :modal="true" class="p-fluid">
+        <form id="casino-form" @submit.prevent="saveCasino">
         <CasinoForm v-if="visible" v-model="localData" :modoEdicion="!!casinoProp.id" @validar="handleValidar" />
 
         <div v-if="casinoProp.id" class="border-t border-surface-200 dark:border-surface-700 pt-4 mt-4">
@@ -105,10 +106,11 @@ const saveCasino = async () => {
                 </div>
             </div>
         </div>
+        </form>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" :disabled="loading" />
-            <Button label="Guardar" icon="pi pi-check" @click="saveCasino" :loading="loading" />
+            <Button label="Guardar" icon="pi pi-check" type="submit" form="casino-form" :loading="loading" />
         </template>
     </Dialog>
 </template>

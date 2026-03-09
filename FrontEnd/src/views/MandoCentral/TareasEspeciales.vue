@@ -317,6 +317,7 @@ onMounted(() => {
             <Dialog v-model:visible="tareaDialog" :style="{ width: '600px' }"
                 :header="tarea.id ? (canEditCreate ? 'Editar Tarea' : 'Detalles de Tarea') : 'Nueva Tarea'"
                 :modal="true">
+                <form id="tarea-form" @submit.prevent="saveTarea">
                 <div class="flex flex-col gap-4">
                     <div>
                         <label class="block font-bold mb-1">Título</label>
@@ -364,10 +365,11 @@ onMounted(() => {
                             placeholder="Reporte de finalización..." />
                     </div>
                 </div>
+                </form>
 
                 <template #footer>
                     <Button label="Cerrar" icon="pi pi-times" text @click="closeDialog" />
-                    <Button v-if="canEditCreate" label="Guardar Tarea" icon="pi pi-check" @click="saveTarea"
+                    <Button v-if="canEditCreate" label="Guardar Tarea" icon="pi pi-check" type="submit" form="tarea-form"
                         severity="primary" />
                 </template>
             </Dialog>
@@ -380,6 +382,7 @@ onMounted(() => {
                     <span class="text-surface-600 dark:text-surface-300">{{ tareaTecnica.descripcion }}</span>
                 </div>
 
+                <form id="tarea-tecnica-form" @submit.prevent="procesarTareaTecnica">
                 <div class="flex flex-col gap-4">
                     <div>
                         <label class="block font-bold mb-1">Nuevo Estado</label>
@@ -400,10 +403,11 @@ onMounted(() => {
                             como completada.</small>
                     </div>
                 </div>
+                </form>
 
                 <template #footer>
                     <Button label="Cancelar" icon="pi pi-times" text @click="btnTecnicoDialog = false" />
-                    <Button label="Guardar Progreso" icon="pi pi-save" @click="procesarTareaTecnica"
+                    <Button label="Guardar Progreso" icon="pi pi-save" type="submit" form="tarea-tecnica-form"
                         severity="warning" />
                 </template>
             </Dialog>

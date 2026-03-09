@@ -461,56 +461,62 @@ const NEXUS_SVG = `<svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org
 
 /**
  * Convierte el SVG del logo a una imagen PNG en base64.
- * En MAUI WebView, URL.createObjectURL puede no estar disponible o fallar;
- * en ese caso se devuelve null para que el logo se omita sin interrumpir
- * la generación del PDF.
+ *
+ * Estrategia:
+ *   - En MAUI WebView: URL.createObjectURL existe pero los blob-URLs no disparan
+ *     img.onload, dejando el Promise colgado indefinidamente. Se usa data URI directo.
+ *   - En navegador de escritorio: se intenta createObjectURL primero (más rápido);
+ *     si falla se cae al data URI.
+ *   - En cualquier caso, un timeout de 3s garantiza que el Promise resuelve (con null)
+ *     antes de bloquear la exportación.
  */
 async function _logoToPng(wPx, hPx) {
+    /** Espera que una imagen cargue con timeout de seguridad (ms). */
+    function _loadImg(img, src, timeoutMs = 3000) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+            img.onload = () => { clearTimeout(timer); resolve(); };
+            img.onerror = (e) => { clearTimeout(timer); reject(e); };
+            img.src = src;
+        });
+    }
+
     try {
-        // Intentar primero con createObjectURL (más rápido)
-        if (typeof URL.createObjectURL === 'function') {
-            const blob = new Blob([NEXUS_SVG], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const dataUrl = await new Promise((resolve, reject) => {
+        const svgEncoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(NEXUS_SVG);
+
+        // En MAUI WebView los blob-URLs de SVG no cargan como <img> src,
+        // usar siempre data URI para evitar que el Promise quede colgado.
+        const skipObjectURL = MauiShareHelper.isMauiWebView() ||
+                              typeof URL.createObjectURL !== 'function';
+
+        if (!skipObjectURL) {
+            // Intento rápido con createObjectURL (solo en navegador de escritorio)
+            const blobUrl = URL.createObjectURL(new Blob([NEXUS_SVG], { type: 'image/svg+xml' }));
+            try {
                 const img = new Image(wPx, hPx);
-                img.onload = () => {
-                    try {
-                        const c = document.createElement('canvas');
-                        c.width = wPx; c.height = hPx;
-                        c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
-                        URL.revokeObjectURL(url);
-                        resolve(c.toDataURL('image/png'));
-                    } catch (e) {
-                        URL.revokeObjectURL(url);
-                        reject(e);
-                    }
-                };
-                img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
-                img.src = url;
-            });
-            return dataUrl;
+                await _loadImg(img, blobUrl);
+                const c = document.createElement('canvas');
+                c.width = wPx; c.height = hPx;
+                c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
+                URL.revokeObjectURL(blobUrl);
+                return c.toDataURL('image/png');
+            } catch {
+                URL.revokeObjectURL(blobUrl);
+                // cae al data URI a continuación
+            }
         }
 
-        // Fallback: data URL directa con SVG codificado (funciona en MAUI WebView
-        // cuando createObjectURL no está disponible o produce blobs bloqueados)
-        const svgEncoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(NEXUS_SVG);
-        return await new Promise((resolve, reject) => {
-            const img = new Image(wPx, hPx);
-            img.onload = () => {
-                try {
-                    const c = document.createElement('canvas');
-                    c.width = wPx; c.height = hPx;
-                    c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
-                    resolve(c.toDataURL('image/png'));
-                } catch (e) { reject(e); }
-            };
-            img.onerror = reject;
-            img.src = svgEncoded;
-        });
+        // data URI directo — compatible con MAUI WebView y con navegadores
+        const img = new Image(wPx, hPx);
+        await _loadImg(img, svgEncoded);
+        const c = document.createElement('canvas');
+        c.width = wPx; c.height = hPx;
+        c.getContext('2d').drawImage(img, 0, 0, wPx, hPx);
+        return c.toDataURL('image/png');
+
     } catch (e) {
-        // En caso de cualquier error (canvas bloqueado, SVG no cargado, etc.)
-        // devolver null para que el logo se omita sin romper la exportación.
-        console.warn('[MapaSala] _logoToPng falló, se omite el logo:', e);
+        // Canvas tainted, SVG bloqueado o timeout — el logo se omite sin romper el PDF.
+        console.warn('[MapaSala] _logoToPng falló, se omite el logo:', e.message || e);
         return null;
     }
 }

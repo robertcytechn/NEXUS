@@ -33,6 +33,7 @@ const handleLogin = async () => {
         });
 
         if (result.success) {
+            localStorage.setItem('nexus_last_nickname', email.value);
             const redirectPath = route.query.redirect || '/';
             // Usamos window.location.href en lugar de router.push para forzar
             // una recarga completa del módulo router/index.js. Ese módulo contiene
@@ -100,6 +101,9 @@ function getPresetExt() {
 }
 
 onMounted(async () => {
+    const savedNickname = localStorage.getItem('nexus_last_nickname');
+    if (savedNickname) email.value = savedNickname;
+
     const surfacePalette = surfaces[layoutConfig.surface];
     
     $t()
@@ -146,7 +150,7 @@ onMounted(async () => {
                         <span class="text-muted-color font-medium">Inicia sesión para continuar</span>
                     </div>
 
-                    <div>
+                    <form @submit.prevent="handleLogin" autocomplete="on">
                         <label for="username" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Usuario</label>
                         <InputText id="username" name="username" type="text" placeholder="Nombre de usuario" class="w-full md:w-[30rem] mb-8" v-model="email" autocomplete="username" />
 
@@ -155,7 +159,7 @@ onMounted(async () => {
 
                         <Message v-if="errorMessage" severity="error" :closable="false" class="mb-4">{{ errorMessage }}</Message>
 
-                        <Button label="Iniciar Sesión" class="w-full" @click="handleLogin" :loading="loading" :disabled="loading"></Button>
+                        <Button label="Iniciar Sesión" type="submit" class="w-full" :loading="loading" :disabled="loading"></Button>
 
                         <!-- Términos y Condiciones -->
                         <div class="mt-6 text-center">
@@ -169,7 +173,7 @@ onMounted(async () => {
                                 </router-link>
                             </p>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

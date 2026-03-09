@@ -286,7 +286,7 @@ const estadoTicketSeverity = (estado) => {
 
                             <!-- Panel: Seguridad -->
                             <TabPanel value="1">
-                                <div class="flex flex-col gap-4 mt-3 max-w-md">
+                                <form class="flex flex-col gap-4 mt-3 max-w-md" @submit.prevent="onChangePassword">
 
                                     <!-- Aviso de recomendaciones -->
                                     <div
@@ -319,9 +319,9 @@ const estadoTicketSeverity = (estado) => {
                                             placeholder="Repita la contraseña" class="w-full" fluid />
                                     </div>
 
-                                    <Button label="Actualizar Contraseña" icon="pi pi-check" severity="primary"
-                                        @click="onChangePassword" :loading="loading" class="self-start" />
-                                </div>
+                                    <Button type="submit" label="Actualizar Contraseña" icon="pi pi-check" severity="primary"
+                                        :loading="loading" class="self-start" />
+                                </form>
                             </TabPanel>
 
                         </TabPanels>

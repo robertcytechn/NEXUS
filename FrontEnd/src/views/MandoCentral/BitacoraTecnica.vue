@@ -169,6 +169,7 @@
             <Card v-if="!ticketEstaCerrado">
                 <template #title>Nueva Entrada de Bitácora</template>
                 <template #content>
+                    <form @submit.prevent="guardarEntrada">
                     <div class="grid grid-cols-1 gap-4">
                         <!-- Tipo de Intervención -->
                         <div>
@@ -324,12 +325,13 @@
                             <Button 
                                 label="Guardar Entrada" 
                                 icon="pi pi-save" 
-                                @click="guardarEntrada"
+                                type="submit"
                                 :loading="guardando"
                                 :disabled="nuevaEntrada.finaliza_ticket && !puedeSerCerrado"
                             />
                         </div>
                     </div>
+                    </form>
                 </template>
             </Card>
 

@@ -120,15 +120,15 @@ const saveModelo = async () => {
         <div v-if="loading && props.modeloId" class="flex justify-center p-6">
             <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
         </div>
-        <div v-else class="flex flex-col gap-6 w-full p-2">
+        <form v-else id="modelo-form" @submit.prevent="saveModelo" class="flex flex-col gap-6 w-full p-2">
             <!-- MOTOR DINÁMICO UI -->
             <ModeloForm v-model="modeloLocal" :submitted="submitted" @validar="saveModelo" />
-        </div>
+        </form>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text severity="secondary" @click="hideDialog"
                 :disabled="loading" />
-            <Button label="Guardar Modelo" icon="pi pi-check" @click="saveModelo" :loading="loading" />
+            <Button label="Guardar Modelo" icon="pi pi-check" type="submit" form="modelo-form" :loading="loading" />
         </template>
     </Dialog>
 </template>

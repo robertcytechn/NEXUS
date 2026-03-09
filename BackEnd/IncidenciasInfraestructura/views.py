@@ -12,12 +12,20 @@ class IncidenciaInfraestructuraViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Traer todas las incidencias con sus relaciones
         queryset = IncidenciaInfraestructura.objects.all().select_related('casino').order_by('-creado_en')
-        
+
+        usuario = self.request.user
+
         # Filtrado opcional por casino: ?casino={id}
         casino_id = self.request.query_params.get('casino')
         if casino_id:
             queryset = queryset.filter(casino_id=casino_id)
-        
+        else:
+            # Usuarios sin nivel de mando central solo ven su propio casino.
+            # nivel_jerarquia >= 19 corresponde a roles privilegiados (ADMINISTRADOR, DB ADMIN, etc.)
+            rol_nivel = getattr(getattr(usuario, 'rol', None), 'nivel_jerarquia', 0)
+            if rol_nivel < 19 and getattr(usuario, 'casino_id', None):
+                queryset = queryset.filter(casino=usuario.casino)
+
         return queryset
 
     def perform_create(self, serializer):

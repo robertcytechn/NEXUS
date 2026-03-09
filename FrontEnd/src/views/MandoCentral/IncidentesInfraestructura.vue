@@ -568,6 +568,7 @@ onMounted(() => {
                 :modal="true"
                 class="p-fluid"
             >
+                <form id="incidencia-mc-form" @submit.prevent="saveIncidencia">
                 <div class="flex flex-col gap-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -690,10 +691,11 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
+                </form>
 
                 <template #footer>
                     <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                    <Button label="Guardar" icon="pi pi-check" @click="saveIncidencia" />
+                    <Button label="Guardar" icon="pi pi-check" type="submit" form="incidencia-mc-form" />
                 </template>
             </Dialog>
         </div>

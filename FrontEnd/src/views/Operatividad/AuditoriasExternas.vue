@@ -361,6 +361,7 @@ watch(() => toolbarRef.value?.busquedaGlobal, (val) => {
 
         <!-- Dialog de Registro/Edición -->
         <Dialog v-model:visible="auditoriaDialog" :style="{ width: '700px' }" header="Registro de Visita Externa" :modal="true" class="p-fluid">
+            <form id="auditoria-ext-form" @submit.prevent="saveAuditoria">
             <div class="flex flex-col gap-4">
                 <!-- Empresa Proveedora -->
                 <div class="flex flex-col gap-2">
@@ -469,10 +470,11 @@ watch(() => toolbarRef.value?.busquedaGlobal, (val) => {
                     </div>
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" />
-                <Button label="Registrar" icon="pi pi-check" @click="saveAuditoria" :loading="loading" />
+                <Button label="Registrar" icon="pi pi-check" type="submit" form="auditoria-ext-form" :loading="loading" />
             </template>
         </Dialog>
 

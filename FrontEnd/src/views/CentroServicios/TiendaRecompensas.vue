@@ -660,6 +660,7 @@ onMounted(cargarRecompensas);
             :style="{ width: '90vw', maxWidth: '540px' }"
             :header="modoEdicion ? `✏️ Editar: ${form.titulo}` : '🎁 Nueva Recompensa'"
         >
+            <form id="recompensa-cs-form" @submit.prevent="guardarRecompensa">
             <div class="flex flex-col gap-5">
                 <!-- Título -->
                 <div class="flex flex-col gap-2">
@@ -726,6 +727,7 @@ onMounted(cargarRecompensas);
                     </label>
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogRecompensa = false" :disabled="loadingGuardar" />
@@ -733,7 +735,8 @@ onMounted(cargarRecompensas);
                     :label="modoEdicion ? 'Guardar Cambios' : 'Crear Recompensa'"
                     :icon="modoEdicion ? 'pi pi-save' : 'pi pi-plus'"
                     severity="primary"
-                    @click="guardarRecompensa"
+                    type="submit"
+                    form="recompensa-cs-form"
                     :loading="loadingGuardar"
                 />
             </template>
@@ -743,7 +746,7 @@ onMounted(cargarRecompensas);
         <!-- Dialog: Confirmar Entrega de Canje                                 -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <Dialog v-model:visible="dialogEntrega" modal :style="{ width: '460px' }" header="✅ Confirmar Entrega de Canje">
-            <div class="flex flex-col gap-4">
+            <form id="entrega-cs-form" @submit.prevent="confirmarEntrega" class="flex flex-col gap-4">
                 <p class="text-sm text-surface-600 dark:text-surface-300 m-0">
                     Confirmas que entregaste <strong>{{ canjeSeleccionado?.recompensa_titulo }}</strong>
                     al técnico <strong>{{ canjeSeleccionado?.usuario_nombre }}</strong>.
@@ -757,10 +760,10 @@ onMounted(cargarRecompensas);
                         class="w-full"
                     />
                 </div>
-            </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogEntrega = false" :disabled="loadingEntrega" />
-                <Button label="Confirmar Entrega" icon="pi pi-check" severity="success" @click="confirmarEntrega" :loading="loadingEntrega" />
+                <Button type="submit" form="entrega-cs-form" label="Confirmar Entrega" icon="pi pi-check" severity="success" :loading="loadingEntrega" />
             </template>
         </Dialog>
     </div>

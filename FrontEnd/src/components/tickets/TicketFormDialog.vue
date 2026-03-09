@@ -107,6 +107,7 @@ const saveTicket = async () => {
     <Dialog :visible="visible" @update:visible="(val) => emit('update:visible', val)" :style="{ width: '550px' }"
         :header="ticketProp.id ? `Editar Ticket: ${ticketProp.folio || ''}` : 'Alta de Nuevo Ticket'" :modal="true"
         class="p-fluid">
+        <form id="ticket-form" @submit.prevent="saveTicket">
         <TicketForm v-if="visible" ref="formEngineInstance" v-model="localData" :modoEdicion="!!ticketProp.id"
             @validar="handleValidar" />
 
@@ -122,10 +123,11 @@ const saveTicket = async () => {
                 </div>
             </div>
         </div>
+        </form>
 
         <template #footer>
             <Button label="Cancelar" icon="pi pi-times" text @click="hideDialog" :disabled="loading" />
-            <Button label="Guardar Incidencia" icon="pi pi-check" @click="saveTicket" :loading="loading" />
+            <Button label="Guardar Incidencia" icon="pi pi-check" type="submit" form="ticket-form" :loading="loading" />
         </template>
     </Dialog>
 </template>

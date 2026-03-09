@@ -598,6 +598,7 @@ onMounted(cargarDatos);
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <Dialog v-model:visible="dialogPropuesta" modal :style="{ width: '90vw', maxWidth: '580px' }"
             header="📤 Enviar Propuesta de Guía Técnica">
+            <form id="wiki-cs-propuesta-form" @submit.prevent="enviarPropuesta">
             <div class="flex flex-col gap-5">
                 <!-- Aviso informativo -->
                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-200">
@@ -675,6 +676,7 @@ onMounted(cargarDatos);
                     <small class="text-surface-400">Solo archivos PDF. Tamaño máximo: 10 MB.</small>
                 </div>
             </div>
+            </form>
 
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogPropuesta = false" :disabled="loadingEnvio" />
@@ -682,7 +684,8 @@ onMounted(cargarDatos);
                     label="Enviar para Revisión"
                     icon="pi pi-send"
                     severity="primary"
-                    @click="enviarPropuesta"
+                    type="submit"
+                    form="wiki-cs-propuesta-form"
                     :loading="loadingEnvio"
                 />
             </template>

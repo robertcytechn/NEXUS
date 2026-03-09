@@ -5,7 +5,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold text-surface-800 dark:text-surface-100">
-          Gestión de Vacíos
+          Gestión de Cargas por Error en el Sistema (Vacios)
         </h1>
         <p class="text-sm text-surface-500 mt-1">
           Reembolsos forenses por errores de red / software en carga de máquinas
@@ -251,13 +251,16 @@
               class="flex flex-col gap-1"
             >
               <span class="text-xs font-medium text-surface-500">{{ foto.label }}</span>
-              <a :href="foto.url" target="_blank" rel="noopener">
+              <div class="relative group cursor-zoom-in" @click="abrirPreviewFoto(foto.url, foto.label)">
                 <img
                   :src="foto.url"
                   :alt="foto.label"
-                  class="rounded-lg border border-surface-200 max-h-48 w-full object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                  class="rounded-lg border border-surface-200 max-h-48 w-full object-cover hover:opacity-80 transition-opacity"
                 />
-              </a>
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
+                  <i class="pi pi-search-plus text-white text-2xl drop-shadow" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -293,7 +296,7 @@
       header="Emitir Veredicto de Auditoría"
       :style="{ width: '520px', maxWidth: '98vw' }"
     >
-      <div v-if="ticketAuditar" class="flex flex-col gap-4">
+      <form v-if="ticketAuditar" id="auditoria-vacios-form" @submit.prevent="submitAuditoria" class="flex flex-col gap-4">
         <!-- Resumen del ticket -->
         <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 text-sm">
           <p>
@@ -312,13 +315,16 @@
             class="flex flex-col gap-1"
           >
             <span class="text-xs text-surface-500">{{ foto.label }}</span>
-            <a :href="foto.url" target="_blank" rel="noopener">
+            <div class="relative group cursor-zoom-in" @click="abrirPreviewFoto(foto.url, foto.label)">
               <img
                 :src="foto.url"
                 :alt="foto.label"
-                class="rounded-md border border-surface-200 max-h-28 w-full object-cover cursor-zoom-in"
+                class="rounded-md border border-surface-200 max-h-28 w-full object-cover hover:opacity-80 transition-opacity"
               />
-            </a>
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-md">
+                <i class="pi pi-search-plus text-white text-xl drop-shadow" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -357,16 +363,16 @@
         </div>
 
         <div class="flex justify-end gap-2 mt-2">
-          <Button label="Cancelar" severity="secondary" outlined @click="auditoriaVisible = false" />
+          <Button type="button" label="Cancelar" severity="secondary" outlined @click="auditoriaVisible = false" />
           <Button
+            type="submit"
             :label="formAuditoria.veredicto === 'auditado_aprobado' ? 'Aprobar Auditoría' : 'Rechazar / Investigar'"
             :severity="formAuditoria.veredicto === 'auditado_aprobado' ? 'success' : 'danger'"
             :icon="formAuditoria.veredicto === 'auditado_aprobado' ? 'pi pi-check' : 'pi pi-times'"
             :loading="guardandoAuditoria"
-            @click="submitAuditoria"
           />
         </div>
-      </div>
+      </form>
     </Dialog>
 
     <!-- Formulario de creación -->
@@ -374,6 +380,25 @@
       v-model="formularioVisible"
       @ticket-creado="onTicketCreado"
     />
+
+    <!-- ══════════════  MODAL: PREVIEW IMAGEN (WebView-safe)  ══════════════ -->
+    <Dialog
+      v-model:visible="previewVisible"
+      modal
+      :header="previewLabel"
+      :style="{ width: '95vw', maxWidth: '900px', background: 'transparent' }"
+      :pt="{ content: { style: 'padding: 0; background: #000;' }, header: { style: 'background: #111; color: #fff;' } }"
+      @hide="previewUrl = ''"
+    >
+      <div class="flex items-center justify-center bg-black min-h-[40vh]" style="touch-action: pinch-zoom;">
+        <img
+          :src="previewUrl"
+          :alt="previewLabel"
+          class="max-w-full max-h-[80vh] object-contain select-none"
+          style="touch-action: pinch-zoom;"
+        />
+      </div>
+    </Dialog>
 
   </div>
 </template>
@@ -545,11 +570,12 @@ function campoDetalle(t) {
 
 function fotosDetalle(t) {
   const base = api.defaults.baseURL?.replace('/api/', '') ?? '';
+  const url = (v) => v ? (v.startsWith('http') ? v : `${base}${v}`) : '';
   return [
-    { campo: 'foto_ultimas_operaciones', label: 'Últimas Operaciones', url: t.foto_ultimas_operaciones ? (t.foto_ultimas_operaciones.startsWith('http') ? t.foto_ultimas_operaciones : `${base}${t.foto_ultimas_operaciones}`) : '' },
-    { campo: 'foto_carga_sistema',        label: 'Carga en Sistema',   url: t.foto_carga_sistema        ? (t.foto_carga_sistema.startsWith('http')        ? t.foto_carga_sistema        : `${base}${t.foto_carga_sistema}`)        : '' },
-    { campo: 'foto_seguimiento_slot',     label: 'Seguimiento Slot',   url: t.foto_seguimiento_slot     ? (t.foto_seguimiento_slot.startsWith('http')     ? t.foto_seguimiento_slot     : `${base}${t.foto_seguimiento_slot}`)     : '' },
-    { campo: 'foto_recarga_error',        label: 'Recarga Error',      url: t.foto_recarga_error        ? (t.foto_recarga_error.startsWith('http')        ? t.foto_recarga_error        : `${base}${t.foto_recarga_error}`)        : '' },
+    { campo: 'foto_ultimas_operaciones_cliente', label: 'Últimas Operaciones del Cliente', url: url(t.foto_ultimas_operaciones_cliente) },
+    { campo: 'foto_seguimiento_slot_maquina',    label: 'Seguimiento Slot / Máquina',      url: url(t.foto_seguimiento_slot_maquina) },
+    { campo: 'foto_sistema_carga_error',         label: 'Sistema en Carga por Error',      url: url(t.foto_sistema_carga_error) },
+    { campo: 'foto_ultimas_operaciones_maquina', label: 'Últimas Operaciones de la Máquina (Opcional)', url: url(t.foto_ultimas_operaciones_maquina) },
   ].filter((f) => f.url);
 }
 
@@ -641,6 +667,17 @@ const formularioVisible = ref(false);
 
 function abrirFormulario() {
   formularioVisible.value = true;
+}
+
+// ── Preview de imagen (WebView-safe, sin target="_blank") ─────────────────────
+const previewVisible = ref(false);
+const previewUrl = ref('');
+const previewLabel = ref('');
+
+function abrirPreviewFoto(url, label = '') {
+  previewUrl.value = url;
+  previewLabel.value = label;
+  previewVisible.value = true;
 }
 
 function onTicketCreado(nuevoTicket) {

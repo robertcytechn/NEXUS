@@ -448,6 +448,7 @@ onMounted(cargarDatos);
         <!-- Dialog: Aprobar                                                    -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <Dialog v-model:visible="dialogAprobar" modal :style="{ width: '480px' }" header="✅ Aprobar Guía">
+            <form id="wiki-aprobar-form" @submit.prevent="confirmarAprobar">
             <div class="flex flex-col gap-4">
                 <p class="text-surface-600 dark:text-surface-300 text-sm m-0">
                     Estás aprobando <strong>"{{ guiaSeleccionada?.titulo_guia }}"</strong> de
@@ -464,9 +465,10 @@ onMounted(cargarDatos);
                     />
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogAprobar = false" :disabled="loadingAccion" />
-                <Button label="Aprobar Guía" icon="pi pi-check" severity="info" @click="confirmarAprobar" :loading="loadingAccion" />
+                <Button label="Aprobar Guía" icon="pi pi-check" severity="info" type="submit" form="wiki-aprobar-form" :loading="loadingAccion" />
             </template>
         </Dialog>
 
@@ -474,6 +476,7 @@ onMounted(cargarDatos);
         <!-- Dialog: Publicar + Otorgar puntos                                  -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <Dialog v-model:visible="dialogPublicar" modal :style="{ width: '520px' }" header="🌐 Publicar Guía y Otorgar Puntos">
+            <form id="wiki-publicar-form" @submit.prevent="confirmarPublicar">
             <div class="flex flex-col gap-5">
                 <p class="text-surface-600 dark:text-surface-300 text-sm m-0">
                     Publicar <strong>"{{ guiaSeleccionada?.titulo_guia }}"</strong> la hará visible
@@ -529,13 +532,15 @@ onMounted(cargarDatos);
                     />
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogPublicar = false" :disabled="loadingAccion" />
                 <Button
                     label="Publicar y Otorgar Puntos"
                     icon="pi pi-globe"
                     severity="success"
-                    @click="confirmarPublicar"
+                    type="submit"
+                    form="wiki-publicar-form"
                     :loading="loadingAccion"
                 />
             </template>
@@ -545,6 +550,7 @@ onMounted(cargarDatos);
         <!-- Dialog: Rechazar                                                   -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
         <Dialog v-model:visible="dialogRechazar" modal :style="{ width: '460px' }" header="❌ Rechazar Guía">
+            <form id="wiki-rechazar-form" @submit.prevent="confirmarRechazar">
             <div class="flex flex-col gap-4">
                 <p class="text-surface-600 dark:text-surface-300 text-sm m-0">
                     Estás rechazando <strong>"{{ guiaSeleccionada?.titulo_guia }}"</strong>.
@@ -565,9 +571,10 @@ onMounted(cargarDatos);
                     </small>
                 </div>
             </div>
+            </form>
             <template #footer>
                 <Button label="Cancelar" severity="secondary" outlined @click="dialogRechazar = false" :disabled="loadingAccion" />
-                <Button label="Rechazar" icon="pi pi-times" severity="danger" @click="confirmarRechazar" :loading="loadingAccion" />
+                <Button label="Rechazar" icon="pi pi-times" severity="danger" type="submit" form="wiki-rechazar-form" :loading="loadingAccion" />
             </template>
         </Dialog>
     </div>

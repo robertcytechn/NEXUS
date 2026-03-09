@@ -155,25 +155,27 @@ class TicketVacio(ModeloBase):
 
     # ── Evidencias fotográficas ───────────────────────────────────────────
 
-    foto_ultimas_operaciones = models.ImageField(
+    foto_ultimas_operaciones_cliente = models.ImageField(
         upload_to=vacio_foto_upload,
-        verbose_name='Foto: Últimas Operaciones',
-        help_text='Captura de las últimas transacciones registradas en la máquina'
+        verbose_name='Foto: Últimas Operaciones del Cliente',
+        help_text='Captura de las últimas transacciones realizadas por el cliente en el sistema'
     )
-    foto_carga_sistema = models.ImageField(
+    foto_seguimiento_slot_maquina = models.ImageField(
         upload_to=vacio_foto_upload,
-        verbose_name='Foto: Carga en Sistema',
-        help_text='Captura de la pantalla del sistema en el momento de la carga'
+        verbose_name='Foto: Seguimiento Slot / Máquina',
+        help_text='Captura del seguimiento de slot o historial de la máquina afectada'
     )
-    foto_seguimiento_slot = models.ImageField(
+    foto_sistema_carga_error = models.ImageField(
         upload_to=vacio_foto_upload,
-        verbose_name='Foto: Seguimiento Slot',
-        help_text='Captura del seguimiento de slot / historial de la máquina'
+        verbose_name='Foto: Sistema en Carga por Error',
+        help_text='Captura del sistema en el momento en que se realiza la carga por error'
     )
-    foto_recarga_error = models.ImageField(
+    foto_ultimas_operaciones_maquina = models.ImageField(
         upload_to=vacio_foto_upload,
-        verbose_name='Foto: Error de Recarga',
-        help_text='Captura del error mostrado durante el intento de recarga'
+        null=True,
+        blank=True,
+        verbose_name='Foto: Últimas Operaciones de la Máquina (Opcional)',
+        help_text='Captura opcional de las últimas operaciones registradas directamente en la máquina'
     )
 
     # ── Dictamen ─────────────────────────────────────────────────────────
